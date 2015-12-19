@@ -16,8 +16,8 @@ using std::chrono::duration_cast;
 typedef std::chrono::microseconds TimeT;
 
 int main() {
-  const int n = 1000;
-  const int iterations = 1000;
+  const int n = 50000;
+  const int iterations = 10000;
   {  // constructing BitArray
     vector<BitArray> ba;
     auto start = system_clock::now();
@@ -26,7 +26,7 @@ int main() {
     }
     std::cout << "Contructing BitArray (x" << iterations << ", size " << n
               << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) iterations
               << " mis" << std::endl;
   }
 
@@ -37,7 +37,7 @@ int main() {
     }
     std::cout << "Contructing bitset (x" << iterations << ", size " << n
               << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) iterations
               << " mis" << std::endl;
   }
 
@@ -49,7 +49,7 @@ int main() {
       ba.set(i, true);
     }
     std::cout << "Seting bits, BitArray (x" << n / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (n / 2)
               << " mis" << std::endl;
   }
 
@@ -59,7 +59,7 @@ int main() {
       ba.set(i, false);
     }
     std::cout << "Clearing bits, BitArray (x" << n / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (n / 2)
               << " mis" << std::endl;
   }
 
@@ -71,7 +71,7 @@ int main() {
       if (!bs.test(i)) bs.flip(i);
     }
     std::cout << "Seting bits, bitset (x" << n / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (n / 2)
               << " mis" << std::endl;
   }
 
@@ -81,7 +81,7 @@ int main() {
       if (bs.test(i)) bs.flip(i);
     }
     std::cout << "Clearing bits, bitset (x" << n / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (n / 2)
               << " mis" << std::endl;
   }
 
@@ -93,7 +93,7 @@ int main() {
       ba.set(r, true);
     }
     std::cout << "Random seting bits, BitArray (x" << iterations / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (iterations / 2)
               << " mis" << std::endl;
   }
 
@@ -104,7 +104,7 @@ int main() {
       if (!bs.test(r)) bs.flip(r);
     }
     std::cout << "Random seting bits, bitset (x" << iterations / 2 << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) (iterations / 2)
               << " mis" << std::endl;
   }
 
@@ -113,7 +113,7 @@ int main() {
     auto start = system_clock::now();
     for (int i = 0; i < iterations; ++i) bc = ba.bitCount();
     std::cout << "Bitcount, bitarray (x" << iterations << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) iterations
               << " mis" << std::endl;
   }
 
@@ -121,7 +121,7 @@ int main() {
     auto start = system_clock::now();
     for (int i = 0; i < iterations; ++i) bc = bs.count();
     std::cout << "Bitcount, bitset (x" << iterations << "): "
-              << duration_cast<TimeT>(system_clock::now() - start).count()
+              << duration_cast<TimeT>(system_clock::now() - start).count() / (double) iterations
               << " mis" << std::endl;
   }
 

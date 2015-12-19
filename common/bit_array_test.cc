@@ -24,6 +24,26 @@ TEST_F(BitArrayTest, BitArraySanity) {
   }
 }
 
+TEST_F(BitArrayTest, BitArrayOperations) {
+  BitArray zero(1);
+  BitArray one(1);
+  one.set(0, true);
+  EXPECT_EQ(zero | one, one);
+  EXPECT_EQ(one | zero, one);
+  EXPECT_EQ(one | one, one);
+  EXPECT_EQ(zero | zero, zero);
+
+  EXPECT_EQ(zero & one, zero);
+  EXPECT_EQ(one & zero, zero);
+  EXPECT_EQ(one & one, one);
+  EXPECT_EQ(zero & zero, zero);
+
+  EXPECT_EQ(zero % one, zero);
+  EXPECT_EQ(one % zero, zero);
+  EXPECT_EQ(one % one, one);
+  EXPECT_EQ(zero % zero, one);
+}
+
 int main(int argc, char* argv[]) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

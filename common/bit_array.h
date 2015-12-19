@@ -5,35 +5,45 @@
 #include <vector>
 #include <cstdint>
 
-namespace {
-const int kFilledBitsNo = 60;
-}  // namespace
-
 namespace cmplx {
 namespace common {
 class BitArray {
  public:
   BitArray(int bits_num);
+  BitArray(const BitArray& bit_array);
+  ~BitArray() = default;
 
   void set(int bit_idx, bool value);
 
   bool bit(int bit_idx) const;
   int bits_num() const { return bits_num_; }
-
   int bitCount() const;
-  // XNOR_bitCount
-  int XNORSimilarity(const BitArray& bit_array_other) const;
 
-  // Jacard_similarity is first_num / second_num
-  std::pair<int, int> JacardSimilarity(const BitArray& bit_array_other) const;
+  const std::vector<uint64_t>& data() const { return bits_; }
+  void setWord(int idx, uint64_t value);
+  uint64_t getWord(int idx) const { return bits_[idx]; }
 
  private:
-  int bit_cnt_;
   int bits_num_;
+  int bits_in_int_;
+
   std::vector<uint64_t> bits_;
 };
 
 std::ostream& operator<<(std::ostream& oc, const BitArray& bit_array);
+
+bool operator==(const BitArray& a, const BitArray& b);
+  
+// OR
+BitArray operator|(const BitArray& a, const BitArray& b);
+// AND
+BitArray operator&(const BitArray& a, const BitArray& b);
+// XNOR
+BitArray operator%(const BitArray& a, const BitArray& b);
+
+int XNORSimilarity(const BitArray& a, const BitArray& b);
+
+std::pair<int, int> JacardSimilarity(const BitArray& a, const BitArray& b);
 
 }  // namespace common
 }  // namespace cmplx
