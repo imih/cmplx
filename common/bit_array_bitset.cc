@@ -64,7 +64,7 @@ int main() {
   }
 
   bitset<n> bs;
-  std::cout << "bitset size: " << sizeof bs;
+  std::cout << "bitset size: " << sizeof bs << std::endl;
   {  // Setting bits, bitset
     auto start = system_clock::now();
     for (int i = 0; i < n; i += 2) {

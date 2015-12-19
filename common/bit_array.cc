@@ -4,14 +4,18 @@
 
 namespace cmplx {
 namespace common {
-BitArray::BitArray(int bits_num) : bits_num_(bits_num) {
+BitArray::BitArray(int bits_num) : bits_num_(bits_num), bit_cnt_(0) {
   int vector_size = (bits_num / kFilledBitsNo) + (bits_num % kFilledBitsNo > 0);
   bits_.assign(vector_size, 0);
 }
 
 void BitArray::set(int bit_idx, bool value = true) {
   int vector_idx = bit_idx / kFilledBitsNo;
-  bit_idx = bit_idx % vector_idx;
+  bit_idx = bit_idx % kFilledBitsNo;
+  if ((((int)value) & 1) ^ ((bits_[vector_idx] >> bit_idx) & 1)) {
+    bit_cnt_ += value ? +1 : -1;
+  }
+
   if (value == true) {
     bits_[vector_idx] |= (1LL << bit_idx);
   } else {  // value == false
@@ -21,21 +25,11 @@ void BitArray::set(int bit_idx, bool value = true) {
 
 bool BitArray::bit(int bit_idx) const {
   int vector_idx = bit_idx / kFilledBitsNo;
-  bit_idx = bit_idx % vector_idx;
+  bit_idx = bit_idx % kFilledBitsNo;
   return (bits_[vector_idx] >> bit_idx) & 1;
 }
 
-int BitArray::bitCount() const {
-  int bit_cnt = 0;
-  for (uint64_t v : bits_) {
-    // Brian Kernighan bits counting
-    while (v != 0) {
-      v &= (v - 1);
-      bit_cnt++;
-    }
-  }
-  return bit_cnt;
-}
+int BitArray::bitCount() const { return bit_cnt_; }
 
 int BitArray::XNORSimilarity(const BitArray& bit_array_other) const {
   int bits_num = std::max(bits_num_, bit_array_other.bits_num());

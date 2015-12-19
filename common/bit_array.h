@@ -28,6 +28,7 @@ class BitArray {
   std::pair<int, int> JacardSimilarity(const BitArray& bit_array_other) const;
 
  private:
+  int bit_cnt_;
   int bits_num_;
   std::vector<uint64_t> bits_;
 };
