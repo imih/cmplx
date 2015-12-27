@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 2.8) 
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -I/usr/local/igraph -L/usr/local/lib -ligraph ")
 
-#find_package(GMP REQUIRED)
-#include_directories(${GOBJECT_INCLUDE_DIR})
-
-add_library(common bit_array.cc )
+add_library(common igraph.cc ivector.cc bit_array.cc)
 target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-#target_link_libraries(common ${GOBJECT_INCLUDE_DIR})
 
 enable_testing()
 find_package(GTest REQUIRED)
 include_directories(${GTEST_BOTH_LIBRARIES})
+
+#BitArray tests and comp
 add_test(AllTestsInBitarraytest bitarraytest)
 add_executable(bitarraytest bit_array_test.cc bit_array.cc)
 target_link_libraries(bitarraytest ${GTEST_BOTH_LIBRARIES})
 
 add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
 
+#Random Generator tests
