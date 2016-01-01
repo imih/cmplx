@@ -1,7 +1,7 @@
 #ifndef CMPLX_COMMON_IGRAPH_H
 #define CMPLX_COMMON_IGRAPH_H
 
-#include <igraph.h>
+#include <igraph/igraph.h>
 #include <vector>
 
 namespace cmplx {
