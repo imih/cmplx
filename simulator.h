@@ -13,7 +13,7 @@ class SirParams {
   double q() { return q_; }
 
   const common::BitArray& infected() { return infected_; }
-  const common::BitArray& susceptible_() { return susceptible_; }
+  const common::BitArray& susceptible_() { return susceptible_;}
 
  private:
   double p_;
@@ -29,6 +29,7 @@ class SimulationStats {
   common::BitArray& infected() { return infected_; }
   common::BitArray& susceptible() { return susceptible_; }
   common::BitArray& recovered() { return recovered_; }
+ 
   // TODO
  private:
   common::BitArray infected_;
