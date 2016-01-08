@@ -18,16 +18,17 @@ class IVector {
  public:
   IVector(const std::vector<T>& v);
   IVector(std::initializer_list<T> il);
+  IVector(const IVector<T>& iv) { igraph_vector_copy(&vector_, iv.vector()); }
 
   ~IVector() { igraph_vector_destroy(&vector_); }
 
-  const igraph_vector_t& vector() const { return vector_; }
+  const igraph_vector_t* vector() const { return &vector_; }
 
-  T& operator[](int idx);
+  T operator[](int idx);
+  void set(int idx, T val);
 
   long int size() { return igraph_vector_size(&vector_); }
-
-  bool empty() { return igraph_vector_empty(&vector()); }
+  bool empty() { return igraph_vector_empty(&vector_); }
 
  private:
   // By default of type igraph_real_t.

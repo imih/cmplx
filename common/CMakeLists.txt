@@ -25,5 +25,11 @@ add_test(AllTestInIvectortest ivectortest)
 add_executable(ivectortest ivector.cc ivector_test.cc)
 target_link_libraries(ivectortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
 
+#IGraph test
+add_test(AllTestInIgraphtest igraphtest)
+add_executable(igraphtest igraph.cc igraph_test.cc ivector.cc)
+target_link_libraries(igraphtest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+
+
 #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
 
