@@ -11,4 +11,6 @@ include_directories(${IGRAPH_LIBRARY})
 project (cmplx)
 add_subdirectory(common)
 add_subdirectory(simul)
+add_library(source_detection common simul source_detector.cc)
+target_include_directories(source_detection PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}) 
 
