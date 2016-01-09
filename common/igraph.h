@@ -3,6 +3,9 @@
 
 #include <igraph/igraph.h>
 #include <vector>
+#include <unordered_map>
+
+#include "ivector.h"
 
 namespace cmplx {
 namespace common {
@@ -32,9 +35,19 @@ class IGraph {
     return (int)  igraph_vcount(&graph_);
   }
 
+  const IVector<int> &adj_list(int node_id) {
+    if (!adj_list_cache_.count(node_id)) {
+      IVector<int> v;
+      assert(!igraph_incident(&graph_, v.vector(), node_id, IGRAPH_OUT));
+      adj_list_cache_[node_id] = v;
+    }
+    return adj_list_cache_[node_id];
+  }
+
  private:
   IGraph(const igraph_t& graph_) : graph_(std::move(graph_)) {}
   igraph_t graph_;
+  std::unordered_map<int, IVector<int> > adj_list_cache_;
 };
 
 }  // namespace common

@@ -8,7 +8,6 @@ find_package(Igraph REQUIRED)
 include_directories(${IGRAPH_INCLUDE_DIR})
 include_directories(${IGRAPH_LIBRARY})
 
-project (cmplx)
-add_subdirectory(common)
-add_subdirectory(simul)
+add_library(simulator simulator.cc)
+target_include_directories(simulator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${IGRAPH_INCLUDE_DIR})
 
