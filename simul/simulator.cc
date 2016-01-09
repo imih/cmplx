@@ -7,6 +7,7 @@ using cmplx::common::IDqueue;
 using cmplx::common::IGraph;
 using cmplx::common::IVector;
 using cmplx::common::BitArray;
+using cmplx::common::SirParams;
 
 namespace cmplx {
 namespace simul {

@@ -3,6 +3,7 @@
 #include "../common/ivector.h"
 #include "../common/igraph.h"
 #include "../common/bit_array.h"
+#include "../common/sir_params.h"
 
 #include <iostream>
 #include <gtest/gtest.h>
@@ -12,8 +13,8 @@ namespace {
 using cmplx::common::IGraph;
 using cmplx::common::IVector;
 using cmplx::common::BitArray;
+using cmplx::common::SirParams;
 using cmplx::simul::Simulator;
-using cmplx::simul::SirParams;
 
 int Tmax = 100;
 class SimulatorTest : public testing::Test {
@@ -62,7 +63,7 @@ TEST_F(SimulatorTest, SIROnLattice) {
         if (p == 1 && t >= g.diameter()) {
           BitArray zeros(g.vertices());
           EXPECT_EQ(zeros, sp.susceptible());
-          if(q == 1) {
+          if (q == 1) {
             EXPECT_EQ(zeros, sp.infected());
           }
         }
