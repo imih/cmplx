@@ -2,42 +2,47 @@
 #define CMPLX_SIMUL_SIMULATOR_H
 
 #include "../common/bit_array.h"
+#include "../common/idqueue.h"
 #include "../common/igraph.h"
 #include "../common/ivector.h"
+#include "../common/random.h"
 
 namespace cmplx {
 namespace simul {
 class SirParams {
 public:
-  SirParams(double p, double q, const common::BitArray infected,
+  SirParams(double p, double q, int T, const common::BitArray infected,
             const common::BitArray susceptible)
-      : p_(p), q_(q), infected_(infected), susceptible_(susceptible) {}
+      : random_(), infected_q_(infected), time_steps_(0), p_(p), q_(q), T_(T),
+        infected_(infected), susceptible_(susceptible),
+        recovered_(infected.bits_num()) {}
 
-  double p() { return p_; }
-  double q() { return q_; }
+  common::IDqueue &infected_q() { return infected_q_; }
 
-  const common::BitArray &infected() { return infected_; }
-  const common::BitArray &susceptible() { return susceptible_; }
+  bool drawP() { return random_.eventDraw(p_); }
+  bool drawQ() { return random_.eventDraw(q_); }
 
-private:
-  double p_;
-  double q_;
-  common::BitArray infected_;
-  common::BitArray susceptible_;
-};
+  int maxT() { return T_; }
+  void incrTime() { time_steps_++; }
+  int time_steps() { return time_steps_; }
 
-class SimulationStats {
-public:
-  SimulationStats(SirParams &sir_params)
-      : infected_(sir_params.infected()),
-        susceptible_(sir_params.susceptible()),
-        recovered_(sir_params.infected().bits_num()) {}
+  // double p() { return p_; }
+  // double q() { return q_; }
 
   common::BitArray &infected() { return infected_; }
   common::BitArray &susceptible() { return susceptible_; }
   common::BitArray &recovered() { return recovered_; }
 
 private:
+  common::Random random_;
+
+  common::IDqueue infected_q_;
+
+  int time_steps_;
+  double p_;
+  double q_;
+  int T_;
+
   common::BitArray infected_;
   common::BitArray susceptible_;
   common::BitArray recovered_;
@@ -45,7 +50,8 @@ private:
 
 class Simulator {
 public:
-  static SimulationStats NaiveSIR(common::IGraph &graph, SirParams &sir_params);
+  static void NaiveSIROneStep(common::IGraph& graph, SirParams& sir_params);
+  static void NaiveSIR(common::IGraph &graph, SirParams &sir_params);
 };
 } // namespace simul
 } // namespace cmplx

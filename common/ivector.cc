@@ -6,6 +6,11 @@
 
 namespace cmplx {
 namespace common {
+template <class T> IVector<T>::IVector() {
+  assert(!igraph_vector_init(&vector_, 0));
+  vector_p_ = &vector_;
+}
+
 template <class T> IVector<T>::IVector(const std::vector<T> &v) {
   assert(igraph_vector_init(&vector_, (int long)v.size()) == 0);
   int idx = 0;

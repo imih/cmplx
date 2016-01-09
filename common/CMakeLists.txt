@@ -8,7 +8,7 @@ find_package(Igraph REQUIRED)
 include_directories(${IGRAPH_INCLUDE_DIR})
 include_directories(${IGRAPH_LIBRARY})
 
-add_library(common igraph.cc ivector.cc bit_array.cc)
+add_library(common igraph.cc ivector.cc bit_array.cc idqueue.cc)
 target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${IGRAPH_INCLUDE_DIR})
 
 enable_testing()

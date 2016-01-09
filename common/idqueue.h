@@ -18,27 +18,15 @@ public:
   IDqueue(long int sz) { assert(!igraph_dqueue_init(&dqueue_, sz)); }
 
   /* Adds to dqueue all items that are in the bit set.*/
-  IDqueue(const BitArray &bit_array) : IDqueue(bit_array.bits_num()) {
-    int sz = bit_array.bits_num();
-    for(int i = 0; i < sz; ++i) {
-      if(bit_array.bit(i)) {
-        push(i);
-      }
-    }
-  }
-
+  IDqueue(const BitArray &bit_array);
   ~IDqueue() { igraph_dqueue_destroy(&dqueue_); }
 
   long int size() { return igraph_dqueue_size(&dqueue_); }
   bool empty() { return igraph_dqueue_empty(&dqueue_); }
 
-  void push(int x) {
-    assert(!igraph_dqueue_push(&dqueue_, x));
-  }
+  void push(int x) { assert(!igraph_dqueue_push(&dqueue_, x)); }
 
-  int pop() {
-    return (int) igraph_dqueue_pop(&dqueue_);
-  }
+  int pop() { return (int)igraph_dqueue_pop(&dqueue_); }
 
 private:
   igraph_dqueue_t dqueue_;
