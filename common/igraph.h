@@ -23,17 +23,17 @@ public:
 
   const igraph_t &graph() const { return graph_; }
 
-  int diameter();
+  int diameter() const;
 
-  int vertices() { return (int)igraph_vcount(&graph_); }
+  int vertices() const { return (int)igraph_vcount(&graph_); }
 
-  const IVector<int> &adj_list(int node_id);
+  const IVector<int> &adj_list(int node_id) const;
 
 private:
   IGraph(const igraph_t &graph_) : graph_(std::move(graph_)) {}
 
   igraph_t graph_;
-  std::unordered_map<int, IVector<int>> adj_list_cache_;
+  mutable std::unordered_map<int, IVector<int>> adj_list_cache_;
 };
 
 } // namespace common

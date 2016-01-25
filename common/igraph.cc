@@ -16,13 +16,13 @@ IGraph IGraph::UndirectedLattice(const std::vector<int> &dimensions) {
   return IGraph(std::move(graph));
 }
 
-int IGraph::diameter() {
+int IGraph::diameter() const {
   igraph_integer_t diam;
   igraph_diameter(&graph_, &diam, 0, 0, 0, IGRAPH_UNDIRECTED, 0);
   return (int)diam;
 }
 
-const IVector<int> &IGraph::adj_list(int node_id) {
+const IVector<int> &IGraph::adj_list(int node_id) const {
   if (!adj_list_cache_.count(node_id)) {
     IVector<int> v;
     assert(!igraph_incident(&graph_, v.vector(), node_id, IGRAPH_OUT));

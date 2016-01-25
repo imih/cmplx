@@ -19,7 +19,7 @@ typedef std::numeric_limits<double> dbl;
 namespace cmplx {
 namespace simul {
 
-void Simulator::NaiveSIROneStep(IGraph &graph, SirParams &sir_params) {
+void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
   BitArray &I = sir_params.infected();
   BitArray &S = sir_params.susceptible();
   BitArray &R = sir_params.recovered();
@@ -47,7 +47,7 @@ void Simulator::NaiveSIROneStep(IGraph &graph, SirParams &sir_params) {
   sir_params.incrTime();
 }
 
-void Simulator::NaiveSIR(IGraph &graph, SirParams &sir_params) {
+void Simulator::NaiveSIR(const IGraph &graph, SirParams &sir_params) {
   while (sir_params.time_steps() < sir_params.maxT()) {
     NaiveSIROneStep(graph, sir_params);
   }
@@ -89,7 +89,7 @@ double P(int n, int k, double p, double q) {
 
 } // anonymous namespace for CDF calculations
 
-void Simulator::calcCummulativeInfecting(int n, std::string file_name) {
+void Simulator::calcCummulativeInfecting(int n, const std::string &file_name) {
   build_bin_coef_cache(n);
 
   std::ofstream ost;

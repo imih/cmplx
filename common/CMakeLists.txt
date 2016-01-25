@@ -16,20 +16,19 @@ find_package(GTest REQUIRED)
 include_directories(${GTEST_BOTH_LIBRARIES})
 
 #BitArray tests and comp
-add_test(AllTestsInBitarraytest bitarraytest)
 add_executable(bitarraytest bit_array_test.cc bit_array.cc)
 target_link_libraries(bitarraytest ${GTEST_BOTH_LIBRARIES})
+add_test(AllTestsInBitarraytest bitarraytest)
 
 #IVector test
-add_test(AllTestInIvectortest ivectortest)
 add_executable(ivectortest ivector.cc ivector_test.cc)
 target_link_libraries(ivectortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+add_test(AllTestInIvectortest ivectortest)
 
 #IGraph test
-add_test(AllTestInIgraphtest igraphtest)
 add_executable(igraphtest igraph.cc igraph_test.cc ivector.cc)
 target_link_libraries(igraphtest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
-
+add_test(AllTestInIgraphtest igraphtest)
 
 #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
 

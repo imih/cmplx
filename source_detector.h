@@ -9,15 +9,21 @@
 namespace cmplx {
 class SourceDetector {
 public:
-  // Return distribution of nodes being the source of sir epidemic simulation
-  // with ending parameters sir_params.
-  static std::vector<double> directMonteCarloDetection(common::IGraph &g,
-                                        common::SirParams &sir_params,
-                                        int no_simulations);
+  // Return distribution of nodes being the source of SIR epidemic simulation
+  // based on epidemic snapshot defined by sir_params.
+  std::vector<double>
+  directMonteCarloDetection(const common::IGraph &g, const common::SirParams &sir_params,
+                            int no_simulations, bool paralelize = true);
 
 private:
+  int SSSirSimulation(int source_id, const common::IGraph &g,
+                      const common::SirParams &sir_params);
+
+  // Return starting parameters for the epidemic that starts with a single
+  // source define by source_vertex and is capable of producing a snapshot defined by
+  // ending_params.
   static common::SirParams
-  paramsForSingleSource(int vertex, common::SirParams &ending_params);
+  paramsForSingleSource(int source_vertex, common::SirParams &ending_params);
 };
 } // namespace cmplx
 #endif // CMPLX_SOURCE_DETECTOR_H

@@ -17,16 +17,18 @@ public:
   bool drawP() { return random_.eventDraw(p_); }
   bool drawQ() { return random_.eventDraw(q_); }
 
-  int maxT() { return T_; }
+  int maxT() const { return T_; }
   void incrTime() { time_steps_++; }
-  int time_steps() { return time_steps_; }
+  int time_steps() const { return time_steps_; }
 
-  double p() { return p_; }
-  double q() { return q_; }
+  double p() const { return p_; }
+  double q() const { return q_; }
 
-  BitArray &infected() { return infected_; }
-  BitArray &susceptible() { return susceptible_; }
-  BitArray &recovered() { return recovered_; }
+  int population_size() const { return susceptible_.bits_num(); }
+
+  BitArray &infected() const { return const_cast<BitArray &>(infected_); }
+  BitArray &susceptible() const { return const_cast<BitArray &>(susceptible_); }
+  BitArray &recovered() const { return const_cast<BitArray &>(recovered_); }
 
 private:
   Random random_;

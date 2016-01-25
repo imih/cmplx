@@ -44,8 +44,8 @@ TEST_F(BitArrayTest, BitArrayOperations) {
   EXPECT_EQ(zero % zero, one);
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
-}  // namespace
+} // namespace

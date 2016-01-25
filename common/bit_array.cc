@@ -5,13 +5,16 @@
 
 namespace cmplx {
 namespace common {
+BitArray BitArray::ones(int bits_num) { return ~BitArray(bits_num); }
+BitArray BitArray::zeros(int bits_num) { return BitArray(bits_num); }
+
 BitArray::BitArray(int bits_num) : bits_num_(bits_num) {
   bits_in_int_ = 8 * (int)sizeof(uint64_t);
   int vector_size = (bits_num / bits_in_int_) + 1;
   bits_.assign(vector_size, 0);
 }
 
-BitArray::BitArray(const BitArray& bit_array) {
+BitArray::BitArray(const BitArray &bit_array) {
   bits_in_int_ = 8 * (int)sizeof(uint64_t);
   bits_num_ = bit_array.bits_num();
   auto data = bit_array.data();
@@ -24,7 +27,7 @@ void BitArray::set(int bit_idx, bool value = true) {
 
   if (value == true) {
     bits_[vector_idx] |= (1LL << bit_idx);
-  } else {  // value == false
+  } else { // value == false
     bits_[vector_idx] &= ~(1LL << bit_idx);
   }
 }
@@ -48,7 +51,17 @@ int BitArray::bitCount() const {
 
 void BitArray::setWord(int idx, uint64_t value) { bits_[idx] = value; }
 
-std::ostream& operator<<(std::ostream& os, const BitArray& bit_array) {
+/* TODO  Optimaze! */
+BitArray BitArray::operator~() const {
+  int n = bits_num_;
+  BitArray ba(n);
+  for (int i = 0; i < n; ++i) {
+    ba.set(~bit(i));
+  }
+  return ba;
+}
+
+std::ostream &operator<<(std::ostream &os, const BitArray &bit_array) {
   int n = bit_array.bits_num();
   for (int i = 0; i < n; ++i) {
     os << (bit_array.bit(i) ? "1" : "O");
@@ -56,19 +69,20 @@ std::ostream& operator<<(std::ostream& os, const BitArray& bit_array) {
   return os;
 }
 
-bool operator==(const BitArray& a, const BitArray& b) {
+bool operator==(const BitArray &a, const BitArray &b) {
   if (a.bits_num() != b.bits_num()) {
     return false;
   }
 
   int data_size = (int)a.data().size();
   for (int i = 0; i < (int)data_size; ++i) {
-    if (a.getWord(i) ^ b.getWord(i)) return false;
+    if (a.getWord(i) ^ b.getWord(i))
+      return false;
   }
   return true;
 }
 
-BitArray operator|(const BitArray& a, const BitArray& b) {
+BitArray operator|(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
   int words = (int)a.data().size();
@@ -78,7 +92,7 @@ BitArray operator|(const BitArray& a, const BitArray& b) {
   return ret;
 }
 
-BitArray operator&(const BitArray& a, const BitArray& b) {
+BitArray operator&(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
   int words = (int)a.data().size();
@@ -88,7 +102,7 @@ BitArray operator&(const BitArray& a, const BitArray& b) {
   return ret;
 }
 
-BitArray operator%(const BitArray& a, const BitArray& b) {
+BitArray operator%(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
   int words = (int)a.data().size();
@@ -102,17 +116,17 @@ BitArray operator%(const BitArray& a, const BitArray& b) {
   return ret;
 }
 
-int XNORSimilarity(const BitArray& a, const BitArray& b) {
+int XNORSimilarity(const BitArray &a, const BitArray &b) {
   BitArray xnor_ba = a % b;
   return xnor_ba.bitCount();
 }
 
-std::pair<int, int> JacardSimilarity(const BitArray& a, const BitArray& b) {
+std::pair<int, int> JacardSimilarity(const BitArray &a, const BitArray &b) {
   BitArray and_ba = a & b;
   BitArray or_ba = a | b;
   return std::make_pair(and_ba.bitCount(), or_ba.bitCount());
 }
 
-}  // namespace common
-}  // namespace cmplx
+} // namespace common
+} // namespace cmplx
 
