@@ -12,15 +12,17 @@ public:
   // Return distribution of nodes being the source of SIR epidemic simulation
   // based on epidemic snapshot defined by sir_params.
   std::vector<double>
-  directMonteCarloDetection(const common::IGraph &g, const common::SirParams &sir_params,
-                            int no_simulations, bool paralelize = true);
+  directMonteCarloDetection(const common::IGraph &g,
+                            const common::SirParams &sir_params,
+                            int no_simulations);
 
-private:
   int SSSirSimulation(int source_id, const common::IGraph &g,
                       const common::SirParams &sir_params);
 
+private:
   // Return starting parameters for the epidemic that starts with a single
-  // source define by source_vertex and is capable of producing a snapshot defined by
+  // source define by source_vertex and is capable of producing a snapshot
+  // defined by
   // ending_params.
   static common::SirParams
   paramsForSingleSource(int source_vertex, common::SirParams &ending_params);
