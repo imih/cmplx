@@ -19,7 +19,7 @@ target_link_libraries(source_detection simulator igraph)
 
 set(CMAKE_CXX_COMPILER mpicxx)
 add_executable(ss_para single_source_paral.cc)
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS}  ${MPI_COMPILE_FLAGS})
 set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(ss_para common simulator source_detection mpi igraph)

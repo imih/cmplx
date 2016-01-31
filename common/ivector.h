@@ -34,7 +34,7 @@ public:
 private:
   // By default of type igraph_real_t.
   igraph_vector_t vector_;
-  igraph_vector_t* vector_p_;
+  igraph_vector_t *vector_p_;
 };
 } // namespace common
 } // namespace cmplx

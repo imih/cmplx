@@ -7,9 +7,7 @@
 #include "simul/simulator.h"
 
 using cmplx::common::IGraph;
-using cmplx::common::SirParams;
-using cmplx::common::BitArray;
-using cmplx::simul::Simulator;
+using cmplx::common::SirParams; using cmplx::common::BitArray; using cmplx::simul::Simulator;
 
 using std::vector;
 

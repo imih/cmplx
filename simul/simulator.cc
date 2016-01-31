@@ -20,9 +20,9 @@ namespace cmplx {
 namespace simul {
 
 void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
-  BitArray &I = sir_params.infected();
-  BitArray &S = sir_params.susceptible();
-  BitArray &R = sir_params.recovered();
+  BitArray I = sir_params.infected();
+  BitArray S = sir_params.susceptible();
+  BitArray R = sir_params.recovered();
   IDqueue &infected_q = sir_params.infected_q();
   int batch_size = I.bits_num();
 
@@ -45,6 +45,9 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
     }
   }
   sir_params.incrTime();
+  sir_params.set_infected(I);
+  sir_params.set_susceptible(S);
+  sir_params.set_recovered(R);
 }
 
 void Simulator::NaiveSIR(const IGraph &graph, SirParams &sir_params) {

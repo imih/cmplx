@@ -12,6 +12,14 @@ public:
   SirParams(double p, double q, int T, const BitArray &infected,
             const BitArray &susceptible);
 
+  SirParams(const SirParams &other)
+      : random_(), infected_q_(other.infected()),
+        time_steps_(other.time_steps()), p_(other.p()), q_(other.q()),
+        T_(other.maxT()), infected_(other.infected()),
+        susceptible_(other.susceptible()), recovered_(other.recovered()) {}
+
+  ~SirParams() = default;
+
   IDqueue &infected_q() { return infected_q_; }
 
   bool drawP() { return random_.eventDraw(p_); }
@@ -26,9 +34,16 @@ public:
 
   int population_size() const { return susceptible_.bits_num(); }
 
-  BitArray &infected() const { return const_cast<BitArray &>(infected_); }
-  BitArray &susceptible() const { return const_cast<BitArray &>(susceptible_); }
-  BitArray &recovered() const { return const_cast<BitArray &>(recovered_); }
+  BitArray infected() const { return infected_; }
+  BitArray susceptible() const { return susceptible_; }
+  BitArray recovered() const { return recovered_; }
+
+  void set_infected(const BitArray &infected) { infected_ = infected; }
+  void set_susceptible(const BitArray &susceptible) {
+    susceptible_ = susceptible;
+  }
+
+  void set_recovered(const BitArray &recovered) { recovered_ = recovered; }
 
 private:
   Random random_;
