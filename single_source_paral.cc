@@ -24,7 +24,7 @@ using cmplx::common::Realization;
 using cmplx::DirectMCParams;
 using std::vector;
 
-const int SIMUL_PER_REQ = 10;
+const int SIMUL_PER_REQ = 1000;
 
 struct Message {
   int source_id;
@@ -91,9 +91,9 @@ int main(int argc, char **argv) {
           MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
                                MessageType::SIMUL_PREREQUEST);
           if (cur_simul_count < simulations) {
-            cur_simul_count++;
+            cur_simul_count += SIMUL_PER_REQ;
           } else {
-            cur_simul_count = 1;
+            cur_simul_count = SIMUL_PER_REQ;
             cur_v++;
             if (cur_v == vertices) {
               cur_v = -1;
@@ -149,9 +149,13 @@ int main(int argc, char **argv) {
       if (message_recv.source_id == -1) {
         break;
       }
+      int outcomes = 0;
+      for(int t = 0; t < SIMUL_PER_REQ; ++t) {
       Realization sp0 = snapshot;
-      int outcome = sd.SSSirSimulation(message_recv.source_id, graph, sp0);
-      message_recv.event_outcome = outcome;
+      outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0);
+      }
+
+      message_recv.event_outcome = outcomes;
 
       Message toSend = message_recv;
       MPI::COMM_WORLD.Send(&toSend, 1, message_type, 0 /* dest */,
