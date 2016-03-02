@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8) 
+cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
@@ -13,7 +13,7 @@ target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${IGRAPH_IN
 
 enable_testing()
 find_package(GTest REQUIRED)
-include_directories(${GTEST_BOTH_LIBRARIES})
+include_directories(${GTEST_BOTH_LIBRARIES} )
 
 #BitArray tests and comp
 add_executable(bitarraytest bit_array_test.cc bit_array.cc)
@@ -31,4 +31,3 @@ target_link_libraries(igraphtest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
 add_test(AllTestInIgraphtest igraphtest)
 
 #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
-

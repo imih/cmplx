@@ -16,6 +16,7 @@ TEST_F(IGraphTest, IGraphLatticeSanity) {
   IGraph g = IGraph::UndirectedLattice(dims);
   EXPECT_EQ(g.vertices(), 9);
   EXPECT_EQ(g.diameter(), 4);
+  EXPECT_EQ(g.adj_list(4).size(), 4);
 }
 
 int main(int argc, char* argv[]) {

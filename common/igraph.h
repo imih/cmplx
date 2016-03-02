@@ -17,7 +17,10 @@ public:
   // connected
   static IGraph UndirectedLattice(const std::vector<int> &dimensions);
 
-  IGraph(const IGraph &i_graph) { igraph_copy(&graph_, &i_graph.graph()); }
+  IGraph(const IGraph &i_graph) {
+    igraph_copy(&graph_, &i_graph.graph());
+    adj_list_cache_.clear();
+  }
 
   ~IGraph() { igraph_destroy(&graph_); }
 

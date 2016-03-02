@@ -1,7 +1,8 @@
-#include "bit_array.h"
+#include "./bit_array.h"
 
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 
 namespace cmplx {
 namespace common {
@@ -51,12 +52,18 @@ int BitArray::bitCount() const {
 
 void BitArray::setWord(int idx, uint64_t value) { bits_[idx] = value; }
 
-/* TODO  Optimaze! */
+std::string BitArray::to_string() const {
+  std::ostringstream oss;
+  oss << *this;
+  return oss.str();
+}
+
+/* TODO  Optimize! */
 BitArray BitArray::operator~() const {
   int n = bits_num_;
   BitArray ba(n);
   for (int i = 0; i < n; ++i) {
-    ba.set(~bit(i));
+    ba.set(i, ~bit(i));
   }
   return ba;
 }
@@ -129,4 +136,3 @@ std::pair<int, int> JacardSimilarity(const BitArray &a, const BitArray &b) {
 
 } // namespace common
 } // namespace cmplx
-

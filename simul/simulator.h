@@ -15,9 +15,8 @@ namespace simul {
 
 class Simulator {
 public:
-  static void NaiveSIROneStep(const common::IGraph &graph,
-                              common::SirParams &sir_params);
-  static void NaiveSIR(const common::IGraph &graph, common::SirParams &sir_params);
+  static void NaiveSIR(const common::IGraph &graph,
+                       common::SirParams &sir_params);
 
   /* Calculates cummulative distribution of the probabilty the infected node
    * infects k neighbours
@@ -27,7 +26,11 @@ public:
    * [0..0.1..1], q = [0..0.1..1].
    * TODO use precision arithmetic library.
    */
-  static void calcCummulativeInfecting(int n, const std::string& file_name);
+
+  static void NaiveSIROneStep(const common::IGraph &graph,
+                              common::SirParams &sir_params);
+
+  // static void calcCummulativeInfecting(int n, const std::string& file_name);
 };
 } // namespace simul
 } // namespace cmplx

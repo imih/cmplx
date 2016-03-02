@@ -1,9 +1,10 @@
 #ifndef CMPLX_COMMON_BIT_ARRAY_H
 #define CMPLX_COMMON_BIT_ARRAY_H
 
-#include <iostream>
-#include <vector>
 #include <cstdint>
+#include <iostream>
+#include <string>
+#include <vector>
 
 namespace cmplx {
 namespace common {
@@ -26,6 +27,8 @@ public:
   void setWord(int idx, uint64_t value);
   uint64_t getWord(int idx) const { return bits_[idx]; }
 
+  std::string to_string() const;
+
   BitArray operator~() const;
 
 private:
@@ -45,7 +48,6 @@ BitArray operator|(const BitArray &a, const BitArray &b);
 BitArray operator&(const BitArray &a, const BitArray &b);
 // XNOR
 BitArray operator%(const BitArray &a, const BitArray &b);
-
 
 int XNORSimilarity(const BitArray &a, const BitArray &b);
 

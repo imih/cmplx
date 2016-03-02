@@ -26,7 +26,11 @@ public:
 
   void push(int x) { assert(!igraph_dqueue_push(&dqueue_, x)); }
 
+  void clear() { igraph_dqueue_clear(&dqueue_); }
+
   int pop() { return (int)igraph_dqueue_pop(&dqueue_); }
+
+  void insertMarked(const BitArray &bit_array);
 
 private:
   igraph_dqueue_t dqueue_;

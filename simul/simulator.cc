@@ -24,6 +24,10 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
   BitArray S = sir_params.susceptible();
   BitArray R = sir_params.recovered();
   IDqueue &infected_q = sir_params.infected_q();
+  if (infected_q.empty()) {
+    infected_q.insertMarked(I);
+  }
+
   int batch_size = I.bits_num();
 
   while (!infected_q.empty() && batch_size) {
@@ -53,9 +57,12 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
 void Simulator::NaiveSIR(const IGraph &graph, SirParams &sir_params) {
   while (sir_params.time_steps() < sir_params.maxT()) {
     NaiveSIROneStep(graph, sir_params);
+    sir_params.printForLattice((int) sqrt(sir_params.population_size()));
+    std::cout<< std::endl;
   }
 }
 
+/*
 namespace {
 double *bin_coef_cache;
 void build_bin_coef_cache(int n) {
@@ -91,7 +98,9 @@ double P(int n, int k, double p, double q) {
 }
 
 } // anonymous namespace for CDF calculations
+*/
 
+/*
 void Simulator::calcCummulativeInfecting(int n, const std::string &file_name) {
   build_bin_coef_cache(n);
 
@@ -114,6 +123,7 @@ void Simulator::calcCummulativeInfecting(int n, const std::string &file_name) {
   ost.close();
   clear_bin_coef_cache();
 }
+*/
 
 } // namespace simul
 } // namespace cmplx

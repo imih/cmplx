@@ -24,7 +24,7 @@ int IGraph::diameter() const {
 
 const IVector<int> &IGraph::adj_list(int node_id) const {
   if (!adj_list_cache_.count(node_id)) {
-    assert(!igraph_incident(&graph_, adj_list_cache_[node_id].vector(), node_id,
+    assert(!igraph_neighbors(&graph_, adj_list_cache_[node_id].vector(), node_id,
                             IGRAPH_OUT));
   }
   return adj_list_cache_[node_id];

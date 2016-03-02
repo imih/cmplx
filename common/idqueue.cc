@@ -12,6 +12,14 @@ IDqueue::IDqueue(const BitArray &bit_array) : IDqueue(bit_array.bits_num()) {
   }
 }
 
+void IDqueue::insertMarked(const BitArray &bit_array) {
+  int n = bit_array.bits_num();
+  clear();
+  for (int i = 0; i < n; ++i) {
+    if (bit_array.bit(i))
+      push(i);
+  }
+}
+
 } // namespace common
 } // namespace cmplx
-

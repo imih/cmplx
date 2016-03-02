@@ -45,6 +45,9 @@ public:
 
   void set_recovered(const BitArray &recovered) { recovered_ = recovered; }
 
+  void print() const;
+  void printForLattice(int n) const;
+
 private:
   Random random_;
 
