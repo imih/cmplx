@@ -24,7 +24,7 @@ using cmplx::common::Realization;
 using cmplx::DirectMCParams;
 using std::vector;
 
-const int SIMUL_PER_REQ = 1000;
+const int SIMUL_PER_REQ = 10000;
 
 struct Message {
   int source_id;
@@ -82,6 +82,7 @@ int main(int argc, char **argv) {
     // master process
     int cur_simul_count = 0;
     int cur_v = 0;
+    while(cur_v < vertices && snapshot.realization().bit(cur_v) == false) cur_v++;
     vector<int> events_resp(vertices, 0);
     long long jobs_remaining = 1LL * vertices * simulations;
     while (jobs_remaining > 0) {
@@ -95,7 +96,8 @@ int main(int argc, char **argv) {
           } else {
             cur_simul_count = SIMUL_PER_REQ;
             cur_v++;
-            if (cur_v == vertices) {
+	    while(cur_v < vertices && snapshot.realization().bit(cur_v) == false) cur_v++;
+            if (cur_v >= vertices) {
               cur_v = -1;
             }
           }
@@ -103,11 +105,11 @@ int main(int argc, char **argv) {
             puts("No more jobs");
             // There's no more jobs
             Message message = {-1, -1};
-            MPI::COMM_WORLD.Send(&message, 1, message_type, i + 1,
+            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
                                  MessageType::SIMUL_REQUEST);
           } else {
             Message m = {cur_v, 0};
-            MPI::COMM_WORLD.Send(&m, 1, message_type, i + 1,
+            MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
                                  MessageType::SIMUL_REQUEST);
           }
         }
@@ -118,7 +120,7 @@ int main(int argc, char **argv) {
           Message received;
           MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
                                MessageType::SIMUL_RESPONSE);
-          jobs_remaining--;
+          jobs_remaining-= SIMUL_PER_REQ;
           printf("%.10lf\n", 100 * jobs_remaining / ((double)vertices * simulations));
           events_resp[received.source_id] += received.event_outcome;
         }
@@ -132,7 +134,7 @@ int main(int argc, char **argv) {
     }
     for (int i = 0; i < processes - 1; ++i) {
       Message m = {-1, -1};
-      MPI::COMM_WORLD.Send(&m, 1, message_type, i + 1,
+      MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
                            MessageType::SIMUL_REQUEST);
     }
   } else {
