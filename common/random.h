@@ -15,13 +15,16 @@ public:
   /* Execute one experiment over Bernoulli random variable with probabilty p and
   * return the outcome.
   */
-  static bool eventDraw(double probabilty) {
-    static thread_local std::mt19937 generator(randomInt32());
-    static std::uniform_real_distribution<double> prob_distribution_(0, 1);
-    // 32b mt19937
-    return prob_distribution_(generator) <= probabilty;
+  static bool eventDraw(double probabilty) { return prandReal01() <= probabilty; }
+
+  static double prandReal01() {
+    // 64b mt19937
+    static thread_local std::mt19937_64 generator(randomInt32());
+    std::uniform_real_distribution<double> prob_distribution_(0, 1);
+    return prob_distribution_(generator);
   }
 
+private:
   static int64_t randomInt32() {
     int64_t r;
     // from /dev/urandom

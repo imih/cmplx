@@ -105,7 +105,6 @@ int main(int argc, char **argv) {
             if (cur_v >= vertices) {
               cur_v = -1;
             }
-	    printf("%.10lf\n", 100 * cur_v / (double) vertices);
           }
           if (cur_v == -1) {
             puts("No more jobs");
@@ -128,13 +127,17 @@ int main(int argc, char **argv) {
                                MessageType::SIMUL_RESPONSE);
           jobs_remaining -= SIMUL_PER_REQ;
           events_resp[received.source_id] += received.event_outcome;
+          if (!i)
+            printf("%.5f\n",
+                   jobs_remaining * 100 / ((double)simulations *
+                                           snapshot.realization().bitCount()));
         }
       }
     }
 
     fprintf(stderr, "Simulations finished");
     for (int v = 0; v < vertices; ++v) {
-      printf("%.8f ", events_resp[v] / (double)simulations);
+      printf("%.10f ", events_resp[v] / (double)simulations);
     }
     printf("\n");
     for (int i = 0; i < processes - 1; ++i) {
