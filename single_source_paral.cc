@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
 
   srand(time(NULL));
   DirectMCParams params = DirectMCParams::SupFig2Params();
-  int simulations = 1000000;
+  const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
   const IGraph &graph = params.graph();
@@ -82,9 +82,11 @@ int main(int argc, char **argv) {
     // master process
     int cur_simul_count = 0;
     int cur_v = 0;
-    while(cur_v < vertices && snapshot.realization().bit(cur_v) == false) cur_v++;
+    while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
+      cur_v++;
     vector<int> events_resp(vertices, 0);
-    long long jobs_remaining = 1LL * vertices * simulations;
+    long long jobs_remaining =
+        1LL * simulations * snapshot.realization().bitCount();
     while (jobs_remaining > 0) {
       for (int i = 0; i < processes - 1; ++i) {
         if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
@@ -96,21 +98,25 @@ int main(int argc, char **argv) {
           } else {
             cur_simul_count = SIMUL_PER_REQ;
             cur_v++;
-	    while(cur_v < vertices && snapshot.realization().bit(cur_v) == false) cur_v++;
+            while ((cur_v < vertices) &&
+                   (snapshot.realization().bit(cur_v) == false)) {
+              cur_v++;
+            }
             if (cur_v >= vertices) {
               cur_v = -1;
             }
+	    printf("%.10lf\n", 100 * cur_v / (double) vertices);
           }
           if (cur_v == -1) {
             puts("No more jobs");
             // There's no more jobs
             Message message = {-1, -1};
             MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
-                                 MessageType::SIMUL_REQUEST);
+                                  MessageType::SIMUL_REQUEST);
           } else {
             Message m = {cur_v, 0};
             MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                                 MessageType::SIMUL_REQUEST);
+                                  MessageType::SIMUL_REQUEST);
           }
         }
       }
@@ -120,8 +126,7 @@ int main(int argc, char **argv) {
           Message received;
           MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
                                MessageType::SIMUL_RESPONSE);
-          jobs_remaining-= SIMUL_PER_REQ;
-          printf("%.10lf\n", 100 * jobs_remaining / ((double)vertices * simulations));
+          jobs_remaining -= SIMUL_PER_REQ;
           events_resp[received.source_id] += received.event_outcome;
         }
       }
@@ -129,13 +134,13 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "Simulations finished");
     for (int v = 0; v < vertices; ++v) {
-      printf("\n%d  - %.8lf\n", v,
-             events_resp[v] / static_cast<double>(simulations));
+      printf("%.8f ", events_resp[v] / (double)simulations);
     }
+    printf("\n");
     for (int i = 0; i < processes - 1; ++i) {
       Message m = {-1, -1};
       MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                           MessageType::SIMUL_REQUEST);
+                            MessageType::SIMUL_REQUEST);
     }
   } else {
     // workers
@@ -152,9 +157,9 @@ int main(int argc, char **argv) {
         break;
       }
       int outcomes = 0;
-      for(int t = 0; t < SIMUL_PER_REQ; ++t) {
-      Realization sp0 = snapshot;
-      outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0);
+      for (int t = 0; t < SIMUL_PER_REQ; ++t) {
+        Realization sp0 = snapshot;
+        outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0);
       }
 
       message_recv.event_outcome = outcomes;

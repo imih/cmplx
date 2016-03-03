@@ -13,7 +13,7 @@ public:
             const BitArray &susceptible);
 
   SirParams(const SirParams &other)
-      : random_(), infected_q_(other.infected()),
+      : infected_q_(other.infected()),
         time_steps_(other.time_steps()), p_(other.p()), q_(other.q()),
         T_(other.maxT()), infected_(other.infected()),
         susceptible_(other.susceptible()), recovered_(other.recovered()) {}
@@ -22,8 +22,8 @@ public:
 
   IDqueue &infected_q() { return infected_q_; }
 
-  bool drawP() { return random_.eventDraw(p_); }
-  bool drawQ() { return random_.eventDraw(q_); }
+  bool drawP() { return Random::eventDraw(p_); }
+  bool drawQ() { return Random::eventDraw(q_); }
 
   int maxT() const { return T_; }
   void incrTime() { time_steps_++; }
@@ -49,8 +49,6 @@ public:
   void printForLattice(int n) const;
 
 private:
-  Random random_;
-
   IDqueue infected_q_;
 
   int time_steps_;

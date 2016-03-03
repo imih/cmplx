@@ -48,10 +48,8 @@ int SourceDetector::SSSirSimulation(int source_id, const IGraph &g,
 
   SirParams params0 =
       SourceDetector::paramsForSingleSource(source_id, realization);
-  //params0.print();
   for (int t = 0; t < maxT; ++t) {
     Simulator::NaiveSIROneStep(g, params0);
-    //params0.print();
     if ((realization.realization() | params0.infected()).bitCount() !=
         realization.realization().bitCount()) {
       return 0;
