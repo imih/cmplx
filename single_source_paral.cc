@@ -12,6 +12,7 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
+#include "common/random.h"
 #include "simul/simulator.h"
 #include "direct_mc_params.h"
 
@@ -22,6 +23,7 @@ using cmplx::common::SirParams;
 using cmplx::simul::Simulator;
 using cmplx::common::Realization;
 using cmplx::DirectMCParams;
+using cmplx::common::Random;
 using std::vector;
 
 const int SIMUL_PER_REQ = 10000;
@@ -68,8 +70,9 @@ int main(int argc, char **argv) {
   }
   */
 
-  srand(time(NULL));
-  DirectMCParams params = DirectMCParams::SupFig2Params();
+  //srand(time(NULL));
+  //DirectMCParams params = DirectMCParams::SupFig2Params();
+  DirectMCParams params = DirectMCParams::BenchmarkParams(1);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
@@ -137,7 +140,7 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "Simulations finished");
     for (int v = 0; v < vertices; ++v) {
-      printf("%.10f ", events_resp[v] / (double)simulations);
+      printf("%.10f\n", events_resp[v] / (double)simulations);
     }
     printf("\n");
     for (int i = 0; i < processes - 1; ++i) {
@@ -146,6 +149,7 @@ int main(int argc, char **argv) {
                             MessageType::SIMUL_REQUEST);
     }
   } else {
+    Random r(time(NULL) * rank);
     // workers
     // Performs simulation on request.
     SourceDetector sd;
@@ -162,7 +166,7 @@ int main(int argc, char **argv) {
       int outcomes = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0);
+        outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0, r);
       }
 
       message_recv.event_outcome = outcomes;

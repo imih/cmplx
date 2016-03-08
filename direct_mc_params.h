@@ -9,6 +9,7 @@ namespace cmplx {
 class DirectMCParams {
 public:
   static DirectMCParams SupFig2Params();
+  static DirectMCParams BenchmarkParams(int realization_no);
 
   const common::IGraph &graph() { return graph_; }
   const common::Realization &realization() { return realization_; }

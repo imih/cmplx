@@ -4,6 +4,7 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
+#include "common/random.h"
 
 #include <vector>
 
@@ -15,10 +16,11 @@ public:
   std::vector<double>
   directMonteCarloDetection(const common::IGraph &g,
                             const common::Realization &realization,
-                            int no_simulations, bool debug_print = false);
+                            int no_simulations, const common::Random &random);
 
   int SSSirSimulation(int source_id, const common::IGraph &g,
-                      const common::Realization &realization);
+                      const common::Realization &realization,
+                      const common::Random &random);
 
   // Return starting parameters for the epidemic that starts with a single
   // source define by source_vertex and is capable of producing a snapshot

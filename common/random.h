@@ -8,29 +8,27 @@
 
 namespace cmplx {
 namespace common {
+
 class Random {
 public:
-  Random() {}
+  Random(int64_t seed = time(NULL)) : seed_(seed) {}
 
   /* Execute one experiment over Bernoulli random variable with probabilty p and
   * return the outcome.
   */
-  static bool eventDraw(double probabilty) { return prandReal01() <= probabilty; }
+  bool eventDraw(double probabilty) const {
+    return prandReal01() <= probabilty;
+  }
 
-  static double prandReal01() {
+  double prandReal01() const {
     // 64b mt19937
-    static thread_local std::mt19937_64 generator(randomInt32());
+    static thread_local std::mt19937_64 generator(seed_);
     std::uniform_real_distribution<double> prob_distribution_(0, 1);
     return prob_distribution_(generator);
   }
 
 private:
-  static int64_t randomInt32() {
-    int64_t r;
-    // from /dev/urandom
-    syscall(SYS_getrandom, (void *)&r, sizeof r, 0);
-    return r;
-  }
+  int64_t seed_;
 };
 } // namespace cmplx
 } // namespace common

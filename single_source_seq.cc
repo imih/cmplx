@@ -18,9 +18,9 @@ using cmplx::simul::Simulator;
 using cmplx::DirectMCParams;
 
 int main() {
-  srand(time(NULL));
-  DirectMCParams params = DirectMCParams::SupFig2Params();
-  int simulations = 100000;
+  //DirectMCParams params = DirectMCParams::SupFig2Params();
+  DirectMCParams params = DirectMCParams::BenchmarkParams(1);
+  int simulations = params.simulations();
 
   SourceDetector sd;
   std::vector<double> probs = sd.directMonteCarloDetection(

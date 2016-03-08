@@ -10,6 +10,7 @@
 using cmplx::common::IGraph;
 using cmplx::common::SirParams;
 using cmplx::common::Realization;
+using cmplx::common::Random;
 using cmplx::common::BitArray;
 using cmplx::simul::Simulator;
 
@@ -20,7 +21,7 @@ using std::vector;
 namespace cmplx {
 vector<double> SourceDetector::directMonteCarloDetection(
     const IGraph &g, const Realization &realization, int no_simulations,
-    bool debug_print) {
+    const Random &random) {
   assert(g.vertices() == realization.population_size());
   std::vector<double> outcomes_prob;
   int population_size = g.vertices();
@@ -31,17 +32,18 @@ vector<double> SourceDetector::directMonteCarloDetection(
     } else {
       // P(source = v | snapshot)
       for (int sim_id = 0; sim_id < no_simulations; ++sim_id) {
-        outcomes += SSSirSimulation(v, g, realization);
+        outcomes += SSSirSimulation(v, g, realization, random);
       }
     }
-    std::cout << outcomes << std::endl;
+    std::cout << (double)outcomes / no_simulations << std::endl;
     outcomes_prob.push_back((double)outcomes / no_simulations);
   }
   return outcomes_prob;
 }
 
 int SourceDetector::SSSirSimulation(int source_id, const IGraph &g,
-                                    const Realization &realization) {
+                                    const Realization &realization,
+                                    const Random &random) {
   BitArray banned_nodes = ~realization.realization();
   int maxT = realization.maxT();
   BitArray zeros(realization.population_size());
@@ -49,13 +51,13 @@ int SourceDetector::SSSirSimulation(int source_id, const IGraph &g,
   SirParams params0 =
       SourceDetector::paramsForSingleSource(source_id, realization);
   for (int t = 0; t < maxT; ++t) {
-    Simulator::NaiveSIROneStep(g, params0);
+    Simulator::NaiveSIROneStep(g, params0, random);
     if ((realization.realization() | params0.infected()).bitCount() !=
         realization.realization().bitCount()) {
       return 0;
     }
   }
-  return realization.realization().bitCount() ==
+  return realization.realization().bitCount() <=  
          (params0.infected() | params0.recovered()).bitCount();
 }
 
@@ -80,8 +82,9 @@ SourceDetector::createBenchmarkLatticeSnapshot(const IGraph &graph) {
   BitArray succ = BitArray::ones(vertices);
   succ.set(vertices / 2, false);
   SirParams snapshot(0.4 /*p*/, 0 /*q*/, 5 /* T*/, inf, succ);
-  //snapshot.printForLattice((int)sqrt(vertices));
-  Simulator::NaiveSIR(graph, snapshot);
+  // snapshot.printForLattice((int)sqrt(vertices));
+  Random random(time(NULL));
+  Simulator::NaiveSIR(graph, snapshot, random);
   return Realization(snapshot);
 }
 

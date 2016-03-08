@@ -10,13 +10,13 @@ using cmplx::common::Random;
 
 class RandomTest : public testing::Test {};
 
-/*
 TEST_F(RandomTest, CorrelationsTest) {
+  Random r;
   const int N = 1e7;
   std::vector<double> x;
   double avg = 0;
   for (int i = 0; i < N + 30; ++i) {
-    x.push_back(Random::prandReal01());
+    x.push_back(r.prandReal01());
     if (i < N)
       avg += x[i];
   }
@@ -24,25 +24,26 @@ TEST_F(RandomTest, CorrelationsTest) {
   std::vector<double> eps;
   for (int n = 1; n < N; ++n) {
     double cur = 0;
-    for(int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 10; ++i) {
       cur += x[i] * x[i + n];
     }
     eps.push_back(cur / N - avg * avg);
   }
 
   double err = pow(N, -0.5);
-  for(double e : eps) {
-    if(e < 0) e *= -1;
+  for (double e : eps) {
+    if (e < 0)
+      e *= -1;
     EXPECT_LT(e, err);
   }
 }
-*/
 
 TEST_F(RandomTest, MomentsTest) {
+  Random r;
   const int N = 1e7;
   std::vector<double> x;
   for (int i = 0; i < N; ++i)
-    x.push_back(Random::prandReal01());
+    x.push_back(r.prandReal01());
   std::vector<double> eps;
   for (int k = 1; k <= 10; ++k) {
     double powavg = 0;
@@ -59,11 +60,13 @@ TEST_F(RandomTest, MomentsTest) {
 }
 
 TEST_F(RandomTest, FairDiceThrow) {
+  Random r;
   const int N = 1e8;
   double p = 0.5;
   int pos = 0;
-  for(int i = 0; i < N; ++i) {
-    if(Random::eventDraw(p)) pos++;
+  for (int i = 0; i < N; ++i) {
+    if (r.eventDraw(p))
+      pos++;
   }
   printf("%d %d\n", pos, N - pos);
 }

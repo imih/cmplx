@@ -22,8 +22,8 @@ public:
 
   IDqueue &infected_q() { return infected_q_; }
 
-  bool drawP() { return Random::eventDraw(p_); }
-  bool drawQ() { return Random::eventDraw(q_); }
+  bool drawP(const Random& r) { return r.eventDraw(p_); }
+  bool drawQ(const Random& r) { return r.eventDraw(q_); }
 
   int maxT() const { return T_; }
   void incrTime() { time_steps_++; }
