@@ -55,9 +55,7 @@ DirectMCParams DirectMCParams::SupFig2Params() {
 
 // TODO determine number of simulations yourself!
 DirectMCParams DirectMCParams::BenchmarkParams(int realization_no) {
-  int lattice_size = 30;
-  IGraph graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
-
+  IGraph graph = IGraph::GraphFromGDF(BENCHMARK_PATH + "/network/lattice_gephi.GDF");
   double p = 0, q = 0;
   int T = 0;
   BitArray r = BitArray::zeros(graph.vertices());

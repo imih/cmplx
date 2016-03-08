@@ -3,6 +3,7 @@
 
 #include <igraph/igraph.h>
 #include <vector>
+#include <string>
 #include <unordered_map>
 
 #include "ivector.h"
@@ -16,6 +17,8 @@ public:
   // nei - the distance (number of steps) within which two vertices will be
   // connected
   static IGraph UndirectedLattice(const std::vector<int> &dimensions);
+  static IGraph GraphFromGML(const std::string& file_name);
+  static IGraph GraphFromGDF(const std::string& file_name);
 
   IGraph(const IGraph &i_graph) {
     igraph_copy(&graph_, &i_graph.graph());

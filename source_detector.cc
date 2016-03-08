@@ -57,7 +57,7 @@ int SourceDetector::SSSirSimulation(int source_id, const IGraph &g,
       return 0;
     }
   }
-  return realization.realization().bitCount() <=  
+  return realization.realization().bitCount() ==
          (params0.infected() | params0.recovered()).bitCount();
 }
 
