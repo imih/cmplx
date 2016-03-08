@@ -18,7 +18,7 @@ using cmplx::simul::Simulator;
 using cmplx::DirectMCParams;
 
 int main() {
-  //DirectMCParams params = DirectMCParams::SupFig2Params();
+  // DirectMCParams params = DirectMCParams::SupFig2Params();
   DirectMCParams params = DirectMCParams::BenchmarkParams(1);
   int simulations = params.simulations();
 

@@ -139,8 +139,13 @@ int main(int argc, char **argv) {
     }
 
     fprintf(stderr, "Simulations finished");
+    double sum = 0;
     for (int v = 0; v < vertices; ++v) {
-      printf("%.10f\n", events_resp[v] / (double)simulations);
+      sum += events_resp[v];
+    }
+
+    for (int v = 0; v < vertices; ++v) {
+      printf("%.10f\n", events_resp[v] / sum);
     }
     printf("\n");
     for (int i = 0; i < processes - 1; ++i) {

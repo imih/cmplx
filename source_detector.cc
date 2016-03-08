@@ -25,6 +25,7 @@ vector<double> SourceDetector::directMonteCarloDetection(
   assert(g.vertices() == realization.population_size());
   std::vector<double> outcomes_prob;
   int population_size = g.vertices();
+  double sum = 0;
   for (int v = 0; v < population_size; ++v) {
     int outcomes = 0;
     if (!realization.realization().bit(v)) {
@@ -35,8 +36,11 @@ vector<double> SourceDetector::directMonteCarloDetection(
         outcomes += SSSirSimulation(v, g, realization, random);
       }
     }
-    std::cout << (double)outcomes / no_simulations << std::endl;
-    outcomes_prob.push_back((double)outcomes / no_simulations);
+    sum += outcomes;
+    outcomes_prob.push_back((double)outcomes);
+  }
+  for(int v = 0; v < population_size; ++v) {
+    outcomes_prob[v] /= sum;
   }
   return outcomes_prob;
 }
