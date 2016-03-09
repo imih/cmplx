@@ -49,7 +49,7 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   int maxT = 5;
   Realization realization = Realization(p, q, maxT, r);
 
-  int simulations = 1000000000;
+  int simulations = 1000000;
   return SourceDetectionParams(graph, realization, simulations);
 }
 

@@ -16,12 +16,10 @@ namespace simul {
 class Simulator {
 public:
   static void NaiveSIR(const common::IGraph &graph,
-                       common::SirParams &sir_params,
-                       const common::Random &random);
+                       common::SirParams &sir_params);
 
   static void NaiveSIROneStep(const common::IGraph &graph,
-                              common::SirParams &sir_params,
-                              const common::Random &random);
+                              common::SirParams &sir_params);
 
   // static void calcCummulativeInfecting(int n, const std::string& file_name);
 };

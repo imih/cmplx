@@ -6,12 +6,14 @@
 #include <cstdlib>
 
 #include <vector>
+#include <numeric>
 
 #include "./source_detector.h"
 #include "common/bit_array.h"
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
+#include "common/random.h"
 #include "simul/simulator.h"
 #include "source_detection_params.h"
 
@@ -22,13 +24,14 @@ using cmplx::common::SirParams;
 using cmplx::simul::Simulator;
 using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
+using cmplx::common::Random;
 using std::vector;
 
 const int SIMUL_PER_REQ = 10000;
 
 struct Message {
   int source_id;
-  int event_outcome;
+  double event_outcome;
 };
 
 enum MessageType { SIMUL_PREREQUEST, SIMUL_REQUEST, SIMUL_RESPONSE };
@@ -37,11 +40,11 @@ MPI::Datatype datatypeOfMessage() {
   int blockLen[2] = {1, 1};
   MPI::Aint offsets[2] = {offsetof(Message, source_id),
                           offsetof(Message, event_outcome)};
-  MPI::Datatype types[2] = {MPI::INT, MPI::INT};
+  MPI::Datatype types[2] = {MPI::INT, MPI::DOUBLE};
   return MPI::Datatype::Create_struct(2, blockLen, offsets, types);
 }
 
-// -s simulations_no -l lattice_size
+// TODO unite paral for direct mc and soft
 int main(int argc, char **argv) {
   // Paralelized
   MPI::Init(argc, argv);
@@ -51,8 +54,8 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
+  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
@@ -67,7 +70,7 @@ int main(int argc, char **argv) {
     int cur_v = 0;
     while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
       cur_v++;
-    vector<int> events_resp(vertices, 0);
+    vector<vector<double>> events_resp(vertices, vector<double>());
     long long jobs_remaining =
         1LL * simulations * snapshot.realization().bitCount();
     while (jobs_remaining > 0) {
@@ -109,7 +112,9 @@ int main(int argc, char **argv) {
           MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
                                MessageType::SIMUL_RESPONSE);
           jobs_remaining -= SIMUL_PER_REQ;
-          events_resp[received.source_id] += received.event_outcome;
+          /***/
+          events_resp[received.source_id].push_back(received.event_outcome);
+          /***/
           if (!i)
             printf("%.5f\n",
                    jobs_remaining * 100 / ((double)simulations *
@@ -117,22 +122,27 @@ int main(int argc, char **argv) {
         }
       }
     }
-
-    fprintf(stderr, "Simulations finished");
-    double sum = 0;
-    for (int v = 0; v < vertices; ++v) {
-      sum += events_resp[v];
-    }
-
-    for (int v = 0; v < vertices; ++v) {
-      printf("%.10f\n", events_resp[v] / sum);
-    }
-    printf("\n");
     for (int i = 0; i < processes - 1; ++i) {
       Message m = {-1, -1};
       MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
                             MessageType::SIMUL_REQUEST);
     }
+
+    fprintf(stderr, "Simulations finished");
+    /*****/
+    for (int v = 0; v < vertices; ++v) {
+      double P_v = 0;
+      for (double d : events_resp[v]) {
+//        std::cout << d << std::endl;
+        P_v += d;
+      }
+      if (events_resp[v].size())
+        P_v /= (int)events_resp[v].size();
+      printf("%.10f\n", P_v);
+    }
+    printf("\n");
+    /******/
+
   } else {
     // workers
     // Performs simulation on request.
@@ -147,14 +157,17 @@ int main(int argc, char **argv) {
       if (message_recv.source_id == -1) {
         break;
       }
-      int outcomes = 0;
+
+      /***/
+      vector<double> fi;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes += sd.DMCSingleSourceSirSimulation(message_recv.source_id,
-                                                    graph, sp0);
+        fi.push_back(
+            sd.SMSingleSourceSirSimulation(message_recv.source_id, graph, sp0));
       }
 
-      message_recv.event_outcome = outcomes;
+      message_recv.event_outcome = sd.likelihood(fi, params.a());
+      /****/
 
       Message toSend = message_recv;
       MPI::COMM_WORLD.Send(&toSend, 1, message_type, 0 /* dest */,

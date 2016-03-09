@@ -4,7 +4,6 @@
 #include "common/realization.h"
 #include "common/sir_params.h"
 #include "simul/simulator.h"
-#include "common/random.h"
 #include "source_detection_params.h"
 
 #include <iostream>
@@ -20,19 +19,18 @@ using cmplx::simul::Simulator;
 using cmplx::SourceDetectionParams;
 
 int main() {
-  // DirectMCParams params = DirectMCParams::SupFig2Params();
+  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   // DirectMCParams params = DirectMCParams::BenchmarkParams(1);
-  SourceDetectionParams params = SourceDetectionParams::LatticeCenter();
+  //SourceDetectionParams params = SourceDetectionParams::LatticeCenter();
 
   SourceDetector sd;
-  Random r;
   /*
   std::vector<double> probs = sd.directMonteCarloDetection(
-      params.graph(), params.realization(), params.simulations(), r);
+      params.graph(), params.realization(), params.simulations());
       */
   std::vector<double> probs =
       sd.softMarginDetection(params.graph(), params.realization(),
-                             params.simulations(), params.a(), r);
+                             params.simulations(), params.a());
 
   for (double p : probs) {
     std::cout << p << " ";

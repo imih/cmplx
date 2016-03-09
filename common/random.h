@@ -11,18 +11,17 @@ namespace common {
 
 class Random {
 public:
-  Random(int64_t seed = time(NULL)) : seed_(seed) {}
-
+  Random() {}
   /* Execute one experiment over Bernoulli random variable with probabilty p and
   * return the outcome.
   */
-  bool eventDraw(double probabilty) const {
+  static bool eventDraw(double probabilty) {
     return prandReal01() <= probabilty;
   }
 
-  double prandReal01() const {
+  static double prandReal01() {
     // 64b mt19937
-    static thread_local std::mt19937_64 generator(seed_);
+    static thread_local std::mt19937_64 generator(getpid());
     static thread_local std::uniform_real_distribution<double>
         prob_distribution_(0, 1);
     return prob_distribution_(generator);

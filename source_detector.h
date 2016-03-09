@@ -4,7 +4,6 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
-#include "common/random.h"
 
 #include <vector>
 
@@ -16,11 +15,10 @@ public:
   std::vector<double>
   directMonteCarloDetection(const common::IGraph &g,
                             const common::Realization &realization,
-                            int no_simulations, const common::Random &random);
+                            int no_simulations);
 
   int DMCSingleSourceSirSimulation(int source_id, const common::IGraph &g,
-                                   const common::Realization &realization,
-                                   const common::Random &random);
+                                   const common::Realization &realization);
 
   // Return starting parameters for the epidemic that starts with a single
   // source defined by source_vertex and is capable of producing a snapshot
@@ -30,20 +28,20 @@ public:
   paramsForSingleSource(int source_vertex,
                         const common::Realization &realization);
 
-  std::vector<double> softMarginDetection(
-      const common::IGraph &g, const common::Realization &realization,
-      int no_simulations, double a, const common::Random &random);
+  std::vector<double>
+  softMarginDetection(const common::IGraph &g,
+                      const common::Realization &realization,
+                      int no_simulations, double a);
 
   double SMSingleSourceSirSimulation(int source_id, const common::IGraph &g,
-                                     const common::Realization &realization,
-                                     const common::Random &random);
+                                     const common::Realization &realization);
+
+  double likelihood(std::vector<double> fi, double a);
 
 private:
   double w_(double x, double a) {
     return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
   }
-
-  double calcP(std::vector<double> fi, double a);
 };
 } // namespace cmplx
 #endif // CMPLX_SOURCE_DETECTOR_H

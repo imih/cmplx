@@ -20,8 +20,7 @@ using std::vector;
 
 namespace cmplx {
 vector<double> SourceDetector::directMonteCarloDetection(
-    const IGraph &g, const Realization &realization, int no_simulations,
-    const Random &random) {
+    const IGraph &g, const Realization &realization, int no_simulations) {
   assert(g.vertices() == realization.population_size());
   std::vector<double> outcomes_prob;
   int population_size = g.vertices();
@@ -33,7 +32,7 @@ vector<double> SourceDetector::directMonteCarloDetection(
     } else {
       // P(source = v | snapshot)
       for (int sim_id = 0; sim_id < no_simulations; ++sim_id) {
-        outcomes += DMCSingleSourceSirSimulation(v, g, realization, random);
+        outcomes += DMCSingleSourceSirSimulation(v, g, realization);
       }
     }
     sum += outcomes;
@@ -45,13 +44,12 @@ vector<double> SourceDetector::directMonteCarloDetection(
   return outcomes_prob;
 }
 
-int SourceDetector::DMCSingleSourceSirSimulation(int source_id, const IGraph &g,
-                                                 const Realization &realization,
-                                                 const Random &random) {
+int SourceDetector::DMCSingleSourceSirSimulation(
+    int source_id, const IGraph &g, const Realization &realization) {
   int maxT = realization.maxT();
   SirParams params0 = paramsForSingleSource(source_id, realization);
   for (int t = 0; t < maxT; ++t) {
-    Simulator::NaiveSIROneStep(g, params0, random);
+    Simulator::NaiveSIROneStep(g, params0);
     if ((realization.realization() | params0.infected()).bitCount() !=
         realization.realization().bitCount()) {
       return 0;
@@ -61,26 +59,27 @@ int SourceDetector::DMCSingleSourceSirSimulation(int source_id, const IGraph &g,
          (params0.infected() | params0.recovered()).bitCount();
 }
 
-vector<double> SourceDetector::softMarginDetection(
-    const IGraph &g, const Realization &realization, int no_simulations,
-    double a, const Random &random) {
+vector<double>
+SourceDetector::softMarginDetection(const IGraph &g,
+                                    const Realization &realization,
+                                    int no_simulations, double a) {
   vector<double> P;
   int population_size = g.vertices();
   for (int v = 0; v < population_size; ++v) {
     vector<double> fi;
     for (int s = 0; s < no_simulations; ++s) {
-      fi.push_back(SMSingleSourceSirSimulation(v, g, realization, random));
+      fi.push_back(SMSingleSourceSirSimulation(v, g, realization));
     }
-    P.push_back(calcP(fi, a));
+    P.push_back(likelihood(fi, a));
   }
   return P;
 }
 
 double SourceDetector::SMSingleSourceSirSimulation(
     int source_id, const common::IGraph &g,
-    const common::Realization &realization, const common::Random &random) {
+    const common::Realization &realization) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
-  Simulator::NaiveSIR(g, params0, random);
+  Simulator::NaiveSIR(g, params0);
   BitArray observed = params0.infected() | params0.recovered();
   return JaccardSimilarity(realization.realization(), observed);
 }
@@ -98,7 +97,7 @@ SourceDetector::paramsForSingleSource(int source_vertex,
                    infected, susceptible);
 }
 
-double SourceDetector::calcP(vector<double> fi, double a) {
+double SourceDetector::likelihood(vector<double> fi, double a) {
   int n = (int)fi.size();
   double P = 0;
   for (int i = 0; i < n; ++i) {
