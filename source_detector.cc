@@ -33,7 +33,7 @@ vector<double> SourceDetector::directMonteCarloDetection(
     } else {
       // P(source = v | snapshot)
       for (int sim_id = 0; sim_id < no_simulations; ++sim_id) {
-        outcomes += SSSirSimulation(v, g, realization, random);
+        outcomes += SingleSourceSirSimulation(v, g, realization, random);
       }
     }
     sum += outcomes;
@@ -45,13 +45,10 @@ vector<double> SourceDetector::directMonteCarloDetection(
   return outcomes_prob;
 }
 
-int SourceDetector::SSSirSimulation(int source_id, const IGraph &g,
+int SourceDetector::SingleSourceSirSimulation(int source_id, const IGraph &g,
                                     const Realization &realization,
                                     const Random &random) {
-  BitArray banned_nodes = ~realization.realization();
   int maxT = realization.maxT();
-  BitArray zeros(realization.population_size());
-
   SirParams params0 =
       SourceDetector::paramsForSingleSource(source_id, realization);
   for (int t = 0; t < maxT; ++t) {

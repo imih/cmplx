@@ -53,6 +53,16 @@ DirectMCParams DirectMCParams::SupFig2Params() {
   return DirectMCParams(graph, realization, simulations);
 }
 
+DirectMCParams DirectMCParams::LatticeCenter() {
+  int lattice_size = 3;
+  IGraph graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
+  BitArray r = BitArray::ones(graph.vertices());
+  double p = 0.2;
+  double q = 0;
+  Realization realization = Realization(p, q, 2, r);
+  return DirectMCParams(graph, realization, 1000000);
+}
+
 // TODO determine number of simulations yourself!
 DirectMCParams DirectMCParams::BenchmarkParams(int realization_no) {
   IGraph graph = IGraph::GraphFromGDF(BENCHMARK_PATH + "/network/lattice_gephi.GDF");

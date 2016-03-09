@@ -18,7 +18,7 @@ public:
                             const common::Realization &realization,
                             int no_simulations, const common::Random &random);
 
-  int SSSirSimulation(int source_id, const common::IGraph &g,
+  int SingleSourceSirSimulation(int source_id, const common::IGraph &g,
                       const common::Realization &realization,
                       const common::Random &random);
 

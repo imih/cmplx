@@ -19,12 +19,12 @@ using cmplx::DirectMCParams;
 
 int main() {
   // DirectMCParams params = DirectMCParams::SupFig2Params();
-  DirectMCParams params = DirectMCParams::BenchmarkParams(1);
-  int simulations = params.simulations();
+  //DirectMCParams params = DirectMCParams::BenchmarkParams(1);
+  DirectMCParams params = DirectMCParams::LatticeCenter();
 
   SourceDetector sd;
   std::vector<double> probs = sd.directMonteCarloDetection(
-      params.graph(), params.realization(), simulations, true);
+      params.graph(), params.realization(), params.simulations(), true);
   for (double p : probs) {
     std::cout << p << " ";
   }

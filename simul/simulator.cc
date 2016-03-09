@@ -48,6 +48,8 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params,
     if (sir_params.drawQ(r)) {
       I.set(u, 0);
       R.set(u, 1);
+    } else {
+      infected_q.push(u);
     }
   }
   sir_params.incrTime();

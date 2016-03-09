@@ -54,23 +54,6 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  /*
-  int command = 0;
-  int simulations = 100000000;
-  int lattice_size = 30;
-  while ((command = getopt(argc, argv, "s:l:n:")) != -1) {
-    switch (command) {
-    case 's':
-      simulations = atoi(optarg);
-      break;
-    case 'l':
-      lattice_size = atoi(optarg);
-      break;
-    }
-  }
-  */
-
-  //srand(time(NULL));
   //DirectMCParams params = DirectMCParams::SupFig2Params();
   DirectMCParams params = DirectMCParams::BenchmarkParams(1);
   const int simulations = params.simulations();
@@ -171,7 +154,8 @@ int main(int argc, char **argv) {
       int outcomes = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes += sd.SSSirSimulation(message_recv.source_id, graph, sp0, r);
+        outcomes +=
+            sd.SingleSourceSirSimulation(message_recv.source_id, graph, sp0, r);
       }
 
       message_recv.event_outcome = outcomes;
