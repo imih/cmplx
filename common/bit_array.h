@@ -51,7 +51,7 @@ BitArray operator%(const BitArray &a, const BitArray &b);
 
 int XNORSimilarity(const BitArray &a, const BitArray &b);
 
-std::pair<int, int> JacardSimilarity(const BitArray &a, const BitArray &b);
+double JaccardSimilarity(const BitArray &a, const BitArray &b);
 
 } // namespace common
 } // namespace cmplx

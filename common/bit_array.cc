@@ -128,10 +128,10 @@ int XNORSimilarity(const BitArray &a, const BitArray &b) {
   return xnor_ba.bitCount();
 }
 
-std::pair<int, int> JacardSimilarity(const BitArray &a, const BitArray &b) {
+double JaccardSimilarity(const BitArray &a, const BitArray &b) {
   BitArray and_ba = a & b;
   BitArray or_ba = a | b;
-  return std::make_pair(and_ba.bitCount(), or_ba.bitCount());
+  return and_ba.bitCount() / (double)or_ba.bitCount();
 }
 
 } // namespace common

@@ -1,4 +1,4 @@
-#include "direct_mc_params.h"
+#include "source_detection_params.h"
 
 #include <vector>
 #include <iostream>
@@ -33,7 +33,7 @@ std::string BENCHMARK_PATH =
 }
 
 namespace cmplx {
-DirectMCParams DirectMCParams::SupFig2Params() {
+SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   int lattice_size1 = 5;
   int lattice_size2 = 4;
   IGraph graph = IGraph::UndirectedLattice({lattice_size1, lattice_size2});
@@ -50,22 +50,24 @@ DirectMCParams DirectMCParams::SupFig2Params() {
   Realization realization = Realization(p, q, maxT, r);
 
   int simulations = 1000000000;
-  return DirectMCParams(graph, realization, simulations);
+  return SourceDetectionParams(graph, realization, simulations);
 }
 
-DirectMCParams DirectMCParams::LatticeCenter() {
+SourceDetectionParams SourceDetectionParams::LatticeCenter() {
   int lattice_size = 3;
   IGraph graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
   BitArray r = BitArray::ones(graph.vertices());
   double p = 0.2;
   double q = 0;
   Realization realization = Realization(p, q, 2, r);
-  return DirectMCParams(graph, realization, 1000000);
+  return SourceDetectionParams(graph, realization, 1000000);
 }
 
 // TODO determine number of simulations yourself!
-DirectMCParams DirectMCParams::BenchmarkParams(int realization_no) {
-  IGraph graph = IGraph::GraphFromGDF(BENCHMARK_PATH + "/network/lattice_gephi.GDF");
+SourceDetectionParams
+SourceDetectionParams::BenchmarkParams(int realization_no) {
+  IGraph graph =
+      IGraph::GraphFromGDF(BENCHMARK_PATH + "/network/lattice_gephi.GDF");
   double p = 0, q = 0;
   int T = 0;
   BitArray r = BitArray::zeros(graph.vertices());
@@ -117,7 +119,7 @@ DirectMCParams DirectMCParams::BenchmarkParams(int realization_no) {
   simulations = stoi(items[3]);
 
   Realization realization(p, q, T, r);
-  return DirectMCParams(graph, realization, simulations);
+  return SourceDetectionParams(graph, realization, simulations);
 }
 
 } // namespace cmplx

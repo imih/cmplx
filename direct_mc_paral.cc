@@ -14,7 +14,7 @@
 #include "common/sir_params.h"
 #include "common/random.h"
 #include "simul/simulator.h"
-#include "direct_mc_params.h"
+#include "source_detection_params.h"
 
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
@@ -22,7 +22,7 @@ using cmplx::common::BitArray;
 using cmplx::common::SirParams;
 using cmplx::simul::Simulator;
 using cmplx::common::Realization;
-using cmplx::DirectMCParams;
+using cmplx::SourceDetectionParams;
 using cmplx::common::Random;
 using std::vector;
 
@@ -44,7 +44,6 @@ MPI::Datatype datatypeOfMessage() {
 }
 
 // -s simulations_no -l lattice_size
-// TODO(iva) paralelize for multiple realizations
 int main(int argc, char **argv) {
   // Paralelized
   MPI::Init(argc, argv);
@@ -54,8 +53,8 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  //DirectMCParams params = DirectMCParams::SupFig2Params();
-  DirectMCParams params = DirectMCParams::BenchmarkParams(1);
+  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
@@ -154,8 +153,8 @@ int main(int argc, char **argv) {
       int outcomes = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes +=
-            sd.SingleSourceSirSimulation(message_recv.source_id, graph, sp0, r);
+        outcomes += sd.DMCSingleSourceSirSimulation(message_recv.source_id,
+                                                    graph, sp0, r);
       }
 
       message_recv.event_outcome = outcomes;

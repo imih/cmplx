@@ -18,20 +18,32 @@ public:
                             const common::Realization &realization,
                             int no_simulations, const common::Random &random);
 
-  int SingleSourceSirSimulation(int source_id, const common::IGraph &g,
-                      const common::Realization &realization,
-                      const common::Random &random);
+  int DMCSingleSourceSirSimulation(int source_id, const common::IGraph &g,
+                                   const common::Realization &realization,
+                                   const common::Random &random);
 
   // Return starting parameters for the epidemic that starts with a single
-  // source define by source_vertex and is capable of producing a snapshot
+  // source defined by source_vertex and is capable of producing a snapshot
   // defined by
   // ending_params.
-  static common::SirParams
+  common::SirParams
   paramsForSingleSource(int source_vertex,
                         const common::Realization &realization);
 
-  static common::Realization
-  createBenchmarkLatticeSnapshot(const common::IGraph &graph);
+  std::vector<double> softMarginDetection(
+      const common::IGraph &g, const common::Realization &realization,
+      int no_simulations, double a, const common::Random &random);
+
+  double SMSingleSourceSirSimulation(int source_id, const common::IGraph &g,
+                                     const common::Realization &realization,
+                                     const common::Random &random);
+
+private:
+  double w_(double x, double a) {
+    return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
+  }
+
+  double calcP(std::vector<double> fi, double a);
 };
 } // namespace cmplx
 #endif // CMPLX_SOURCE_DETECTOR_H

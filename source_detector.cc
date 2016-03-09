@@ -33,24 +33,23 @@ vector<double> SourceDetector::directMonteCarloDetection(
     } else {
       // P(source = v | snapshot)
       for (int sim_id = 0; sim_id < no_simulations; ++sim_id) {
-        outcomes += SingleSourceSirSimulation(v, g, realization, random);
+        outcomes += DMCSingleSourceSirSimulation(v, g, realization, random);
       }
     }
     sum += outcomes;
     outcomes_prob.push_back((double)outcomes);
   }
-  for(int v = 0; v < population_size; ++v) {
+  for (int v = 0; v < population_size; ++v) {
     outcomes_prob[v] /= sum;
   }
   return outcomes_prob;
 }
 
-int SourceDetector::SingleSourceSirSimulation(int source_id, const IGraph &g,
-                                    const Realization &realization,
-                                    const Random &random) {
+int SourceDetector::DMCSingleSourceSirSimulation(int source_id, const IGraph &g,
+                                                 const Realization &realization,
+                                                 const Random &random) {
   int maxT = realization.maxT();
-  SirParams params0 =
-      SourceDetector::paramsForSingleSource(source_id, realization);
+  SirParams params0 = paramsForSingleSource(source_id, realization);
   for (int t = 0; t < maxT; ++t) {
     Simulator::NaiveSIROneStep(g, params0, random);
     if ((realization.realization() | params0.infected()).bitCount() !=
@@ -60,6 +59,30 @@ int SourceDetector::SingleSourceSirSimulation(int source_id, const IGraph &g,
   }
   return realization.realization().bitCount() ==
          (params0.infected() | params0.recovered()).bitCount();
+}
+
+vector<double> SourceDetector::softMarginDetection(
+    const IGraph &g, const Realization &realization, int no_simulations,
+    double a, const Random &random) {
+  vector<double> P;
+  int population_size = g.vertices();
+  for (int v = 0; v < population_size; ++v) {
+    vector<double> fi;
+    for (int s = 0; s < no_simulations; ++s) {
+      fi.push_back(SMSingleSourceSirSimulation(v, g, realization, random));
+    }
+    P.push_back(calcP(fi, a));
+  }
+  return P;
+}
+
+double SourceDetector::SMSingleSourceSirSimulation(
+    int source_id, const common::IGraph &g,
+    const common::Realization &realization, const common::Random &random) {
+  SirParams params0 = paramsForSingleSource(source_id, realization);
+  Simulator::NaiveSIR(g, params0, random);
+  BitArray observed = params0.infected() | params0.recovered();
+  return JaccardSimilarity(realization.realization(), observed);
 }
 
 SirParams
@@ -75,18 +98,13 @@ SourceDetector::paramsForSingleSource(int source_vertex,
                    infected, susceptible);
 }
 
-Realization
-SourceDetector::createBenchmarkLatticeSnapshot(const IGraph &graph) {
-  int vertices = graph.vertices();
-  BitArray inf = BitArray::zeros(vertices);
-  inf.set(vertices / 2, true);
-  BitArray succ = BitArray::ones(vertices);
-  succ.set(vertices / 2, false);
-  SirParams snapshot(0.4 /*p*/, 0 /*q*/, 5 /* T*/, inf, succ);
-  // snapshot.printForLattice((int)sqrt(vertices));
-  Random random(time(NULL));
-  Simulator::NaiveSIR(graph, snapshot, random);
-  return Realization(snapshot);
+double SourceDetector::calcP(vector<double> fi, double a) {
+  int n = (int)fi.size();
+  double P = 0;
+  for (int i = 0; i < n; ++i) {
+    P += w_(fi[i], a);
+  }
+  return P / n;
 }
 
 } // namespace cmplx
