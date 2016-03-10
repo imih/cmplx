@@ -50,14 +50,13 @@ void Simulator::NaiveSIROneStep(SirParams &sir_params) {
       infected_q.push(u);
     }
   }
-  sir_params.incrTime();
   sir_params.set_infected(I);
   sir_params.set_susceptible(S);
   sir_params.set_recovered(R);
 }
 
 void Simulator::NaiveSIR(SirParams &sir_params) {
-  while (sir_params.time_steps() < sir_params.maxT()) {
+  for (int t = 0; t < sir_params.maxT(); ++t) {
     NaiveSIROneStep(sir_params);
   }
 }

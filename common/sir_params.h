@@ -12,8 +12,7 @@ public:
             const BitArray &susceptible);
 
   SirParams(const SirParams &other)
-      : infected_q_(other.infected()),
-        time_steps_(other.time_steps()), p_(other.p()), q_(other.q()),
+      : infected_q_(other.infected()), p_(other.p()), q_(other.q()),
         T_(other.maxT()), infected_(other.infected()),
         susceptible_(other.susceptible()), recovered_(other.recovered()) {}
 
@@ -22,8 +21,6 @@ public:
   IDqueue &infected_q() { return infected_q_; }
 
   int maxT() const { return T_; }
-  void incrTime() { time_steps_++; }
-  int time_steps() const { return time_steps_; }
 
   double p() const { return p_; }
   double q() const { return q_; }
@@ -47,7 +44,6 @@ public:
 private:
   IDqueue infected_q_;
 
-  int time_steps_;
   double p_;
   double q_;
   int T_;
