@@ -12,14 +12,12 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
-#include "simul/simulator.h"
 #include "source_detection_params.h"
 
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
 using cmplx::common::SirParams;
-using cmplx::simul::Simulator;
 using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
 using std::vector;
@@ -51,15 +49,14 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
+  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  //SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
   const IGraph &graph = params.graph();
   const Realization &snapshot = params.realization();
   // TODO(iva) Make only one copy!
-  // snapshot.print();
 
   if (rank == 0) {
     // master process
@@ -136,7 +133,7 @@ int main(int argc, char **argv) {
   } else {
     // workers
     // Performs simulation on request.
-    SourceDetector sd;
+    SourceDetector sd(graph);
     while (true) {
       Message message = {-1, 0};
       MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
@@ -150,8 +147,8 @@ int main(int argc, char **argv) {
       int outcomes = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes += sd.DMCSingleSourceSirSimulation(message_recv.source_id,
-                                                    graph, sp0);
+        outcomes +=
+            sd.DMCSingleSourceSirSimulation(message_recv.source_id, sp0);
       }
 
       message_recv.event_outcome = outcomes;

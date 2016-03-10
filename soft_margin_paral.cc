@@ -14,17 +14,14 @@
 #include "common/realization.h"
 #include "common/sir_params.h"
 #include "common/random.h"
-#include "simul/simulator.h"
 #include "source_detection_params.h"
 
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
 using cmplx::common::SirParams;
-using cmplx::simul::Simulator;
 using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
-using cmplx::common::Random;
 using std::vector;
 
 const int SIMUL_PER_REQ = 10000;
@@ -133,7 +130,7 @@ int main(int argc, char **argv) {
     for (int v = 0; v < vertices; ++v) {
       double P_v = 0;
       for (double d : events_resp[v]) {
-//        std::cout << d << std::endl;
+        //        std::cout << d << std::endl;
         P_v += d;
       }
       if (events_resp[v].size())
@@ -146,7 +143,7 @@ int main(int argc, char **argv) {
   } else {
     // workers
     // Performs simulation on request.
-    SourceDetector sd;
+    SourceDetector sd(graph);
     while (true) {
       Message message = {-1, 0};
       MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
@@ -163,7 +160,7 @@ int main(int argc, char **argv) {
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
         fi.push_back(
-            sd.SMSingleSourceSirSimulation(message_recv.source_id, graph, sp0));
+            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0));
       }
 
       message_recv.event_outcome = sd.likelihood(fi, params.a());

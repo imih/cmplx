@@ -11,24 +11,20 @@ namespace common {
 
 class Random {
 public:
-  Random() {}
+  Random(long long seed) : generator_(seed), prob_distribution_(0, 1) {}
   /* Execute one experiment over Bernoulli random variable with probabilty p and
   * return the outcome.
   */
-  static bool eventDraw(double probabilty) {
-    return prandReal01() <= probabilty;
-  }
+  bool eventDraw(double probabilty) { return prandReal01() <= probabilty; }
 
-  static double prandReal01() {
+  double prandReal01() {
     // 64b mt19937
-    static thread_local std::mt19937_64 generator(getpid());
-    static thread_local std::uniform_real_distribution<double>
-        prob_distribution_(0, 1);
-    return prob_distribution_(generator);
+    return prob_distribution_(generator_);
   }
 
 private:
-  int64_t seed_;
+  std::mt19937_64 generator_;
+  std::uniform_real_distribution<double> prob_distribution_;
 };
 } // namespace cmplx
 } // namespace common

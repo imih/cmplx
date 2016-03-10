@@ -11,7 +11,7 @@ using cmplx::common::Random;
 class RandomTest : public testing::Test {};
 
 TEST_F(RandomTest, CorrelationsTest) {
-  Random r;
+  Random r(1LL * time(NULL) * getpid());
   const int N = 1e7;
   std::vector<double> x;
   double avg = 0;
@@ -39,7 +39,7 @@ TEST_F(RandomTest, CorrelationsTest) {
 }
 
 TEST_F(RandomTest, MomentsTest) {
-  Random r;
+  Random r(1LL * time(NULL) * getpid());
   const int N = 1e7;
   std::vector<double> x;
   for (int i = 0; i < N; ++i)
@@ -60,7 +60,7 @@ TEST_F(RandomTest, MomentsTest) {
 }
 
 TEST_F(RandomTest, FairDiceThrow) {
-  Random r;
+  Random r(1LL * time(NULL) * getpid());
   const int N = 1e8;
   double p = 0.5;
   int pos = 0;

@@ -4,20 +4,22 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
+#include "simul/simulator.h"
 
 #include <vector>
 
 namespace cmplx {
 class SourceDetector {
 public:
+  SourceDetector(const common::IGraph &g) : simulator_(g) {}
+
   // Return distribution of nodes being the source of SIR epidemic simulation
   // based on epidemic snapshot defined by sir_params.
   std::vector<double>
-  directMonteCarloDetection(const common::IGraph &g,
-                            const common::Realization &realization,
+  directMonteCarloDetection(const common::Realization &realization,
                             int no_simulations);
 
-  int DMCSingleSourceSirSimulation(int source_id, const common::IGraph &g,
+  int DMCSingleSourceSirSimulation(int source_id,
                                    const common::Realization &realization);
 
   // Return starting parameters for the epidemic that starts with a single
@@ -29,11 +31,10 @@ public:
                         const common::Realization &realization);
 
   std::vector<double>
-  softMarginDetection(const common::IGraph &g,
-                      const common::Realization &realization,
+  softMarginDetection(const common::Realization &realization,
                       int no_simulations, double a);
 
-  double SMSingleSourceSirSimulation(int source_id, const common::IGraph &g,
+  double SMSingleSourceSirSimulation(int source_id,
                                      const common::Realization &realization);
 
   double likelihood(std::vector<double> fi, double a);
@@ -42,6 +43,8 @@ private:
   double w_(double x, double a) {
     return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
   }
+
+  simul::Simulator simulator_;
 };
 } // namespace cmplx
 #endif // CMPLX_SOURCE_DETECTOR_H

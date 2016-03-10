@@ -20,7 +20,7 @@ typedef std::numeric_limits<double> dbl;
 namespace cmplx {
 namespace simul {
 
-void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
+void Simulator::NaiveSIROneStep(SirParams &sir_params) {
   BitArray I = sir_params.infected();
   BitArray S = sir_params.susceptible();
   BitArray R = sir_params.recovered();
@@ -28,23 +28,22 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
   if (infected_q.empty()) {
     infected_q.insertMarked(I);
   }
-
-  int batch_size = I.bits_num();
+  int batch_size = infected_q.size();
 
   while (!infected_q.empty() && batch_size) {
     int u = infected_q.pop();
     batch_size--;
-    const IVector<int> &adj_list_u = graph.adj_list(u);
+    const IVector<int> &adj_list_u = graph_.adj_list(u);
     int adj_list_size = adj_list_u.size();
     for (int idx = 0; idx < adj_list_size; ++idx) {
       int v = adj_list_u[idx];
-      if (S.bit(v) && sir_params.drawP()) {
+      if (S.bit(v) && draw(sir_params.p())) {
         S.set(v, 0);
         I.set(v, 1);
         infected_q.push(v);
       }
     }
-    if (sir_params.drawQ()) {
+    if (draw(sir_params.q())) {
       I.set(u, 0);
       R.set(u, 1);
     } else {
@@ -57,9 +56,9 @@ void Simulator::NaiveSIROneStep(const IGraph &graph, SirParams &sir_params) {
   sir_params.set_recovered(R);
 }
 
-void Simulator::NaiveSIR(const IGraph &graph, SirParams &sir_params) {
+void Simulator::NaiveSIR(SirParams &sir_params) {
   while (sir_params.time_steps() < sir_params.maxT()) {
-    NaiveSIROneStep(graph, sir_params);
+    NaiveSIROneStep(sir_params);
   }
 }
 

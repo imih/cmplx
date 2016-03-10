@@ -3,7 +3,6 @@
 
 #include "bit_array.h"
 #include "idqueue.h"
-#include "random.h"
 
 namespace cmplx {
 namespace common {
@@ -21,9 +20,6 @@ public:
   ~SirParams() = default;
 
   IDqueue &infected_q() { return infected_q_; }
-
-  bool drawP() { return Random::eventDraw(p_); }
-  bool drawQ() { return Random::eventDraw(q_); }
 
   int maxT() const { return T_; }
   void incrTime() { time_steps_++; }

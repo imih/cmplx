@@ -3,7 +3,6 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
-#include "simul/simulator.h"
 #include "source_detection_params.h"
 
 #include <iostream>
@@ -15,7 +14,6 @@ using cmplx::common::BitArray;
 using cmplx::common::SirParams;
 using cmplx::common::Realization;
 using cmplx::common::Random;
-using cmplx::simul::Simulator;
 using cmplx::SourceDetectionParams;
 
 int main() {
@@ -23,14 +21,13 @@ int main() {
   // DirectMCParams params = DirectMCParams::BenchmarkParams(1);
   //SourceDetectionParams params = SourceDetectionParams::LatticeCenter();
 
-  SourceDetector sd;
+  SourceDetector sd(params.graph());
   /*
   std::vector<double> probs = sd.directMonteCarloDetection(
       params.graph(), params.realization(), params.simulations());
       */
-  std::vector<double> probs =
-      sd.softMarginDetection(params.graph(), params.realization(),
-                             params.simulations(), params.a());
+  std::vector<double> probs = sd.softMarginDetection(
+      params.realization(), params.simulations(), params.a());
 
   for (double p : probs) {
     std::cout << p << " ";
