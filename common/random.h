@@ -5,13 +5,19 @@
 #include <unistd.h>
 
 #include <random>
+#include <sys/time.h>
 
 namespace cmplx {
 namespace common {
 
 class Random {
 public:
-  Random(long long seed) : generator_(seed), prob_distribution_(0, 1) {}
+  Random() : prob_distribution_(0, 1) {
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    srand(tv.tv_usec * getpid());
+    generator_.seed(tv.tv_usec * getpid());
+  }
   /* Execute one experiment over Bernoulli random variable with probabilty p and
   * return the outcome.
   */

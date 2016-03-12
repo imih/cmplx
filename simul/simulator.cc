@@ -20,20 +20,31 @@ typedef std::numeric_limits<double> dbl;
 namespace cmplx {
 namespace simul {
 
-void Simulator::NaiveSIROneStep(SirParams &sir_params) {
+bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
+                         const BitArray &allowed_nodes) {
   BitArray I = sir_params.infected();
   BitArray S = sir_params.susceptible();
   BitArray R = sir_params.recovered();
   IDqueue &infected_q = sir_params.infected_q();
-  if (infected_q.empty()) {
-    infected_q.insertMarked(I);
-  }
+  infected_q.clear();
+  infected_q.insertMarked(I);
+  int t = 1;
   int batch_size = infected_q.size();
+  bool prunned = false;
 
-  while (!infected_q.empty() && batch_size) {
+  while (!infected_q.empty() && !prunned) {
+    if (batch_size == 0) {
+      t++;
+      batch_size = infected_q.size();
+    }
+    if (t > sir_params.maxT()) {
+      break;
+    }
+
     int u = infected_q.pop();
     batch_size--;
     const IVector<int> &adj_list_u = graph_.adj_list(u);
+    
     int adj_list_size = adj_list_u.size();
     for (int idx = 0; idx < adj_list_size; ++idx) {
       int v = adj_list_u[idx];
@@ -41,6 +52,10 @@ void Simulator::NaiveSIROneStep(SirParams &sir_params) {
         S.set(v, 0);
         I.set(v, 1);
         infected_q.push(v);
+        if (prunning && !allowed_nodes.bit(v)) {
+          prunned = true;
+          break;
+        }
       }
     }
     if (draw(sir_params.q())) {
@@ -50,15 +65,11 @@ void Simulator::NaiveSIROneStep(SirParams &sir_params) {
       infected_q.push(u);
     }
   }
+
   sir_params.set_infected(I);
   sir_params.set_susceptible(S);
   sir_params.set_recovered(R);
-}
-
-void Simulator::NaiveSIR(SirParams &sir_params) {
-  for (int t = 0; t < sir_params.maxT(); ++t) {
-    NaiveSIROneStep(sir_params);
-  }
+  return prunned;
 }
 
 /*

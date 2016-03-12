@@ -51,8 +51,9 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
+  double p = 0.1;
+  double q = 0.0;
+  SourceDetectionParams params = SourceDetectionParams::ParamsFromGrid(p, q);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();
@@ -62,6 +63,7 @@ int main(int argc, char **argv) {
   // snapshot.print();
 
   if (rank == 0) {
+    FILE *file = fopen("distributions-sm-106", "a");
     // master process
     int cur_simul_count = 0;
     int cur_v = 0;
@@ -127,6 +129,8 @@ int main(int argc, char **argv) {
 
     fprintf(stderr, "Simulations finished");
     /*****/
+    std::vector<double> P;
+    double sum = 0;
     for (int v = 0; v < vertices; ++v) {
       double P_v = 0;
       for (double d : events_resp[v]) {
@@ -135,9 +139,17 @@ int main(int argc, char **argv) {
       }
       if (events_resp[v].size())
         P_v /= (int)events_resp[v].size();
-      printf("%.10f\n", P_v);
+      P.push_back(P_v);
+      sum += P_v;
+    }
+    fprintf(file, "%.10lf %.10lf\n", snapshot.p(), snapshot.q());
+    for (int v = 0; v < vertices; ++v) {
+      P[v] /= sum;
+      printf("%.10lf\n", P[v]);
+      fprintf(file, "%.10lf ", P[v]);
     }
     printf("\n");
+    fprintf(file, "\n\n");
     /******/
 
   } else {

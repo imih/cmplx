@@ -6,10 +6,14 @@
 #include <sstream>
 #include <string>
 #include <cstring>
+#include <random>
+
+#include "simul/simulator.h"
 
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
 using cmplx::common::Realization;
+using cmplx::common::SirParams;
 
 namespace {
 std::vector<std::string> split(std::string s) {
@@ -49,7 +53,7 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   int maxT = 5;
   Realization realization = Realization(p, q, maxT, r);
 
-  int simulations = 1000000;
+  int simulations = 10000000;
   return SourceDetectionParams(graph, realization, simulations);
 }
 
@@ -61,6 +65,32 @@ SourceDetectionParams SourceDetectionParams::LatticeCenter() {
   double q = 0;
   Realization realization = Realization(p, q, 2, r);
   return SourceDetectionParams(graph, realization, 1000000);
+}
+
+namespace {
+  int chooseSource(int n) {
+    std::uniform_int_distribution<int> d(0, n - 1);
+    static thread_local std::mt19937 gen;
+    return d(gen);
+  }
+}
+
+SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
+                                                            double q) {
+  IGraph graph = IGraph::UndirectedLattice({30, 30});
+  int TMax = 5;
+  int source_v = chooseSource(graph.vertices());
+
+  BitArray r = BitArray::zeros(graph.vertices());
+  r.set(source_v, true);
+  BitArray s = BitArray::ones(graph.vertices());
+  s.set(source_v, false);
+  SirParams sir_params(p, q, TMax, r, s);
+
+  cmplx::simul::Simulator simulator(graph);
+  simulator.NaiveSIR(sir_params);
+  Realization real(p, q, TMax, sir_params.infected() | sir_params.recovered());
+  return SourceDetectionParams(graph, real, 1000000);
 }
 
 // TODO determine number of simulations yourself!

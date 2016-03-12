@@ -119,11 +119,10 @@ int main() {
               << " mis" << std::endl;
   }
 
-  int bc;
   { // bitcount, BitArray
     auto start = system_clock::now();
     for (int i = 0; i < iterations; ++i)
-      bc = ba.bitCount();
+      ba.bitCount();
     std::cout << "Bitcount, bitarray (x" << iterations << "): "
               << duration_cast<TimeT>(system_clock::now() - start).count() /
                      (double)iterations
@@ -133,7 +132,7 @@ int main() {
   { // bitcount, bitset
     auto start = system_clock::now();
     for (int i = 0; i < iterations; ++i)
-      bc = bs.count();
+      bs.count();
     std::cout << "Bitcount, bitset (x" << iterations << "): "
               << duration_cast<TimeT>(system_clock::now() - start).count() /
                      (double)iterations

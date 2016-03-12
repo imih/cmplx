@@ -15,12 +15,11 @@ namespace simul {
 
 class Simulator {
 public:
-  Simulator(const common::IGraph &graph)
-      : graph_(graph), random_(1LL * time(NULL) * getpid()) {}
+  Simulator(const common::IGraph &graph) : graph_(graph), random_() {}
 
-  void NaiveSIR(common::SirParams &sir_params);
-
-  void NaiveSIROneStep(common::SirParams &sir_params);
+  bool
+  NaiveSIR(common::SirParams &sir_params, bool prunning = false,
+           const common::BitArray &allowed_nodes = common::BitArray::zeros(1));
 
 private:
   bool draw(double p) { return random_.eventDraw(p); }
@@ -28,7 +27,8 @@ private:
   const common::IGraph &graph_;
   common::Random random_;
 
-  // static void calcCummulativeInfecting(int n, const std::string& file_name);
+  // static void calcCummulativeInfecting(int n, const std::string&
+  // file_name);
 };
 } // namespace simul
 } // namespace cmplx

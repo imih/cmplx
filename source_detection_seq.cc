@@ -22,12 +22,12 @@ int main() {
   //SourceDetectionParams params = SourceDetectionParams::LatticeCenter();
 
   SourceDetector sd(params.graph());
+  /*
   std::vector<double> probs =
       sd.directMonteCarloDetection(params.realization(), params.simulations());
-  /*
+      */
   std::vector<double> probs = sd.softMarginDetection(
       params.realization(), params.simulations(), params.a());
-      */
 
   for (double p : probs) {
     printf("%.10lf\n", p);

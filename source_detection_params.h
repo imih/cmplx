@@ -12,6 +12,7 @@ public:
   static SourceDetectionParams SupFig2Params();
   static SourceDetectionParams LatticeCenter();
   static SourceDetectionParams BenchmarkParams(int realization_no);
+  static SourceDetectionParams ParamsFromGrid(double p, double q);
 
   const common::IGraph &graph() { return graph_; }
   const common::Realization &realization() { return realization_; }

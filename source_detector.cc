@@ -44,18 +44,25 @@ SourceDetector::directMonteCarloDetection(const Realization &realization,
 
 int SourceDetector::DMCSingleSourceSirSimulation(
     int source_id, const Realization &realization) {
-  int maxT = realization.maxT();
   SirParams params0 = paramsForSingleSource(source_id, realization);
-  for (int t = 0; t < maxT; ++t) {
-    simulator_.NaiveSIROneStep(params0);
-    if ((realization.realization() | params0.infected()).bitCount() !=
-        realization.realization().bitCount()) {
-      return 0;
-    }
-  }
+  bool prunned =
+      simulator_.NaiveSIR(params0, true, (realization.realization()));
+  if (prunned)
+    return 0;
   return realization.realization().bitCount() ==
          (params0.infected() | params0.recovered()).bitCount();
 }
+
+namespace {
+vector<double> normalize(vector<double> P) {
+  double sum = 0;
+  for (double p : P)
+    sum += p;
+  for (int i = 0; i < (int)P.size(); ++i)
+    P[i] /= sum;
+  return P;
+}
+} // namespace
 
 vector<double>
 SourceDetector::softMarginDetection(const Realization &realization,
@@ -69,7 +76,7 @@ SourceDetector::softMarginDetection(const Realization &realization,
     }
     P.push_back(likelihood(fi, a));
   }
-  return P;
+  return normalize(P);
 }
 
 double SourceDetector::SMSingleSourceSirSimulation(
