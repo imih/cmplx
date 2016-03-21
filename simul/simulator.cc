@@ -33,24 +33,19 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
-  // printf("\n ------------------------discrete time step : %d
-  // -----------------", dis_time);
   long int num_inf_nodes = 1;  // source
   bool prunned = false;
 
   while (q.size() && !prunned) {
     if (delta_nodes_pop == 0) {
-      dis_time++;  // discrete epidemic time
+      dis_time++;  
       delta_nodes_pop = q.size();
-      // printf("\n ------------------------discrete time step : %d
-      // -----------------", dis_time);
     }
 
     if (dis_time <= sir_params.maxT()) {
       long int current_node;
       current_node = q.pop();
       delta_nodes_pop--;
-      // printf(" \n Current node: %d ", current_node);
 
       const IVector<int> &neis = graph_.adj_list(current_node);
       for (int i = 0; i < neis.size(); ++i) {

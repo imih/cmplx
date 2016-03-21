@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
+#include <ctime>
 
 #include <vector>
 #include <numeric>
@@ -44,6 +45,8 @@ MPI::Datatype datatypeOfMessage() {
 // TODO unite paral for direct mc and soft
 
 int main(int argc, char **argv) {
+  clock_t begin = std::clock();
+
   // Paralelized
   MPI::Init(argc, argv);
   MPI::Datatype message_type = datatypeOfMessage();
@@ -187,5 +190,7 @@ int main(int argc, char **argv) {
     }
   }
   MPI::Finalize();
+  clock_t end = clock();
+  printf("%lf sec\n", double(end - begin) / CLOCKS_PER_SEC);
   return 0;
 }

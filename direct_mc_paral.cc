@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <ctime>
 #include <cstdlib>
 
 #include <vector>
@@ -41,6 +42,7 @@ MPI::Datatype datatypeOfMessage() {
 
 // -s simulations_no -l lattice_size
 int main(int argc, char **argv) {
+  clock_t begin = std::clock();
   // Paralelized
   MPI::Init(argc, argv);
   MPI::Datatype message_type = datatypeOfMessage();
@@ -159,5 +161,7 @@ int main(int argc, char **argv) {
     }
   }
   MPI::Finalize();
+  clock_t end = clock();
+  printf("%lf sec\n", double(end - begin) / CLOCKS_PER_SEC);
   return 0;
 }
