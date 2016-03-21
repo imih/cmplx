@@ -8,16 +8,16 @@ find_package(Igraph REQUIRED)
 include_directories(${IGRAPH_INCLUDE_DIR})
 include_directories(${IGRAPH_LIBRARY})
 
-add_library(simulator simulator.cc ../common/idqueue.cc)
+add_library(simulator simulator.cc ../common/idqueue.cc ../common/random.cc)
 target_include_directories(simulator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${IGRAPH_INCLUDE_DIR})
 
-enable_testing()
-find_package(GTest REQUIRED)
-include_directories(${GTEST_BOTH_LIBRARIES})
+#enable_testing()
+#find_package(GTest REQUIRED)
+#include_directories(${GTEST_BOTH_LIBRARIES})
 
 #Simulator test
-add_executable(simulatortest simulator_test.cc
-   simulator.cc ../common/bit_array.cc ../common/igraph.cc ../common/idqueue.cc
-   ../common/ivector.cc ../common/sir_params.cc)
-target_link_libraries(simulatortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
-add_test(AllTestInSimulatortest simulatortest)
+#add_executable(simulatortest simulator_test.cc
+#   simulator.cc ../common/bit_array.cc ../common/igraph.cc ../common/idqueue.cc
+#   ../common/ivector.cc ../common/sir_params.cc)
+#target_link_libraries(simulatortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+#add_test(AllTestInSimulatortest simulatortest)

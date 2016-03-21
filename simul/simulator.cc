@@ -21,48 +21,63 @@ namespace cmplx {
 namespace simul {
 
 bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
-                         const BitArray &allowed_nodes) {
+                         const BitArray &allowed_nodes)
+{
   BitArray I = sir_params.infected();
   BitArray S = sir_params.susceptible();
   BitArray R = sir_params.recovered();
-  IDqueue &infected_q = sir_params.infected_q();
-  infected_q.clear();
-  infected_q.insertMarked(I);
-  int t = 1;
-  int batch_size = infected_q.size();
+
+  assert(I.bitCount() == 1);
+  IDqueue q(sir_params.population_size());
+  q.insertMarked(I);
+
+  int dis_time = 1;
+  int delta_nodes_pop = q.size();
+  // printf("\n ------------------------discrete time step : %d
+  // -----------------", dis_time);
+  long int num_inf_nodes = 1;  // source
   bool prunned = false;
 
-  while (!infected_q.empty() && !prunned) {
-    if (batch_size == 0) {
-      t++;
-      batch_size = infected_q.size();
-    }
-    if (t > sir_params.maxT()) {
-      break;
+  while (q.size() && !prunned) {
+    if (delta_nodes_pop == 0) {
+      dis_time++;  // discrete epidemic time
+      delta_nodes_pop = q.size();
+      // printf("\n ------------------------discrete time step : %d
+      // -----------------", dis_time);
     }
 
-    int u = infected_q.pop();
-    batch_size--;
-    const IVector<int> &adj_list_u = graph_.adj_list(u);
-    
-    int adj_list_size = adj_list_u.size();
-    for (int idx = 0; idx < adj_list_size; ++idx) {
-      int v = adj_list_u[idx];
-      if (S.bit(v) && draw(sir_params.p())) {
-        S.set(v, 0);
-        I.set(v, 1);
-        infected_q.push(v);
-        if (prunning && !allowed_nodes.bit(v)) {
-          prunned = true;
-          break;
+    if (dis_time <= sir_params.maxT()) {
+      long int current_node;
+      current_node = q.pop();
+      delta_nodes_pop--;
+      // printf(" \n Current node: %d ", current_node);
+
+      const IVector<int> &neis = graph_.adj_list(current_node);
+      for (int i = 0; i < neis.size(); ++i) {
+        int current_neigh = neis[i];
+
+        if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
+          if (random_.eventDraw(sir_params.p())) {
+            q.push(current_neigh);
+            I.set(current_neigh, true);
+            num_inf_nodes++;
+            // indentity prunning
+            if (prunning && allowed_nodes.bit(current_neigh) == 0) {
+              prunned = true;
+              break;
+            }
+          }
         }
       }
-    }
-    if (draw(sir_params.q())) {
-      I.set(u, 0);
-      R.set(u, 1);
+
+      if (random_.eventDraw(sir_params.q())) {
+        R.set(current_node, true);
+        I.set(current_node, false);
+      } else {
+        q.push(current_node);
+      }
     } else {
-      infected_q.push(u);
+      break;
     }
   }
 
@@ -71,6 +86,59 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   sir_params.set_recovered(R);
   return prunned;
 }
+
+/*
+BitArray I = sir_params.infected();
+BitArray S = sir_params.susceptible();
+BitArray R = sir_params.recovered();
+IDqueue infected_q(sir_params.population_size());
+infected_q.clear();
+infected_q.insertMarked(I);
+
+int t = 1;
+int batch_size = infected_q.size();
+bool prunned = false;
+
+while (!infected_q.empty() && !prunned) {
+  if (batch_size == 0) {
+    t++;
+    batch_size = infected_q.size();
+  }
+  if (t > sir_params.maxT()) {
+    break;
+  }
+
+  int u = infected_q.pop();
+  batch_size--;
+  const IVector<int> &adj_list_u = graph_.adj_list(u);
+
+  int adj_list_size = adj_list_u.size();
+  for (int idx = 0; idx < adj_list_size; ++idx) {
+    int v = adj_list_u[idx];
+    if (S.bit(v) && draw(sir_params.p())) {
+      S.set(v, 0);
+      I.set(v, 1);
+      infected_q.push(v);
+      if (prunning && !allowed_nodes.bit(v)) {
+        prunned = true;
+        break;
+      }
+    }
+  }
+  if (draw(sir_params.q())) {
+    I.set(u, 0);
+    R.set(u, 1);
+  } else {
+    infected_q.push(u);
+  }
+}
+
+sir_params.set_infected(I);
+sir_params.set_susceptible(S);
+sir_params.set_recovered(R);
+infected_q.clear();
+return prunned;
+*/
 
 /*
 namespace {
@@ -135,5 +203,5 @@ void Simulator::calcCummulativeInfecting(int n, const std::string &file_name) {
 }
 */
 
-} // namespace simul
-} // namespace cmplx
+}  // namespace simul
+}  // namespace cmplx

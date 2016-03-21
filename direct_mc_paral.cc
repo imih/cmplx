@@ -49,8 +49,8 @@ int main(int argc, char **argv) {
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
 
-  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
+  //SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   const int simulations = params.simulations();
 
   int vertices = params.graph().vertices();

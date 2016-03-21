@@ -82,7 +82,7 @@ SourceDetector::softMarginDetection(const Realization &realization,
 double SourceDetector::SMSingleSourceSirSimulation(
     int source_id, const common::Realization &realization) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
-  simulator_.NaiveSIR(params0);
+  bool prunned = simulator_.NaiveSIR(params0);
   BitArray observed = params0.infected() | params0.recovered();
   return JaccardSimilarity(realization.realization(), observed);
 }

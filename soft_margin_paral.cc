@@ -42,6 +42,7 @@ MPI::Datatype datatypeOfMessage() {
 }
 
 // TODO unite paral for direct mc and soft
+
 int main(int argc, char **argv) {
   // Paralelized
   MPI::Init(argc, argv);
@@ -50,15 +51,17 @@ int main(int argc, char **argv) {
 
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
+  MPI_Barrier(MPI::COMM_WORLD);
 
-  double p = 0.1;
-  double q = 0.0;
-  SourceDetectionParams params = SourceDetectionParams::ParamsFromGrid(p, q);
+  //SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
+  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  double p = params.realization().p();
+  double q = params.realization().q();
   const int simulations = params.simulations();
-
   int vertices = params.graph().vertices();
   const IGraph &graph = params.graph();
   const Realization &snapshot = params.realization();
+
   // TODO(iva) Make only one copy!
   // snapshot.print();
 
@@ -142,7 +145,7 @@ int main(int argc, char **argv) {
       P.push_back(P_v);
       sum += P_v;
     }
-    fprintf(file, "%.10lf %.10lf\n", snapshot.p(), snapshot.q());
+    fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
     for (int v = 0; v < vertices; ++v) {
       P[v] /= sum;
       printf("%.10lf\n", P[v]);

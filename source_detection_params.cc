@@ -33,7 +33,7 @@ const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
 std::string BENCHMARK_PATH =
-    "/home/iva/dipl/nino-sup/Supplementary_data_code/Data/BenchmarkData";
+    "/home/iva/dipl/Supplementary_data_code/Data/Benchmark data";
 }
 
 namespace cmplx {
@@ -53,7 +53,7 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   int maxT = 5;
   Realization realization = Realization(p, q, maxT, r);
 
-  int simulations = 10000000;
+  int simulations = 1000000; /* supposed to be 10e9 */
   return SourceDetectionParams(graph, realization, simulations);
 }
 
@@ -97,13 +97,13 @@ SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
 SourceDetectionParams
 SourceDetectionParams::BenchmarkParams(int realization_no) {
   IGraph graph =
-      IGraph::GraphFromGDF(BENCHMARK_PATH + "/network/lattice_gephi.GDF");
+      IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice5.gml");
   double p = 0, q = 0;
   int T = 0;
   BitArray r = BitArray::zeros(graph.vertices());
 
   std::ifstream f_real;
-  f_real.open(BENCHMARK_PATH + "/realizations/realization_" +
+  f_real.open(BENCHMARK_PATH + "/realization_num_" +
               std::to_string(realization_no) + ".txt");
   if (!f_real.is_open()) {
     std::cout << std::strerror(errno) << std::endl;
@@ -115,13 +115,13 @@ SourceDetectionParams::BenchmarkParams(int realization_no) {
     auto items = split(line);
     switch (line_no) {
     case P_LINE:
-      p = stod(items[1]);
+      p = stod(items[2]);
       break;
     case Q_LINE:
-      q = stod(items[1]);
+      q = stod(items[2]);
       break;
     case T_LINE:
-      T = stoi(items[1]);
+      T = stoi(items[2]);
       break;
     }
 
@@ -135,6 +135,7 @@ SourceDetectionParams::BenchmarkParams(int realization_no) {
 
   f_real.close();
 
+  /*
   std::ifstream f_sol;
   f_sol.open(BENCHMARK_PATH + "/solutions/inverse_solution_" +
              std::to_string(realization_no) + ".txt");
@@ -147,6 +148,8 @@ SourceDetectionParams::BenchmarkParams(int realization_no) {
   f_sol.close();
   auto items = split(line);
   simulations = stoi(items[3]);
+  */
+  int simulations = 10000000;
 
   Realization realization(p, q, T, r);
   return SourceDetectionParams(graph, realization, simulations);

@@ -12,13 +12,11 @@ public:
             const BitArray &susceptible);
 
   SirParams(const SirParams &other)
-      : infected_q_(other.infected()), p_(other.p()), q_(other.q()),
+      : p_(other.p()), q_(other.q()),
         T_(other.maxT()), infected_(other.infected()),
         susceptible_(other.susceptible()), recovered_(other.recovered()) {}
 
   ~SirParams() = default;
-
-  IDqueue &infected_q() { return infected_q_; }
 
   int maxT() const { return T_; }
 
@@ -42,8 +40,6 @@ public:
   void printForLattice(int n) const;
 
 private:
-  IDqueue infected_q_;
-
   double p_;
   double q_;
   int T_;
