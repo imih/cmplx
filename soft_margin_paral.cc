@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <numeric>
+#include <string>
 
 #include "./source_detector.h"
 #include "common/bit_array.h"
@@ -55,8 +56,22 @@ int main(int argc, char **argv) {
   int rank = MPI::COMM_WORLD.Get_rank();
   MPI_Barrier(MPI::COMM_WORLD);
 
-  //SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
-  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  int P = 0, Q = 0;
+  {
+    int c;
+    while((c = getopt(argc, argv, "p:q:")) != EOF) {
+      switch (c) {
+        case 'p':
+          P = atoi(optarg);
+          break;
+        case 'q':
+          Q = atoi(optarg);
+          break;
+    }
+  }
+  }
+
+  SourceDetectionParams params = SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0);
   double p = params.realization().p();
   double q = params.realization().q();
   const int simulations = params.simulations();
@@ -68,13 +83,14 @@ int main(int argc, char **argv) {
   // snapshot.print();
 
   if (rank == 0) {
-    FILE *file = fopen("distributions-sm-106", "a");
+    std::string file_name ="distribution_sm-" + std::to_string(P) + "-" + std::to_string(Q);
+    FILE *file = fopen(file_name.c_str(), "a");
     // master process
     int cur_simul_count = 0;
     int cur_v = 0;
     while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
       cur_v++;
-    vector<vector<double>> events_resp(vertices, vector<double>());
+    vector<vector<double> > events_resp(vertices, vector<double>());
     long long jobs_remaining =
         1LL * simulations * snapshot.realization().bitCount();
     while (jobs_remaining > 0) {
@@ -147,16 +163,16 @@ int main(int argc, char **argv) {
       P.push_back(P_v);
       sum += P_v;
     }
-    fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
+    //fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
     for (int v = 0; v < vertices; ++v) {
       P[v] /= sum;
       printf("%.10lf\n", P[v]);
       fprintf(file, "%.10lf ", P[v]);
     }
     printf("\n");
-    fprintf(file, "\n\n");
+    fprintf(file, "\n");
     /******/
-
+    fclose(file);
   } else {
     // workers
     // Performs simulation on request.

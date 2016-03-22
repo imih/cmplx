@@ -135,7 +135,6 @@ SourceDetectionParams::BenchmarkParams(int realization_no) {
 
   f_real.close();
 
-  /*
   std::ifstream f_sol;
   f_sol.open(BENCHMARK_PATH + "/solutions/inverse_solution_" +
              std::to_string(realization_no) + ".txt");
@@ -148,8 +147,6 @@ SourceDetectionParams::BenchmarkParams(int realization_no) {
   f_sol.close();
   auto items = split(line);
   simulations = stoi(items[3]);
-  */
-  int simulations = 10000000;
 
   Realization realization(p, q, T, r);
   return SourceDetectionParams(graph, realization, simulations);
