@@ -39,7 +39,7 @@ private:
   IGraph(const igraph_t &graph_) : graph_(std::move(graph_)) {}
 
   igraph_t graph_;
-  mutable std::unordered_map<int, IVector<int>> adj_list_cache_;
+  mutable std::unordered_map<int, IVector<int> > adj_list_cache_;
 };
 
 } // namespace common

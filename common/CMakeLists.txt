@@ -32,9 +32,9 @@ add_test(AllTestInIgraphtest igraphtest)
 
 
 #Random test
-add_executable(randomtest random.cc random_test.cc)
-target_link_libraries(randomtest ${GTEST_BOTH_LIBRARIES})
-add_test(AllTestInIgraphtest randomtest)
+#add_executable(randomtest random.cc random_test.cc)
+#target_link_libraries(randomtest ${GTEST_BOTH_LIBRARIES})
+#add_test(AllTestInIgraphtest randomtest)
 
 
 add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)

@@ -8,7 +8,7 @@ find_package(Igraph REQUIRED)
 include_directories(${IGRAPH_INCLUDE_DIR})
 include_directories(${IGRAPH_LIBRARY})
 
-add_library(simulator simulator.cc ../common/idqueue.cc ../common/random.cc)
+add_library(simulator simulator.cc ../common/idqueue.cc)
 target_include_directories(simulator PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${IGRAPH_INCLUDE_DIR})
 
 #enable_testing()

@@ -14,7 +14,6 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/sir_params.h"
-#include "common/random.h"
 #include "source_detection_params.h"
 
 using cmplx::SourceDetector;

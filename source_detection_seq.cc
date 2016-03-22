@@ -13,7 +13,6 @@ using cmplx::common::IGraph;
 using cmplx::common::BitArray;
 using cmplx::common::SirParams;
 using cmplx::common::Realization;
-using cmplx::common::Random;
 using cmplx::SourceDetectionParams;
 
 int main() {

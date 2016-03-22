@@ -13,7 +13,6 @@ using cmplx::common::IGraph;
 using cmplx::common::IVector;
 using cmplx::common::BitArray;
 using cmplx::common::SirParams;
-using cmplx::common::Random;
 
 typedef std::numeric_limits<double> dbl;
 
@@ -52,7 +51,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
         int current_neigh = neis[i];
 
         if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
-          if (random_.eventDraw(sir_params.p())) {
+          if (eventDraw(sir_params.p())) {
             q.push(current_neigh);
             I.set(current_neigh, true);
             num_inf_nodes++;
@@ -65,7 +64,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
         }
       }
 
-      if (random_.eventDraw(sir_params.q())) {
+      if (eventDraw(sir_params.q())) {
         R.set(current_node, true);
         I.set(current_node, false);
       } else {
