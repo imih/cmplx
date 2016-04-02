@@ -34,3 +34,9 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(sm_para common simulator source_detection mpi igraph)
 
+add_executable(f_esti f_estimator.cc source_detection_params.cc)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS}  ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(${MPI_INCLUDE_PATH})
+target_link_libraries(f_esti common simulator source_detection mpi igraph)
+
