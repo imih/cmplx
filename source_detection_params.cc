@@ -16,8 +16,7 @@ using cmplx::common::Realization;
 using cmplx::common::SirParams;
 
 namespace {
-std::vector<std::string> split(std::string s)
-{
+std::vector<std::string> split(std::string s) {
   std::stringstream ss(s);
   std::vector<std::string> elems;
   std::string item;
@@ -38,8 +37,7 @@ std::string BENCHMARK_PATH =
 }
 
 namespace cmplx {
-SourceDetectionParams SourceDetectionParams::SupFig2Params()
-{
+SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   int lattice_size1 = 5;
   int lattice_size2 = 4;
   IGraph graph = IGraph::UndirectedLattice({lattice_size1, lattice_size2});
@@ -53,34 +51,34 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params()
   double p = 0.2;
   double q = 0.3;
   int maxT = 5;
-  Realization realization = Realization(p, q, maxT, r);
+  Realization realization =
+      Realization(p, q, maxT, r, BitArray::zeros(vertices));
 
   int simulations = 100000000; /* supposed to be 10e9 */
   return SourceDetectionParams(graph, realization, simulations);
 }
 
-SourceDetectionParams SourceDetectionParams::LatticeCenter()
-{
+SourceDetectionParams SourceDetectionParams::LatticeCenter() {
   int lattice_size = 3;
   IGraph graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
   BitArray r = BitArray::ones(graph.vertices());
   double p = 0.2;
   double q = 0;
-  Realization realization = Realization(p, q, 2, r);
+  Realization realization =
+      Realization(p, q, 2, r, BitArray::zeros(graph.vertices()));
   return SourceDetectionParams(graph, realization, 1000000);
 }
 
 namespace {
-int chooseSource(int n)
-{
+int chooseSource(int n) {
   std::uniform_int_distribution<int> d(0, n - 1);
   static thread_local std::mt19937 gen;
   return d(gen);
 }
 }
 
-SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p, double q)
-{
+SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
+                                                            double q) {
   IGraph graph = IGraph::UndirectedLattice({3, 3});
   int TMax = 5;
   int source_v = 4;
@@ -93,16 +91,15 @@ SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p, double q)
   while (true) {
     SirParams sir_params(p, q, TMax, r, s);
     simulator.NaiveSIR(sir_params);
-    Realization real(p, q, TMax,
-                     sir_params.infected() | sir_params.recovered());
+    Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
     if (real.realization().bits_num() != 0)
       return SourceDetectionParams(graph, real, 1000000);
   }
 }
 
 // TODO determine number of simulations yourself!
-SourceDetectionParams SourceDetectionParams::BenchmarkParams(int realization_no)
-{
+SourceDetectionParams SourceDetectionParams::BenchmarkParams(
+    int realization_no) {
   IGraph graph = IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice5.gml");
   double p = 0, q = 0;
   int T = 0;
@@ -154,7 +151,7 @@ SourceDetectionParams SourceDetectionParams::BenchmarkParams(int realization_no)
   auto items = split(line);
   simulations = stoi(items[3]);
 
-  Realization realization(p, q, T, r);
+  Realization realization(p, q, T, r, BitArray::zeros(graph.vertices()));
   return SourceDetectionParams(graph, realization, simulations);
 }
 

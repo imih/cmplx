@@ -38,8 +38,7 @@ enum MessageType {
   SIMUL_RESPONSE
 };
 
-MPI::Datatype datatypeOfMessage()
-{
+MPI::Datatype datatypeOfMessage() {
   int blockLen[2] = {1, 1};
   MPI::Aint offsets[2] = {offsetof(Message, source_id),
                           offsetof(Message, event_outcome)};
@@ -49,8 +48,7 @@ MPI::Datatype datatypeOfMessage()
 
 // TODO unite paral for direct mc and soft
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   clock_t begin = std::clock();
 
   // Paralelized
@@ -77,7 +75,8 @@ int main(int argc, char **argv)
     }
   }
 
-  SourceDetectionParams params = SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0);
+  SourceDetectionParams params =
+      SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0);
   double p = params.realization().p();
   double q = params.realization().q();
   const int simulations = params.simulations();
@@ -98,7 +97,7 @@ int main(int argc, char **argv)
     int cur_v = 0;
     while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
       cur_v++;
-    vector<vector<double>> events_resp(vertices, vector<double>());
+    vector<vector<double> > events_resp(vertices, vector<double>());
     long long jobs_remaining =
         1LL * simulations * snapshot.realization().bitCount();
     while (jobs_remaining > 0) {

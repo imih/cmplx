@@ -7,13 +7,19 @@
 namespace cmplx {
 namespace common {
 class Realization {
-public:
+ public:
   Realization(const SirParams &snapshot)
       : Realization(snapshot.p(), snapshot.q(), snapshot.maxT(),
-                    snapshot.infected() | snapshot.recovered()) {}
+                    snapshot.infected(), snapshot.recovered()) {}
 
-  Realization(double p, double q, int maxT, const BitArray &realization)
-      : p_(p), q_(q), T_(maxT), realization_(realization) {}
+  Realization(double p, double q, int maxT, const BitArray &infected,
+              const BitArray &recovered)
+      : p_(p),
+        q_(q),
+        T_(maxT),
+        infected_(infected),
+        recovered_(recovered),
+        realization_(infected | recovered) {}
 
   ~Realization() = default;
 
@@ -28,13 +34,15 @@ public:
 
   void print() const { std::cout << "R: " << realization_ << std::endl; }
 
-private:
+ private:
   const double p_;
   const double q_;
   const int T_;
+  const BitArray infected_;
+  const BitArray recovered_;
   const BitArray realization_;
 };
-} // namespace common
-} // namespace cmplx
+}  // namespace common
+}  // namespace cmplx
 
-#endif // CMPLX_COMMON_SIR_PARAMS_H
+#endif  // CMPLX_COMMON_SIR_PARAMS_H
