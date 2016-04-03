@@ -79,9 +79,9 @@ int chooseSource(int n) {
 
 SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
                                                             double q) {
-  IGraph graph = IGraph::UndirectedLattice({3, 3});
+  IGraph graph = IGraph::UndirectedLattice({5, 5});
   int TMax = 5;
-  int source_v = 4;
+  int source_v = 12;
 
   BitArray r = BitArray::zeros(graph.vertices());
   r.set(source_v, true);

@@ -20,8 +20,7 @@ namespace cmplx {
 namespace simul {
 
 bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
-                         const BitArray &allowed_nodes)
-{
+                         const BitArray &allowed_nodes) {
   BitArray I = sir_params.infected();
   BitArray S = sir_params.susceptible();
   BitArray R = sir_params.recovered();
@@ -37,7 +36,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
   while (q.size() && !prunned) {
     if (delta_nodes_pop == 0) {
-      dis_time++;  
+      dis_time++;
       delta_nodes_pop = q.size();
     }
 
@@ -79,6 +78,54 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   sir_params.set_susceptible(S);
   sir_params.set_recovered(R);
   return prunned;
+}
+
+double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
+  BitArray I = sir_params.infected();
+  BitArray R = sir_params.recovered();
+  double p = sir_params.p();
+  double q = sir_params.q();
+
+  IDqueue queue(sir_params.population_size());
+  queue.insertMarked(I);
+  int delta_nodes_pop = queue.size();
+  int p0 = 0, p1 = 0, q0 = 0, q1 = 0;
+
+  while (queue.size()) {
+    if (delta_nodes_pop == 0) {
+      break;
+    }
+    long int current_node = queue.pop();
+    delta_nodes_pop--;
+
+    const IVector<int> &neis = graph_.adj_list(current_node);
+    for (int i = 0; i < neis.size(); ++i) {
+      int current_neigh = neis[i];
+
+      if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
+        if (eventDraw(p)) {
+          p1++;
+          queue.push(current_neigh);
+          I.set(current_neigh, true);
+          // indentity prunning
+        } else
+          p0++;
+      }
+    }
+
+    if (eventDraw(q)) {
+      q1++;
+      R.set(current_node, true);
+      I.set(current_node, false);
+    } else {
+      q0++;
+      queue.push(current_node);
+    }
+  }
+
+  sir_params.set_infected(I);
+  sir_params.set_recovered(R);
+  return pow(1 - p, p0) * pow(p, p1) * pow(1 - q, q0) * pow(q, q1);
 }
 
 /*

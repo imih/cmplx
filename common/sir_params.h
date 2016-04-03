@@ -7,14 +7,19 @@
 namespace cmplx {
 namespace common {
 class SirParams {
-public:
+ public:
   SirParams(double p, double q, int T, const BitArray &infected,
             const BitArray &susceptible);
 
+  SirParams() : SirParams(0, 0, 0, BitArray::zeros(0), BitArray::zeros(0)) {}
+
   SirParams(const SirParams &other)
-      : p_(other.p()), q_(other.q()),
-        T_(other.maxT()), infected_(other.infected()),
-        susceptible_(other.susceptible()), recovered_(other.recovered()) {}
+      : p_(other.p()),
+        q_(other.q()),
+        T_(other.maxT()),
+        infected_(other.infected()),
+        susceptible_(other.susceptible()),
+        recovered_(other.recovered()) {}
 
   ~SirParams() = default;
 
@@ -39,7 +44,7 @@ public:
   void print() const;
   void printForLattice(int n) const;
 
-private:
+ private:
   double p_;
   double q_;
   int T_;
@@ -48,7 +53,7 @@ private:
   BitArray susceptible_;
   BitArray recovered_;
 };
-} // namespace common
-} // namespace cmplx
+}  // namespace common
+}  // namespace cmplx
 
-#endif // CMPLX_COMMON_SIR_PARAMS_H
+#endif  // CMPLX_COMMON_SIR_PARAMS_H

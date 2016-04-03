@@ -47,9 +47,7 @@ int main(int argc, char **argv) {
   MPI::Init(argc, argv);
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-
-  int processes = MPI::COMM_WORLD.Get_size();
-  int rank = MPI::COMM_WORLD.Get_rank();
+int processes = MPI::COMM_WORLD.Get_size(); int rank = MPI::COMM_WORLD.Get_rank();
 
   //SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);

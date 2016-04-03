@@ -30,6 +30,8 @@ class Realization {
 
   int population_size() const { return realization_.bits_num(); }
 
+  BitArray infected() const { return infected_; }
+  BitArray recovered() const { return recovered_; }
   BitArray realization() const { return realization_; }
 
   void print() const { std::cout << "R: " << realization_ << std::endl; }

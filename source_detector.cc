@@ -3,6 +3,7 @@
 #include <cstring>
 #include <mpi.h>
 
+#include "seq_mc_stat.h"
 #include "common/bit_array.h"
 #include "common/realization.h"
 
@@ -18,8 +19,7 @@ using std::vector;
 
 namespace cmplx {
 vector<double> SourceDetector::directMonteCarloDetection(
-    const Realization &realization, int no_simulations)
-{
+    const Realization &realization, int no_simulations) {
   std::vector<double> outcomes_prob;
   int population_size = realization.population_size();
   double sum = 0;
@@ -42,9 +42,8 @@ vector<double> SourceDetector::directMonteCarloDetection(
   return outcomes_prob;
 }
 
-int SourceDetector::DMCSingleSourceSirSimulation(int source_id,
-                                                 const Realization &realization)
-{
+int SourceDetector::DMCSingleSourceSirSimulation(
+    int source_id, const Realization &realization) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
   bool prunned =
       simulator_.NaiveSIR(params0, true, (realization.realization()));
@@ -54,8 +53,7 @@ int SourceDetector::DMCSingleSourceSirSimulation(int source_id,
 }
 
 namespace {
-vector<double> normalize(vector<double> P)
-{
+vector<double> normalize(vector<double> P) {
   double sum = 0;
   for (double p : P) sum += p;
   for (int i = 0; i < (int)P.size(); ++i) P[i] /= sum;
@@ -64,8 +62,7 @@ vector<double> normalize(vector<double> P)
 }  // namespace
 
 vector<double> SourceDetector::softMarginDetection(
-    const Realization &realization, int no_simulations, double a)
-{
+    const Realization &realization, int no_simulations, double a) {
   vector<double> P;
   int population_size = realization.population_size();
   for (int v = 0; v < population_size; ++v) {
@@ -79,17 +76,15 @@ vector<double> SourceDetector::softMarginDetection(
 }
 
 double SourceDetector::SMSingleSourceSirSimulation(
-    int source_id, const common::Realization &realization)
-{
+    int source_id, const common::Realization &realization) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
   bool prunned = simulator_.NaiveSIR(params0);
   BitArray observed = params0.infected() | params0.recovered();
   return JaccardSimilarity(realization.realization(), observed);
 }
 
-SirParams SourceDetector::paramsForSingleSource(int source_vertex,
-                                                const Realization &realization)
-{
+SirParams SourceDetector::paramsForSingleSource(
+    int source_vertex, const Realization &realization) {
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
   BitArray infected = BitArray::zeros(population_size);
@@ -100,8 +95,7 @@ SirParams SourceDetector::paramsForSingleSource(int source_vertex,
                    infected, susceptible);
 }
 
-double SourceDetector::likelihood(vector<double> fi, double a)
-{
+double SourceDetector::likelihood(vector<double> fi, double a) {
   int n = (int)fi.size();
   double P = 0;
   for (int i = 0; i < n; ++i) {
@@ -110,17 +104,26 @@ double SourceDetector::likelihood(vector<double> fi, double a)
   return P / n;
 }
 
+SeqSample SourceDetector::forwardSeqSample(const SeqSample &seqSample) {
+  SeqSample novi = seqSample;
+  double u = simulator_.NaiveSIROneStep(novi.sir_params());
+  novi.addW(u);
+  return novi;
+}
 
-double SourceDetector::sequentialMCPosterior(int v, const common::Realization& realization) {
-  double p = 0;
-
-
-  return p;
+double SourceDetector::sequentialMCPosterior(
+    int v, const common::Realization &realization) {
+  SeqMCStat stat(v, realization);
+  int maxT = realization.maxT();
+  for(int t = 1; t <= maxT; ++t) {
+    //TODO
+  }
+  // return stat.approx();
+  return 0;
 }
 
 std::vector<double> SourceDetector::sequentialMCDetection(
-    const common::Realization &realization)
-{
+    const common::Realization &realization) {
   int nodes = realization.population_size();
   std::vector<double> P;
   double sum = 0;
@@ -131,7 +134,6 @@ std::vector<double> SourceDetector::sequentialMCDetection(
   for (double &P_v : P) {
     P_v /= sum;
   }
-
   return P;
 }
 

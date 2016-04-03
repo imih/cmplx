@@ -16,7 +16,7 @@ namespace cmplx {
 namespace simul {
 
 class Simulator {
-  public:
+ public:
   Simulator(const common::IGraph &graph)
       : graph_(graph), prob_distribution_(0, 1) {
     struct timeval tv;
@@ -29,7 +29,10 @@ class Simulator {
                 const common::BitArray &allowed_nodes =
                     common::BitArray::zeros(1));
 
-  private:
+  // Returns  probability of drawn sample.
+  double NaiveSIROneStep(common::SirParams &sir_params);
+
+ private:
   bool eventDraw(double probability) {
     return prob_distribution_(generator_) <= probability;
   }
