@@ -25,8 +25,12 @@ int main() {
   std::vector<double> probs =
       sd.directMonteCarloDetection(params.realization(), params.simulations());
       */
+  /*
   std::vector<double> probs = sd.softMarginDetection(
       params.realization(), params.simulations(), params.a());
+      */
+
+  std::vector<double> probs = sd.sequentialMCDetection(params.realization());
 
   for (double p : probs) {
     printf("%.10lf\n", p);

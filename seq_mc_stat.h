@@ -20,6 +20,8 @@ class SeqSample {
   common::SirParams& sir_params() { return sir_params_; }
   common::SirParams sir_params_const() const { return sir_params_; }
 
+  bool match(const common::Realization& realization) const;
+
   int t() const { return t_; }
   std::vector<double> w() const { return w_; }
 

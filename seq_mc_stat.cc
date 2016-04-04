@@ -21,4 +21,14 @@ SeqSample::SeqSample(const SeqSample& seqSample)
       t_(seqSample.t()),
       w_(seqSample.w()) {}
 
+bool SeqSample::match(const common::Realization& realization) const {
+  common::BitArray newR = sir_params_.infected() | sir_params_.recovered();
+  int realizationBC = realization.realization().bitCount();
+  if ((newR | realization.realization()).bitCount() != realizationBC) {
+    return false;
+  }
+  int newBC = newR.bitCount();
+  return newBC == realizationBC;
+}
+
 }  // namespace cmplx

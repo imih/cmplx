@@ -113,13 +113,32 @@ SeqSample SourceDetector::forwardSeqSample(const SeqSample &seqSample) {
 
 double SourceDetector::sequentialMCPosterior(
     int v, const common::Realization &realization) {
-  SeqMCStat stat(v, realization);
+  std::vector<SeqSample> stat;
+  stat.assign(10000, SeqSample(v, realization));
   int maxT = realization.maxT();
-  for(int t = 1; t <= maxT; ++t) {
-    //TODO
+  std::string file_name = "seq_vulgaris_weights" + std::to_string(v);
+  FILE *f = fopen(file_name.c_str(), "w");
+  for (int t = 1; t <= maxT; ++t) {
+    for (const SeqSample &seq : stat) {
+      assert((int)seq.w().size() > 0);
+      fprintf(f, "%.10lf ", seq.w().back());
+    }
+    fprintf(f, "\n");
+    for (int i = 0; i < (int)stat.size(); ++i) {
+      stat[i] = forwardSeqSample(stat[i]);
+    }
   }
-  // return stat.approx();
-  return 0;
+
+  fclose(f);
+
+  double p = 0;
+  for (const SeqSample &seq : stat) {
+    if (seq.match(realization)) {
+      // p += seq.w().back();
+      p++;
+    }
+  }
+  return p / (int)stat.size();
 }
 
 std::vector<double> SourceDetector::sequentialMCDetection(
@@ -128,7 +147,10 @@ std::vector<double> SourceDetector::sequentialMCDetection(
   std::vector<double> P;
   double sum = 0;
   for (int v = 0; v < nodes; ++v) {
-    P.push_back(sequentialMCPosterior(v, realization));
+    if (realization.realization().bit(v) == false)
+      P.push_back(0);
+    else
+      P.push_back(sequentialMCPosterior(v, realization));
     sum += P.back();
   }
   for (double &P_v : P) {
