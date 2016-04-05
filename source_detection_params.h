@@ -7,19 +7,21 @@
 
 namespace cmplx {
 class SourceDetectionParams {
-public:
+ public:
   // DirectMC
   static SourceDetectionParams SupFig2Params();
   static SourceDetectionParams LatticeCenter();
   static SourceDetectionParams BenchmarkParams(int realization_no);
   static SourceDetectionParams ParamsFromGrid(double p, double q);
 
-  const common::IGraph &graph() { return graph_; }
-  const common::Realization &realization() { return realization_; }
-  int simulations() { return simulations_; }
-  double a() { return a_; }
+  const common::IGraph &graph() const { return graph_; }
+  const common::Realization &realization() const { return realization_; }
+  int simulations() const { return simulations_; }
+  double a() const { return a_; }
 
-private:
+  void setSimulations(int simulations) { simulations_ = simulations; }
+
+ private:
   SourceDetectionParams(const common::IGraph &graph,
                         const common::Realization &r, int simulations,
                         double a = 0.05)
@@ -31,6 +33,6 @@ private:
   int simulations_;
 };
 
-} // namespace cmplx
+}  // namespace cmplx
 
-#endif // SOURCE_DETECTION_PARAMS_H
+#endif  // SOURCE_DETECTION_PARAMS_H

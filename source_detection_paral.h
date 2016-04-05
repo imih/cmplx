@@ -4,12 +4,15 @@
 #include "source_detection_params.h"
 
 namespace cmplx {
-void DirectMCSimulParal(cmplx::SourceDetectionParams params);
 
-void SoftMarginParal(cmplx::SourceDetectionParams params);
+void DirectMCSimulParalConv(const cmplx::SourceDetectionParams& params);
+void DirectMCSimulParal(const cmplx::SourceDetectionParams& params);
+
+// void SoftMarginParalConv(const cmplx::SourceDetectionParams& params);
+void SoftMarginParal(const cmplx::SourceDetectionParams& params);
 
 // estimates the posterior probabilty of a full match
-void FEstimatorParal(cmplx::SourceDetectionParams params);
+void FEstimatorParal(const cmplx::SourceDetectionParams& params);
 
 }  // namespace cmplx
 #endif  // SOURCE_DETECTION_PARAL_H

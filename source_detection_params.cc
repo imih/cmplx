@@ -54,7 +54,7 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params() {
   Realization realization =
       Realization(p, q, maxT, r, BitArray::zeros(vertices));
 
-  int simulations = 100000000; /* supposed to be 10e9 */
+  int simulations = 10000000; /* supposed to be 10e9 */
   return SourceDetectionParams(graph, realization, simulations);
 }
 
