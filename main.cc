@@ -14,8 +14,10 @@ int main(int argc, char **argv) {
 
   SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
-  cmplx::DirectMCSimulParalConv(params);
+  //cmplx::DirectMCSimulParalConv(params);
   //cmplx::DirectMCSimulParal(params);
+  //cmplx::SoftMarginParal(params);
+  cmplx::SoftMarginParalConv(params);
 
   MPI::Finalize();
  // clock_t end = clock();

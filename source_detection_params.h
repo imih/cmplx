@@ -20,6 +20,7 @@ class SourceDetectionParams {
   double a() const { return a_; }
 
   void setSimulations(int simulations) { simulations_ = simulations; }
+  void setA(double a) { a_ = a; }
 
  private:
   SourceDetectionParams(const common::IGraph &graph,

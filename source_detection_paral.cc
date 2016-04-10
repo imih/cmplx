@@ -59,16 +59,16 @@ MPI::Datatype datatypeOfMessage() {
 namespace cmplx {
 
 void DirectMCSimulParalWorker(const SourceDetectionParams &);
-vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &, bool);
+vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &, bool,
+                                        bool);
 
 void DirectMCSimulParal(const SourceDetectionParams &params) {
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
-    DirectMCSimulParalMaster(params, true);
+    DirectMCSimulParalMaster(params, true, true);
   } else {
     DirectMCSimulParalWorker(params);
   }
-  puts("Done");
 }
 
 void DirectMCSimulParalConv(const SourceDetectionParams &params) {
@@ -88,13 +88,13 @@ void DirectMCSimulParalConv(const SourceDetectionParams &params) {
     int s0 = SIMUL_PER_REQ;
     double pml0 = 0;
     params0.setSimulations(s0);
-    vector<double> p0 = DirectMCSimulParalMaster(params0, false);
+    vector<double> p0 = DirectMCSimulParalMaster(params0, false, false);
     pml0 = *std::max_element(p0.begin(), p0.end());
     while (true) {
       int s1 = 2 * s0;
       printf("s: %d\n", s1);
       params0.setSimulations(s1);
-      vector<double> p1 = DirectMCSimulParalMaster(params0, false);
+      vector<double> p1 = DirectMCSimulParalMaster(params0, false, false);
 
       double pml1 = *std::max_element(p0.begin(), p0.end());
       bool converge = true;
@@ -110,7 +110,6 @@ void DirectMCSimulParalConv(const SourceDetectionParams &params) {
           Message end_message;
           MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
                                 MessageType::SIMUL_END);
-          puts("DONE");
         }
         break;
       }
@@ -127,6 +126,7 @@ void DirectMCSimulParalWorker(const SourceDetectionParams &params) {
   message_type.Commit();
   int processes = MPI::COMM_WORLD.Get_size();
   int rank = MPI::COMM_WORLD.Get_rank();
+  assert(rank > 0);
 
   int vertices = params.graph().vertices();
   const IGraph &graph = params.graph();
@@ -162,11 +162,10 @@ void DirectMCSimulParalWorker(const SourceDetectionParams &params) {
       break;
     }
   }
-  puts("Worker done");
 }
 
 vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &params,
-                                        bool end = true) {
+                                        bool end = true, bool print = true) {
   using namespace DMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -232,10 +231,12 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &params,
                              MessageType::SIMUL_RESPONSE);
         jobs_remaining -= SIMUL_PER_REQ;
         events_resp[received.source_id] += received.event_outcome;
-        if (!i)
-          printf("%.5f\n",
+        if (!i) {
+          printf("\r%.5f",
                  jobs_remaining * 100 /
                      ((double)simulations * snapshot.realization().bitCount()));
+          fflush(stdout);
+        }
       }
     }
   }
@@ -245,12 +246,287 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &params,
     sum += events_resp[v];
   }
 
+  printf("\r\r\n");
   vector<double> p;
   for (int v = 0; v < vertices; ++v) {
+    if (print)
+      ;
     printf("%.10f\n", events_resp[v] / sum);
     p.push_back(events_resp[v] / sum);
   }
   return p;
+}
+
+/******* SMP *******/
+namespace SMP {
+struct Message {
+  int source_id;
+  double event_outcome;
+  double a;
+  Message() : Message(-1, -1, -1) {}
+  Message(int source_id, double event_outcome, double a)
+      : source_id(source_id), event_outcome(event_outcome), a(a) {}
+};
+
+MPI::Datatype datatypeOfMessage() {
+  int blockLen[3] = {1, 1, 1};
+  MPI::Aint offsets[3] = {offsetof(Message, source_id),
+                          offsetof(Message, event_outcome),
+                          offsetof(Message, a)};
+  MPI::Datatype types[3] = {MPI::INT, MPI::DOUBLE, MPI::DOUBLE};
+  return MPI::Datatype::Create_struct(3, blockLen, offsets, types);
+}
+}  // namespace SMP
+
+void SoftMarginSimulParalWorker(const SourceDetectionParams &);
+vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams &, bool,
+                                          bool);
+
+void SoftMarginParal(const SourceDetectionParams &params) {
+  int rank = MPI::COMM_WORLD.Get_rank();
+  if (rank == 0) {
+    SoftMarginSimulParalMaster(params, true, true);
+  } else {
+    // workers
+    SoftMarginSimulParalWorker(params);
+  }
+}
+
+void SoftMarginParalConv(const SourceDetectionParams &params) {
+  using namespace SMP;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  if (rank != 0) {
+    SoftMarginSimulParalWorker(params);
+  } else {
+    SourceDetectionParams params0(params);
+    double c = 0.05;
+    // SourceDetectionParams& params;
+    const int MAXA = 15;
+    int s0 = SIMUL_PER_REQ;
+    printf("s0: %d\n", s0);
+    vector<double> a(MAXA + 1, 0);
+    for (int i = 5; i <= MAXA; ++i) {
+      a[i] = 1.0 / (double)(1 << i);
+    }
+    vector<double> p0[MAXA + 1];
+    vector<double> pMAP0(MAXA + 1, 0);
+    for (int i = 5; i <= MAXA; ++i) {
+      params0.setSimulations(s0);
+      params0.setA(a[i]);
+      printf("a[i]: %lf\n", a[i]);
+      p0[i] = SoftMarginSimulParalMaster(params0, false, false);
+      pMAP0[i] = *std::max_element(p0[i].begin(), p0[i].end());
+    }
+
+    vector<int> convergeGlobal(MAXA + 1, 0);
+    while (true) {
+      int s1 = 2 * s0;
+      printf("s: %d\n", s1);
+      params0.setSimulations(s1);
+      vector<double> p1[MAXA + 1];
+      vector<double> pMAP1(MAXA + 1, 0);
+
+      for (int i = 15; i >= 5; --i) {
+        printf("s: %d a: %.10lf\n", s1, a[i]);
+        params0.setA(a[i]);
+        p1[i] = SoftMarginSimulParalMaster(params0, false, false);
+        pMAP1[i] = *std::max_element(p1[i].begin(), p1[i].end());
+        double delta = dabs(pMAP1[i] - pMAP0[i]) / pMAP1[i];
+        double converge = true;
+        if (delta >= c) converge = false;
+        for (int j = 0; j < (int)p1[i].size(); ++j) {
+          if (dabs(p1[i][j] - p0[i][j]) >= c) converge = false;
+        }
+        if (converge) {
+          convergeGlobal[i]++;
+          printf("Converged for n=%d a=%lf\n", s1, a[i]);
+        } else {
+          convergeGlobal[i] = 0;
+          printf("Not converged.\n");
+        }
+      }
+
+      bool done = false;
+      for (int i = 15; i >= 5; --i) {
+        if (convergeGlobal[i] > 1) {
+          SoftMarginSimulParalMaster(params0, false, true);
+          int processes = MPI::COMM_WORLD.Get_size();
+          for (int v = 1; v < processes; ++v) {
+            Message end_message;
+            MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                                  MessageType::SIMUL_END);
+          }
+          done = true;
+          break;
+        }
+      }
+
+      s0 = s1;
+      for (int i = 1; i <= 15; ++i) p0[i] = p1[i];
+      pMAP0 = pMAP1;
+      if(done) break;
+    }
+  }
+}
+
+vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams &params,
+                                          bool end = true, bool print = true) {
+  using namespace SMP;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+
+  int processes = MPI::COMM_WORLD.Get_size();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  assert(rank == 0);
+
+  double p = params.realization().p();
+  double q = params.realization().q();
+  const int simulations = params.simulations();
+  int vertices = params.graph().vertices();
+  const IGraph &graph = params.graph();
+  const Realization &snapshot = params.realization();
+
+  /*
+  std::string file_name = "distribution_sm-" + std::to_string((int)(10 * p)) +
+                          "-" + std::to_string((int)(10 * q)) + "_grid" +
+                          std::to_string((int)sqrt(vertices));
+  FILE *file = fopen(file_name.c_str(), "a");
+  */
+  // master process
+  int cur_simul_count = 0;
+  int cur_v = 0;
+  while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
+    cur_v++;
+  vector<vector<double> > events_resp(vertices, vector<double>());
+  long long jobs_remaining =
+      1LL * simulations * snapshot.realization().bitCount();
+  while (jobs_remaining > 0) {
+    for (int i = 0; i < processes - 1; ++i) {
+      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
+        Message init_message;
+        MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
+                             MessageType::SIMUL_PREREQUEST);
+        if (cur_simul_count < simulations) {
+          cur_simul_count += SIMUL_PER_REQ;
+        } else {
+          cur_simul_count = SIMUL_PER_REQ;
+          cur_v++;
+          while ((cur_v < vertices) &&
+                 (snapshot.realization().bit(cur_v) == false)) {
+            cur_v++;
+          }
+          if (cur_v >= vertices) {
+            cur_v = -1;
+          }
+        }
+        if (cur_v == -1) {
+          if (end) {
+            // There's no more jobs
+            Message message;
+            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
+                                  MessageType::SIMUL_END);
+          }
+        } else {
+          Message m = Message(cur_v, 0, params.a());
+          MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
+                                MessageType::SIMUL_REQUEST);
+        }
+      }
+    }
+
+    for (int i = 0; i < processes - 1; ++i) {
+      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
+        Message received;
+        MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
+                             MessageType::SIMUL_RESPONSE);
+        jobs_remaining -= SIMUL_PER_REQ;
+        events_resp[received.source_id].push_back(received.event_outcome);
+        if (!i) {
+          printf("\r%.5f",
+                 jobs_remaining * 100 /
+                     ((double)simulations * snapshot.realization().bitCount()));
+          fflush(stdout);
+        }
+      }
+    }
+  }
+
+  // fprintf(stderr, "Simulations finished");
+  printf("\r\n");
+  /*****/
+  std::vector<double> P;
+  double sum = 0;
+  for (int v = 0; v < vertices; ++v) {
+    double P_v = 0;
+    for (double d : events_resp[v]) {
+      //        std::cout << d << std::endl;
+      P_v += d;
+    }
+    if (events_resp[v].size()) P_v /= (int)events_resp[v].size();
+    P.push_back(P_v);
+    sum += P_v;
+  }
+  // fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
+  for (int v = 0; v < vertices; ++v) {
+    // printf("%.10lf\n", P[v]);
+    P[v] /= sum;
+    if (print) printf("%.10lf\n", P[v]);
+    // fprintf(file, "%.10lf ", P[v]);
+  }
+  printf("\n");
+  // fprintf(file, "\n");
+  /******/
+  //  fclose(file);
+  return P;
+}
+
+void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
+  using namespace SMP;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  assert(rank > 0);
+
+  int vertices = params.graph().vertices();
+  const IGraph &graph = params.graph();
+  const Realization &snapshot = params.realization();
+
+  // workers
+  // Performs simulation on request.
+  SourceDetector sd(graph);
+  while (true) {
+    Message message;
+    MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
+                         MessageType::SIMUL_PREREQUEST);
+    if (MPI::COMM_WORLD.Iprobe(0, MessageType::SIMUL_REQUEST)) {
+      Message message_recv;
+      MPI::COMM_WORLD.Recv(&message_recv, 1, message_type, 0 /* source */,
+                           MessageType::SIMUL_REQUEST);
+
+      /***/
+      vector<double> fi;
+      for (int t = 0; t < SIMUL_PER_REQ; ++t) {
+        Realization sp0 = snapshot;
+        fi.push_back(
+            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0));
+      }
+
+      message_recv.event_outcome = sd.likelihood(fi, message_recv.a);
+      /****/
+
+      Message toSend = message_recv;
+      MPI::COMM_WORLD.Isend(&toSend, 1, message_type, 0 /* dest */,
+                            MessageType::SIMUL_RESPONSE);
+    }
+
+    if (MPI::COMM_WORLD.Iprobe(0, MessageType::SIMUL_END)) {
+      Message m;
+      MPI::COMM_WORLD.Recv(&m, 1, message_type, 0, MessageType::SIMUL_END);
+      break;
+    }
+  }
 }
 
 // estimates the posterior probabilty of full match
@@ -324,7 +600,7 @@ void FEstimatorParal(const SourceDetectionParams &params) {
           events_resp[received.source_id] +=
               received.event_outcome / (double)SIMUL_PER_REQ;
           events_resp[received.source_id] /= 2;
-          printf("%.10lf\n", (events_resp[received.source_id] - prev));
+          // printf("%.10lf\n", (events_resp[received.source_id] - prev));
           /***/
           if (!i)
             printf("%.5f\n",
@@ -367,161 +643,6 @@ void FEstimatorParal(const SourceDetectionParams &params) {
       }
 
       message_recv.event_outcome = fi;
-      Message toSend = message_recv;
-      MPI::COMM_WORLD.Send(&toSend, 1, message_type, 0 /* dest */,
-                           MessageType::SIMUL_RESPONSE);
-    }
-  }
-}
-
-namespace SMP {
-struct Message {
-  int source_id;
-  double event_outcome;
-};
-
-MPI::Datatype datatypeOfMessage() {
-  int blockLen[2] = {1, 1};
-  MPI::Aint offsets[2] = {offsetof(Message, source_id),
-                          offsetof(Message, event_outcome)};
-  MPI::Datatype types[2] = {MPI::INT, MPI::DOUBLE};
-  return MPI::Datatype::Create_struct(2, blockLen, offsets, types);
-}
-}  // namespace SMP
-
-void SoftMarginParal(const SourceDetectionParams &params) {
-  using namespace SMP;
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-
-  int processes = MPI::COMM_WORLD.Get_size();
-  int rank = MPI::COMM_WORLD.Get_rank();
-
-  double p = params.realization().p();
-  double q = params.realization().q();
-  const int simulations = params.simulations();
-  int vertices = params.graph().vertices();
-  const IGraph &graph = params.graph();
-  const Realization &snapshot = params.realization();
-
-  if (rank == 0) {
-    std::string file_name = "distribution_sm-" + std::to_string((int)(10 * p)) +
-                            "-" + std::to_string((int)(10 * q)) + "_grid" +
-                            std::to_string((int)sqrt(vertices));
-    FILE *file = fopen(file_name.c_str(), "a");
-    // master process
-    int cur_simul_count = 0;
-    int cur_v = 0;
-    while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
-      cur_v++;
-    vector<vector<double> > events_resp(vertices, vector<double>());
-    long long jobs_remaining =
-        1LL * simulations * snapshot.realization().bitCount();
-    while (jobs_remaining > 0) {
-      for (int i = 0; i < processes - 1; ++i) {
-        if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
-          Message init_message;
-          MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
-                               MessageType::SIMUL_PREREQUEST);
-          if (cur_simul_count < simulations) {
-            cur_simul_count += SIMUL_PER_REQ;
-          } else {
-            cur_simul_count = SIMUL_PER_REQ;
-            cur_v++;
-            while ((cur_v < vertices) &&
-                   (snapshot.realization().bit(cur_v) == false)) {
-              cur_v++;
-            }
-            if (cur_v >= vertices) {
-              cur_v = -1;
-            }
-          }
-          if (cur_v == -1) {
-            puts("No more jobs");
-            // There's no more jobs
-            Message message = {-1, -1};
-            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
-                                  MessageType::SIMUL_REQUEST);
-          } else {
-            Message m = {cur_v, 0};
-            MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                                  MessageType::SIMUL_REQUEST);
-          }
-        }
-      }
-
-      for (int i = 0; i < processes - 1; ++i) {
-        if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
-          Message received;
-          MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
-                               MessageType::SIMUL_RESPONSE);
-          jobs_remaining -= SIMUL_PER_REQ;
-          /***/
-          events_resp[received.source_id].push_back(received.event_outcome);
-          /***/
-          if (!i)
-            printf("%.5f\n",
-                   jobs_remaining * 100 / ((double)simulations *
-                                           snapshot.realization().bitCount()));
-        }
-      }
-    }
-    for (int i = 0; i < processes - 1; ++i) {
-      Message m = {-1, -1};
-      MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                            MessageType::SIMUL_REQUEST);
-    }
-
-    fprintf(stderr, "Simulations finished");
-    /*****/
-    std::vector<double> P;
-    double sum = 0;
-    for (int v = 0; v < vertices; ++v) {
-      double P_v = 0;
-      for (double d : events_resp[v]) {
-        //        std::cout << d << std::endl;
-        P_v += d;
-      }
-      if (events_resp[v].size()) P_v /= (int)events_resp[v].size();
-      P.push_back(P_v);
-      sum += P_v;
-    }
-    // fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
-    for (int v = 0; v < vertices; ++v) {
-      P[v] /= sum;
-      printf("%.10lf\n", P[v]);
-      fprintf(file, "%.10lf ", P[v]);
-    }
-    printf("\n");
-    fprintf(file, "\n");
-    /******/
-    fclose(file);
-  } else {
-    // workers
-    // Performs simulation on request.
-    SourceDetector sd(graph);
-    while (true) {
-      Message message = {-1, 0};
-      MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
-                           MessageType::SIMUL_PREREQUEST);
-      Message message_recv;
-      MPI::COMM_WORLD.Recv(&message_recv, 1, message_type, 0 /* source */,
-                           MessageType::SIMUL_REQUEST);
-      if (message_recv.source_id == -1) {
-        break;
-      }
-
-      /***/
-      vector<double> fi;
-      for (int t = 0; t < SIMUL_PER_REQ; ++t) {
-        Realization sp0 = snapshot;
-        fi.push_back(
-            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0));
-      }
-
-      message_recv.event_outcome = sd.likelihood(fi, params.a());
-      /****/
-
       Message toSend = message_recv;
       MPI::COMM_WORLD.Send(&toSend, 1, message_type, 0 /* dest */,
                            MessageType::SIMUL_RESPONSE);

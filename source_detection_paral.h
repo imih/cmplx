@@ -8,7 +8,7 @@ namespace cmplx {
 void DirectMCSimulParalConv(const cmplx::SourceDetectionParams& params);
 void DirectMCSimulParal(const cmplx::SourceDetectionParams& params);
 
-// void SoftMarginParalConv(const cmplx::SourceDetectionParams& params);
+void SoftMarginParalConv(const cmplx::SourceDetectionParams& params);
 void SoftMarginParal(const cmplx::SourceDetectionParams& params);
 
 // estimates the posterior probabilty of a full match
