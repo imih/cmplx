@@ -4,6 +4,7 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/bit_array.h"
+#include <string>
 
 namespace cmplx {
 class SourceDetectionParams {
@@ -12,7 +13,7 @@ class SourceDetectionParams {
   static SourceDetectionParams SupFig2Params();
   static SourceDetectionParams LatticeCenter();
   static SourceDetectionParams BenchmarkParams(int realization_no);
-  static SourceDetectionParams ParamsFromGrid(double p, double q);
+  static SourceDetectionParams ParamsFromGrid(double p, double q, int n);
 
   const common::IGraph &graph() const { return graph_; }
   const common::Realization &realization() const { return realization_; }
@@ -21,6 +22,8 @@ class SourceDetectionParams {
 
   void setSimulations(int simulations) { simulations_ = simulations; }
   void setA(double a) { a_ = a; }
+
+  std::string summary() const;
 
  private:
   SourceDetectionParams(const common::IGraph &graph,

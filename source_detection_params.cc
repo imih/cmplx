@@ -78,10 +78,10 @@ int chooseSource(int n) {
 }
 
 SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
-                                                            double q) {
-  IGraph graph = IGraph::UndirectedLattice({5, 5});
+                                                            double q, int n) {
+  IGraph graph = IGraph::UndirectedLattice({n, n});
   int TMax = 5;
-  int source_v = 12;
+  int source_v = n * n / 2;
 
   BitArray r = BitArray::zeros(graph.vertices());
   r.set(source_v, true);
@@ -153,6 +153,12 @@ SourceDetectionParams SourceDetectionParams::BenchmarkParams(
 
   Realization realization(p, q, T, r, BitArray::zeros(graph.vertices()));
   return SourceDetectionParams(graph, realization, simulations);
+}
+
+std::string SourceDetectionParams::summary() const {
+  return std::to_string(realization_.p()) + "_" +
+         std::to_string(realization_.q()) + "_" +
+         std::to_string(graph_.vertices());
 }
 
 }  // namespace cmplx

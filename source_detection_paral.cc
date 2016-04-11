@@ -292,82 +292,91 @@ void SoftMarginParal(const SourceDetectionParams &params) {
   }
 }
 
-void SoftMarginParalConv(const SourceDetectionParams &params) {
+vector<double> SoftMarginParalConvMaster(
+    const cmplx::SourceDetectionParams &params, bool end) {
   using namespace SMP;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  int rank = MPI::COMM_WORLD.Get_rank();
-  if (rank != 0) {
-    SoftMarginSimulParalWorker(params);
-  } else {
-    SourceDetectionParams params0(params);
-    double c = 0.05;
-    // SourceDetectionParams& params;
-    const int MAXA = 15;
-    int s0 = SIMUL_PER_REQ;
-    printf("s0: %d\n", s0);
-    vector<double> a(MAXA + 1, 0);
-    for (int i = 5; i <= MAXA; ++i) {
-      a[i] = 1.0 / (double)(1 << i);
-    }
-    vector<double> p0[MAXA + 1];
-    vector<double> pMAP0(MAXA + 1, 0);
-    for (int i = 5; i <= MAXA; ++i) {
-      params0.setSimulations(s0);
+  SourceDetectionParams params0(params);
+  double c = 0.05;
+  // SourceDetectionParams& params;
+  const int MAXA = 15;
+  int s0 = SIMUL_PER_REQ;
+  printf("s0: %d\n", s0);
+  vector<double> a(MAXA + 1, 0);
+  for (int i = 5; i <= MAXA; ++i) {
+    a[i] = 1.0 / (double)(1 << i);
+  }
+  vector<double> p0[MAXA + 1];
+  vector<double> pMAP0(MAXA + 1, 0);
+  for (int i = 5; i <= MAXA; ++i) {
+    params0.setSimulations(s0);
+    params0.setA(a[i]);
+    printf("a[i]: %lf\n", a[i]);
+    p0[i] = SoftMarginSimulParalMaster(params0, false, false);
+    pMAP0[i] = *std::max_element(p0[i].begin(), p0[i].end());
+  }
+
+  vector<int> convergeGlobal(MAXA + 1, 0);
+  vector<double> res;
+  while (true) {
+    int s1 = 2 * s0;
+    printf("s: %d\n", s1);
+    params0.setSimulations(s1);
+    vector<double> p1[MAXA + 1];
+    vector<double> pMAP1(MAXA + 1, 0);
+
+    for (int i = 15; i >= 5; --i) {
+      printf("s: %d a: %.10lf\n", s1, a[i]);
       params0.setA(a[i]);
-      printf("a[i]: %lf\n", a[i]);
-      p0[i] = SoftMarginSimulParalMaster(params0, false, false);
-      pMAP0[i] = *std::max_element(p0[i].begin(), p0[i].end());
+      p1[i] = SoftMarginSimulParalMaster(params0, false, false);
+      pMAP1[i] = *std::max_element(p1[i].begin(), p1[i].end());
+      double delta = dabs(pMAP1[i] - pMAP0[i]) / pMAP1[i];
+      double converge = true;
+      if (delta >= c) converge = false;
+      for (int j = 0; j < (int)p1[i].size(); ++j) {
+        if (dabs(p1[i][j] - p0[i][j]) >= c) converge = false;
+      }
+      if (converge) {
+        convergeGlobal[i]++;
+        printf("Converged for n=%d a=%lf\n", s1, a[i]);
+      } else {
+        convergeGlobal[i] = 0;
+        printf("Not converged.\n");
+      }
     }
 
-    vector<int> convergeGlobal(MAXA + 1, 0);
-    while (true) {
-      int s1 = 2 * s0;
-      printf("s: %d\n", s1);
-      params0.setSimulations(s1);
-      vector<double> p1[MAXA + 1];
-      vector<double> pMAP1(MAXA + 1, 0);
-
-      for (int i = 15; i >= 5; --i) {
-        printf("s: %d a: %.10lf\n", s1, a[i]);
-        params0.setA(a[i]);
-        p1[i] = SoftMarginSimulParalMaster(params0, false, false);
-        pMAP1[i] = *std::max_element(p1[i].begin(), p1[i].end());
-        double delta = dabs(pMAP1[i] - pMAP0[i]) / pMAP1[i];
-        double converge = true;
-        if (delta >= c) converge = false;
-        for (int j = 0; j < (int)p1[i].size(); ++j) {
-          if (dabs(p1[i][j] - p0[i][j]) >= c) converge = false;
-        }
-        if (converge) {
-          convergeGlobal[i]++;
-          printf("Converged for n=%d a=%lf\n", s1, a[i]);
-        } else {
-          convergeGlobal[i] = 0;
-          printf("Not converged.\n");
-        }
-      }
-
-      bool done = false;
-      for (int i = 15; i >= 5; --i) {
-        if (convergeGlobal[i] > 1) {
-          SoftMarginSimulParalMaster(params0, false, true);
-          int processes = MPI::COMM_WORLD.Get_size();
+    bool done = false;
+    for (int i = 15; i >= 5; --i) {
+      if (convergeGlobal[i] > 1 || (convergeGlobal[i] && s1 > 1000000)) {
+        res = SoftMarginSimulParalMaster(params0, false, true);
+        int processes = MPI::COMM_WORLD.Get_size();
+        if (end) {
           for (int v = 1; v < processes; ++v) {
             Message end_message;
             MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
                                   MessageType::SIMUL_END);
           }
-          done = true;
-          break;
         }
+        done = true;
+        break;
       }
-
-      s0 = s1;
-      for (int i = 1; i <= 15; ++i) p0[i] = p1[i];
-      pMAP0 = pMAP1;
-      if(done) break;
     }
+
+    s0 = s1;
+    for (int i = 1; i <= 15; ++i) p0[i] = p1[i];
+    pMAP0 = pMAP1;
+    if (done) break;
+  }
+  return res;
+}
+
+void SoftMarginParalConv(const SourceDetectionParams &params) {
+  int rank = MPI::COMM_WORLD.Get_rank();
+  if (rank != 0) {
+    SoftMarginSimulParalWorker(params);
+  } else {
+    SoftMarginParalConvMaster(params);
   }
 }
 
@@ -527,6 +536,32 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
       break;
     }
   }
+}
+
+void GenerateSoftMarginDistributions(const cmplx::SourceDetectionParams &params,
+                                     int distributions) {
+  int rank = MPI::COMM_WORLD.Get_rank();
+  std::string filename = "distr_" + params.summary();
+  FILE *f = fopen(filename.c_str(), "a");
+  if (rank == 0) {
+    for (int d = 0; d < distributions; ++d) {
+      std::vector<double> P = SoftMarginParalConvMaster(params, false);
+      for (int j = 0; j < (int)P.size(); ++j)
+        fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
+    }
+    using namespace SMP;
+    MPI::Datatype message_type = datatypeOfMessage();
+    message_type.Commit();
+    int processes = MPI::COMM_WORLD.Get_size();
+    for (int v = 1; v < processes; ++v) {
+      Message end_message;
+      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                            MessageType::SIMUL_END);
+    }
+  } else {
+    SoftMarginSimulParalWorker(params);
+  }
+  fclose(f);
 }
 
 // estimates the posterior probabilty of full match
