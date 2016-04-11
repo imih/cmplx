@@ -12,14 +12,14 @@ BitArray BitArray::zeros(int bits_num) { return BitArray(bits_num); }
 BitArray::BitArray(int bits_num) : bits_num_(bits_num) {
   bits_in_int_ = 8 * (int)sizeof(uint64_t);
   int vector_size = (bits_num / bits_in_int_) + 1;
-  bits_.assign(vector_size, 0);
+  bits_ = new std::vector<uint64_t>(vector_size, 0);
 }
 
 BitArray::BitArray(const BitArray &bit_array) {
   bits_in_int_ = 8 * (int)sizeof(uint64_t);
   bits_num_ = bit_array.bits_num();
-  auto data = bit_array.data();
-  bits_.assign(data.begin(), data.end());
+  const std::vector<uint64_t>& data = bit_array.data();
+  bits_ = new std::vector<uint64_t>(data.begin(), data.end());
 }
 
 void BitArray::set(int bit_idx, bool value = true) {
@@ -27,21 +27,21 @@ void BitArray::set(int bit_idx, bool value = true) {
   bit_idx = bit_idx % bits_in_int_;
 
   if (value == true) {
-    bits_[vector_idx] |= (1LL << bit_idx);
+    bits_->at(vector_idx) |= (1LL << bit_idx);
   } else { // value == false
-    bits_[vector_idx] &= ~(1LL << bit_idx);
+    bits_->at(vector_idx) &= ~(1LL << bit_idx);
   }
 }
 
 bool BitArray::bit(int bit_idx) const {
   int vector_idx = bit_idx / bits_in_int_;
   bit_idx = bit_idx % bits_in_int_;
-  return (bits_[vector_idx] >> bit_idx) & 1;
+  return (bits_->at(vector_idx) >> bit_idx) & 1;
 }
 
 int BitArray::bitCount() const {
   int bit_cnt = 0;
-  for (uint64_t v : bits_) {
+  for (uint64_t v : *bits_) {
     while (v) {
       v &= (v - 1);
       bit_cnt++;
@@ -50,7 +50,7 @@ int BitArray::bitCount() const {
   return bit_cnt;
 }
 
-void BitArray::setWord(int idx, uint64_t value) { bits_[idx] = value; }
+void BitArray::setWord(int idx, uint64_t value) { bits_->at(idx) = value; }
 
 std::string BitArray::to_string() const {
   std::ostringstream oss;

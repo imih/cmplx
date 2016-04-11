@@ -13,30 +13,33 @@ namespace common {
  * T can be scalar and will be saved as igraph_real_t internally.
  * Purpose: taking care of memory management.
  */
-template <class T> class IVector {
-public:
+template <class T>
+class IVector {
+ public:
   /*Initializes an ampty igraph_vector_t.*/
   IVector();
   IVector(const std::vector<T> &v);
   IVector(std::initializer_list<T> il);
   IVector(const IVector<T> &iv) { igraph_vector_copy(&vector_, iv.vector()); }
 
-  ~IVector() { igraph_vector_destroy(&vector_); }
+  ~IVector() {
+    igraph_vector_destroy(vector_);
+    delete vector_;
+  }
 
-  igraph_vector_t *vector() const { return vector_p_; }
+  igraph_vector_t *vector() const { return vector_; }
 
   T operator[](int idx) const;
   void set(int idx, T val);
 
-  long int size() const { return igraph_vector_size(&vector_); }
-  bool empty() const { return igraph_vector_empty(&vector_); }
+  long int size() const { return igraph_vector_size(vector_); }
+  bool empty() const { return igraph_vector_empty(vector_); }
 
-private:
+ private:
   // By default of type igraph_real_t.
-  igraph_vector_t vector_;
-  igraph_vector_t *vector_p_;
+  igraph_vector_t *vector_;
 };
-} // namespace common
-} // namespace cmplx
+}  // namespace common
+}  // namespace cmplx
 
-#endif // CMPLX_COMMON_IVECTOR_H
+#endif  // CMPLX_COMMON_IVECTOR_H

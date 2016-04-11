@@ -3,8 +3,7 @@
 #include <gtest/gtest.h>
 
 namespace {
-using cmplx::common::BitArray;
-
+using cmplx::common::BitArray; 
 class BitArrayTest : public testing::Test {};
 
 TEST_F(BitArrayTest, BitArraySanity) {

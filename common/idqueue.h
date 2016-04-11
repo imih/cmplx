@@ -14,28 +14,28 @@ namespace common {
  * Class encapsulating igraph_dqueue_t.
  */
 class IDqueue {
-public:
-  IDqueue(long int sz) { assert(!igraph_dqueue_init(&dqueue_, sz)); }
-
+ public:
+  IDqueue(long int sz);
   /* Adds to dqueue all items that are in the bit set.*/
   IDqueue(const BitArray &bit_array);
-  ~IDqueue() { igraph_dqueue_destroy(&dqueue_); }
 
-  long int size() { return igraph_dqueue_size(&dqueue_); }
-  bool empty() { return igraph_dqueue_empty(&dqueue_); }
+  ~IDqueue();
 
-  void push(int x) { assert(!igraph_dqueue_push(&dqueue_, x)); }
+  long int size() { return igraph_dqueue_size(dqueue_); }
+  bool empty() { return igraph_dqueue_empty(dqueue_); }
 
-  void clear() { igraph_dqueue_clear(&dqueue_); }
+  void push(int x) { assert(!igraph_dqueue_push(dqueue_, x)); }
 
-  int pop() { return (int)igraph_dqueue_pop(&dqueue_); }
+  void clear() { igraph_dqueue_clear(dqueue_); }
+
+  int pop() { return (int)igraph_dqueue_pop(dqueue_); }
 
   void insertMarked(const BitArray &bit_array);
 
-private:
-  igraph_dqueue_t dqueue_;
+ private:
+  igraph_dqueue_t *dqueue_;
 };
-} // namespace common
-} // namespace cmplx
+}  // namespace common
+}  // namespace cmplx
 
-#endif // CMPLX_COMMON_IDQUEUE_H
+#endif  // CMPLX_COMMON_IDQUEUE_H

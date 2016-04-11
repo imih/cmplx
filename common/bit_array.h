@@ -15,7 +15,9 @@ public:
 
   BitArray(int bits_num);
   BitArray(const BitArray &bit_array);
-  ~BitArray() = default;
+  ~BitArray() {
+    delete bits_;
+  }
 
   void set(int bit_idx, bool value);
 
@@ -23,9 +25,9 @@ public:
   int bits_num() const { return bits_num_; }
   int bitCount() const;
 
-  const std::vector<uint64_t> &data() const { return bits_; }
+  const std::vector<uint64_t> &data() const { return *bits_; }
   void setWord(int idx, uint64_t value);
-  uint64_t getWord(int idx) const { return bits_[idx]; }
+  uint64_t getWord(int idx) const { return bits_->at(idx); }
 
   std::string to_string() const;
 
@@ -35,7 +37,7 @@ private:
   int bits_num_;
   int bits_in_int_;
 
-  std::vector<uint64_t> bits_;
+  std::vector<uint64_t>* bits_;
 };
 
 std::ostream &operator<<(std::ostream &oc, const BitArray &bit_array);
