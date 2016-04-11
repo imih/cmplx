@@ -340,6 +340,7 @@ vector<double> SoftMarginParalConvMaster(
       if (converge) {
         convergeGlobal[i]++;
         printf("Converged for n=%d a=%lf\n", s1, a[i]);
+        if (convergeGlobal[i] > 1 || (convergeGlobal[i] && s1 > 1000000)) break;
       } else {
         convergeGlobal[i] = 0;
         printf("Not converged.\n");
