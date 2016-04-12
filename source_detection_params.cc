@@ -83,12 +83,12 @@ SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
   int TMax = 5;
   int source_v = n * n / 2;
 
-  BitArray r = BitArray::zeros(graph.vertices());
-  r.set(source_v, true);
-  BitArray s = BitArray::ones(graph.vertices());
-  s.set(source_v, false);
   cmplx::simul::Simulator simulator(graph);
   while (true) {
+    BitArray r = BitArray::zeros(graph.vertices());
+    r.set(source_v, true);
+    BitArray s = BitArray::ones(graph.vertices());
+    s.set(source_v, false);
     SirParams sir_params(p, q, TMax, r, s);
     simulator.NaiveSIR(sir_params);
     Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());

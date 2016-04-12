@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 
   SourceDetectionParams params =
       SourceDetectionParams::ParamsFromGrid(0.2, 0.5, 5);
-  cmplx::GenerateSoftMarginDistributions(params, 10);
+  cmplx::GenerateSoftMarginDistributions(params, 1);
 
   MPI::Finalize();
   // clock_t end = clock();

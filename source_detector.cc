@@ -87,11 +87,12 @@ double SourceDetector::SMSingleSourceSimulation(
   SirParams params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
   if (model_type == ModelType::SIR) {
-    prunned = simulator_.NaiveSIR(params0);
+    prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
   } else if (model_type == ModelType::ISS) {
     prunned = simulator_.NaiveISS(params0);
   }
   BitArray observed = params0.infected() | params0.recovered();
+  if(prunned) return 0;
   return JaccardSimilarity(realization.realization(), observed);
 }
 
@@ -99,7 +100,8 @@ SirParams SourceDetector::paramsForSingleSource(
     int source_vertex, const Realization &realization) {
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
-  BitArray infected = BitArray::zeros(population_size);
+  BitArray infected = BitArray(population_size);
+  assert(infected.bitCount() == 0);
   BitArray susceptible = realization.realization();
   infected.set(source_vertex, true);
   susceptible.set(source_vertex, false);

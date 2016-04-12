@@ -35,7 +35,7 @@ class Realization {
   const BitArray& realization() const { return realization_; }
 
   void setRealization(const BitArray& r) {
-    realization_ = r;
+    realization_ = BitArray(r);
   };
 
   void print() const { std::cout << "R: " << realization_ << std::endl; }
