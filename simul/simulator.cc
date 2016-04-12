@@ -53,6 +53,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
           if (eventDraw(sir_params.p())) {
             q.push(current_neigh);
             I.set(current_neigh, true);
+            S.set(current_neigh, false);
             num_inf_nodes++;
             // indentity prunning
             if (prunning && allowed_nodes.bit(current_neigh) == 0) {
@@ -83,6 +84,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   BitArray I = sir_params.infected();
   BitArray R = sir_params.recovered();
+  BitArray S = sir_params.susceptible();
   double p = sir_params.p();
   double q = sir_params.q();
 
@@ -107,6 +109,7 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
           p1++;
           queue.push(current_neigh);
           I.set(current_neigh, true);
+          S.set(current_neigh, false);
           // indentity prunning
         } else
           p0++;
@@ -125,61 +128,77 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
 
   sir_params.set_infected(I);
   sir_params.set_recovered(R);
+  sir_params.set_susceptible(S);
   return pow(1 - p, p0) * pow(p, p1) * pow(1 - q, q0) * pow(q, q1);
 }
 
-/*
-BitArray I = sir_params.infected();
-BitArray S = sir_params.susceptible();
-BitArray R = sir_params.recovered();
-IDqueue infected_q(sir_params.population_size());
-infected_q.clear();
-infected_q.insertMarked(I);
+bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
+                         const common::BitArray &allowed_nodes) {
+  // p -> lambda
+  // q -> alfa
+  // S -> ignorant
+  // I -> spreader
+  // R -> stifler
+  BitArray I = sir_params.infected();
+  BitArray S = sir_params.susceptible();
+  BitArray R = sir_params.recovered();
 
-int t = 1;
-int batch_size = infected_q.size();
-bool prunned = false;
+  assert(I.bitCount() == 1);
+  IDqueue q(sir_params.population_size());
+  q.insertMarked(I);
 
-while (!infected_q.empty() && !prunned) {
-  if (batch_size == 0) {
-    t++;
-    batch_size = infected_q.size();
-  }
-  if (t > sir_params.maxT()) {
-    break;
-  }
+  int dis_time = 1;
+  int delta_nodes_pop = q.size();
+  bool prunned = false;
 
-  int u = infected_q.pop();
-  batch_size--;
-  const IVector<int> &adj_list_u = graph_.adj_list(u);
+  while (q.size() && !prunned) {
+    if (delta_nodes_pop == 0) {
+      dis_time++;
+      delta_nodes_pop = q.size();
+    }
 
-  int adj_list_size = adj_list_u.size();
-  for (int idx = 0; idx < adj_list_size; ++idx) {
-    int v = adj_list_u[idx];
-    if (S.bit(v) && draw(sir_params.p())) {
-      S.set(v, 0);
-      I.set(v, 1);
-      infected_q.push(v);
-      if (prunning && !allowed_nodes.bit(v)) {
-        prunned = true;
-        break;
+    if (dis_time <= sir_params.maxT()) {
+      long int current_node;
+      current_node = q.pop();
+      delta_nodes_pop--;
+
+      const IVector<int> &neis = graph_.adj_list(current_node);
+      bool became_stifler = false;
+      for (int i = 0; i < neis.size(); ++i) {
+        int current_neigh = neis[i];
+        if (S.bit(current_neigh)) {
+          // spreader meets ignorant
+          if (eventDraw(sir_params.p())) {
+            q.push(current_neigh);
+            S.set(current_neigh, false);
+            I.set(current_neigh, true);
+            if (prunning && allowed_nodes.bit(current_neigh) == 0) {
+              prunned = true;
+              break;
+            }
+          }
+        } else {
+          if (eventDraw(sir_params.q())) {
+            became_stifler = true;
+            I.set(current_node, false);
+            R.set(current_node, true);
+            break;
+          }
+        }
       }
+      if (!became_stifler) {
+        q.push(current_node);
+      }
+    } else {
+      break;
     }
   }
-  if (draw(sir_params.q())) {
-    I.set(u, 0);
-    R.set(u, 1);
-  } else {
-    infected_q.push(u);
-  }
-}
 
-sir_params.set_infected(I);
-sir_params.set_susceptible(S);
-sir_params.set_recovered(R);
-infected_q.clear();
-return prunned;
-*/
+  sir_params.set_infected(I);
+  sir_params.set_susceptible(S);
+  sir_params.set_recovered(R);
+  return prunned;
+}
 
 /*
 namespace {

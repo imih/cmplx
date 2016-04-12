@@ -22,6 +22,9 @@ class SourceDetectionParams {
 
   void setSimulations(int simulations) { simulations_ = simulations; }
   void setA(double a) { a_ = a; }
+  void setRealization(const common::BitArray &r) {
+    realization_.setRealization(r);
+  }
 
   std::string summary() const;
 

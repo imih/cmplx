@@ -57,6 +57,15 @@ int BitArray::bitCount() const {
   return bit_cnt;
 }
 
+std::vector<int> BitArray::positions() const {
+  std::vector<int> ret;
+  for(int i = 0; i < bits_num_; ++i) {
+    if(bit(i)) ret.push_back(i);
+  }
+  return ret;
+}
+
+
 void BitArray::setWord(int idx, uint64_t value) { bits_[idx] = value; }
 
 std::string BitArray::to_string() const {

@@ -31,7 +31,8 @@ enum MessageType {
   SIMUL_PREREQUEST,
   SIMUL_REQUEST,
   SIMUL_RESPONSE,
-  SIMUL_END
+  SIMUL_END,
+  SIMUL_PARAMS
 };
 
 double dabs(double x) {
@@ -58,24 +59,26 @@ MPI::Datatype datatypeOfMessage() {
 
 namespace cmplx {
 
-void DirectMCSimulParalWorker(const SourceDetectionParams &);
+void DirectMCSimulParalWorker(const SourceDetectionParams &, ModelType);
 vector<double> DirectMCSimulParalMaster(const SourceDetectionParams &, bool,
                                         bool);
 
-void DirectMCSimulParal(const SourceDetectionParams &params) {
+void DirectMCSimulParal(const SourceDetectionParams &params,
+                        ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
     DirectMCSimulParalMaster(params, true, true);
   } else {
-    DirectMCSimulParalWorker(params);
+    DirectMCSimulParalWorker(params, model_type);
   }
 }
 
-void DirectMCSimulParalConv(const SourceDetectionParams &params) {
+void DirectMCSimulParalConv(const SourceDetectionParams &params,
+                            ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank != 0) {
-    DirectMCSimulParalWorker(params);
+    DirectMCSimulParalWorker(params, model_type);
   } else {
     using namespace DMC;
     MPI::Datatype message_type = datatypeOfMessage();
@@ -120,7 +123,8 @@ void DirectMCSimulParalConv(const SourceDetectionParams &params) {
   }
 }
 
-void DirectMCSimulParalWorker(const SourceDetectionParams &params) {
+void DirectMCSimulParalWorker(const SourceDetectionParams &params,
+                              ModelType model_type) {
   using namespace DMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -146,8 +150,8 @@ void DirectMCSimulParalWorker(const SourceDetectionParams &params) {
       int outcomes = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        outcomes +=
-            sd.DMCSingleSourceSirSimulation(message_recv.source_id, sp0);
+        outcomes += sd.DMCSingleSourceSimulation(message_recv.source_id, sp0,
+                                                 model_type);
       }
 
       message_recv.event_outcome = outcomes;
@@ -278,17 +282,18 @@ MPI::Datatype datatypeOfMessage() {
 }
 }  // namespace SMP
 
-void SoftMarginSimulParalWorker(const SourceDetectionParams &);
+void SoftMarginSimulParalWorker(const SourceDetectionParams &, ModelType);
 vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams &, bool,
                                           bool);
 
-void SoftMarginParal(const SourceDetectionParams &params) {
+void SoftMarginParal(const SourceDetectionParams &params,
+                     ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
     SoftMarginSimulParalMaster(params, true, true);
   } else {
     // workers
-    SoftMarginSimulParalWorker(params);
+    SoftMarginSimulParalWorker(params, model_type);
   }
 }
 
@@ -372,10 +377,11 @@ vector<double> SoftMarginParalConvMaster(
   return res;
 }
 
-void SoftMarginParalConv(const SourceDetectionParams &params) {
+void SoftMarginParalConv(const SourceDetectionParams &params,
+                         ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank != 0) {
-    SoftMarginSimulParalWorker(params);
+    SoftMarginSimulParalWorker(params, model_type);
   } else {
     SoftMarginParalConvMaster(params);
   }
@@ -492,7 +498,8 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams &params,
   return P;
 }
 
-void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
+void SoftMarginSimulParalWorker(const SourceDetectionParams &params,
+                                ModelType model_type) {
   using namespace SMP;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -501,11 +508,12 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
 
   int vertices = params.graph().vertices();
   const IGraph &graph = params.graph();
-  const Realization &snapshot = params.realization();
+  Realization snapshot = params.realization();
 
   // workers
   // Performs simulation on request.
   SourceDetector sd(graph);
+
   while (true) {
     Message message;
     MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
@@ -519,8 +527,8 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
       vector<double> fi;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        fi.push_back(
-            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0));
+        fi.push_back(sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
+                                                 model_type));
       }
 
       message_recv.event_outcome = sd.likelihood(fi, message_recv.a);
@@ -539,34 +547,62 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams &params) {
   }
 }
 
-void GenerateSoftMarginDistributions(const cmplx::SourceDetectionParams &params,
-                                     int distributions) {
+void GenerateSoftMarginDistributions(const SourceDetectionParams &params,
+                                     int distributions, ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
+  int processes = MPI::COMM_WORLD.Get_size();
   std::string filename = "distr_" + params.summary();
   FILE *f = fopen(filename.c_str(), "a");
-  if (rank == 0) {
-    for (int d = 0; d < distributions; ++d) {
-      std::vector<double> P = SoftMarginParalConvMaster(params, false);
+  SourceDetectionParams params0 = params;
+
+  for (int d = 0; d < distributions; ++d) {
+    if (rank == 0) {
+      SourceDetectionParams params_novi = SourceDetectionParams::ParamsFromGrid(
+          params.realization().p(), params.realization().q(),
+          (int)sqrt(params.realization().population_size()));
+      vector<int> r_pos = params_novi.realization().realization().positions();
+      for (int v = 1; v < processes; ++v) {
+        MPI::COMM_WORLD.Isend(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
+                              MessageType::SIMUL_PARAMS);
+      }
+      params0.setRealization(params_novi.realization().realization());
+    } else {
+      vector<int> r_pos;
+      r_pos.resize(params.graph().vertices());
+      MPI::COMM_WORLD.Recv(&r_pos[0], (int)r_pos.size(), MPI_INT, 0,
+                           MessageType::SIMUL_PARAMS);
+      BitArray r_ba(params.graph().vertices());
+      for (int p : r_pos) r_ba.set(p, true);
+      params0.setRealization(r_ba);
+    }
+
+    MPI::COMM_WORLD.Barrier();
+
+    if (rank == 0) {
+      std::vector<double> P = SoftMarginParalConvMaster(params0, true);
+
       for (int j = 0; j < (int)P.size(); ++j)
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
+
+      using namespace SMP;
+      MPI::Datatype message_type = datatypeOfMessage();
+      message_type.Commit();
+      for (int v = 1; v < processes; ++v) {
+        Message end_message;
+        MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                              MessageType::SIMUL_END);
+      }
+    } else {
+      SoftMarginSimulParalWorker(params0, model_type);
     }
-    using namespace SMP;
-    MPI::Datatype message_type = datatypeOfMessage();
-    message_type.Commit();
-    int processes = MPI::COMM_WORLD.Get_size();
-    for (int v = 1; v < processes; ++v) {
-      Message end_message;
-      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
-                            MessageType::SIMUL_END);
-    }
-  } else {
-    SoftMarginSimulParalWorker(params);
+    MPI::COMM_WORLD.Barrier();
   }
   fclose(f);
 }
 
 // estimates the posterior probabilty of full match
-void FEstimatorParal(const SourceDetectionParams &params) {
+void FEstimatorParal(const SourceDetectionParams &params,
+                     ModelType model_type) {
   using namespace DMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -673,8 +709,8 @@ void FEstimatorParal(const SourceDetectionParams &params) {
       int fi = 0;
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
-        double jac =
-            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0);
+        double jac = sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
+                                                 model_type);
         if (jac == 1.0) fi++;
       }
 

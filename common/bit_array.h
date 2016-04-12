@@ -31,6 +31,8 @@ public:
 
   BitArray operator~() const;
 
+  std::vector<int> positions() const;
+
 private:
   int bits_num_;
   int bits_in_int_;

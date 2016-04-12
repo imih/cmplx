@@ -10,6 +10,11 @@
 #include <vector>
 
 namespace cmplx {
+enum ModelType {
+  SIR,
+  ISS
+};
+
 class SourceDetector {
  public:
   SourceDetector(const common::IGraph &g) : simulator_(g) {}
@@ -17,10 +22,12 @@ class SourceDetector {
   // Return distribution of nodes being the source of SIR epidemic simulation
   // based on epidemic snapshot defined by sir_params.
   std::vector<double> directMonteCarloDetection(
-      const common::Realization &realization, int no_simulations);
+      const common::Realization &realization, int no_simulations,
+      ModelType model_type = ModelType::SIR);
 
-  int DMCSingleSourceSirSimulation(int source_id,
-                                   const common::Realization &realization);
+  int DMCSingleSourceSimulation(int source_id,
+                                const common::Realization &realization,
+                                ModelType model_type = ModelType::SIR);
 
   // Return starting parameters for the epidemic that starts with a single
   // source defined by source_vertex and is capable of producing a snapshot
@@ -30,10 +37,12 @@ class SourceDetector {
       int source_vertex, const common::Realization &realization);
 
   std::vector<double> softMarginDetection(
-      const common::Realization &realization, int no_simulations, double a);
+      const common::Realization &realization, int no_simulations, double a,
+      ModelType model_type = ModelType::SIR);
 
-  double SMSingleSourceSirSimulation(int source_id,
-                                     const common::Realization &realization);
+  double SMSingleSourceSimulation(int source_id,
+                                  const common::Realization &realization,
+                                  ModelType model_type = ModelType::SIR);
 
   double likelihood(std::vector<double> fi, double a);
 

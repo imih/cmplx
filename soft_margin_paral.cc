@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
       for (int t = 0; t < SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
         fi.push_back(
-            sd.SMSingleSourceSirSimulation(message_recv.source_id, sp0));
+            sd.SMSingleSourceSimulation(message_recv.source_id, sp0));
       }
 
       message_recv.event_outcome = sd.likelihood(fi, params.a());

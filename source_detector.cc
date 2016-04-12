@@ -19,7 +19,7 @@ using std::vector;
 
 namespace cmplx {
 vector<double> SourceDetector::directMonteCarloDetection(
-    const Realization &realization, int no_simulations) {
+    const Realization &realization, int no_simulations, ModelType model_type) {
   std::vector<double> outcomes_prob;
   int population_size = realization.population_size();
   double sum = 0;
@@ -30,11 +30,11 @@ vector<double> SourceDetector::directMonteCarloDetection(
     } else {
       // P(source = v | snapshot)
       for (int sim_id = 0; sim_id < no_simulations; ++sim_id) {
-        outcomes += DMCSingleSourceSirSimulation(v, realization);
+        outcomes += DMCSingleSourceSimulation(v, realization, model_type);
       }
+      sum += outcomes;
+      outcomes_prob.push_back((double)outcomes);
     }
-    sum += outcomes;
-    outcomes_prob.push_back((double)outcomes);
   }
   for (int v = 0; v < population_size; ++v) {
     outcomes_prob[v] /= sum;
@@ -42,11 +42,16 @@ vector<double> SourceDetector::directMonteCarloDetection(
   return outcomes_prob;
 }
 
-int SourceDetector::DMCSingleSourceSirSimulation(
-    int source_id, const Realization &realization) {
+int SourceDetector::DMCSingleSourceSimulation(int source_id,
+                                              const Realization &realization,
+                                              ModelType model_type) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
-  bool prunned =
-      simulator_.NaiveSIR(params0, true, (realization.realization()));
+  bool prunned = false;
+  if (model_type == ModelType::SIR) {
+    prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
+  } else if (model_type == ModelType::ISS) {
+    prunned = simulator_.NaiveISS(params0, true, (realization.realization()));
+  }
   if (prunned) return 0;
   return realization.realization().bitCount() ==
          (params0.infected() | params0.recovered()).bitCount();
@@ -62,23 +67,30 @@ vector<double> normalize(vector<double> P) {
 }  // namespace
 
 vector<double> SourceDetector::softMarginDetection(
-    const Realization &realization, int no_simulations, double a) {
+    const Realization &realization, int no_simulations, double a,
+    ModelType model_type) {
   vector<double> P;
   int population_size = realization.population_size();
   for (int v = 0; v < population_size; ++v) {
     vector<double> fi;
     for (int s = 0; s < no_simulations; ++s) {
-      fi.push_back(SMSingleSourceSirSimulation(v, realization));
+      fi.push_back(SMSingleSourceSimulation(v, realization, model_type));
     }
     P.push_back(likelihood(fi, a));
   }
   return normalize(P);
 }
 
-double SourceDetector::SMSingleSourceSirSimulation(
-    int source_id, const common::Realization &realization) {
+double SourceDetector::SMSingleSourceSimulation(
+    int source_id, const common::Realization &realization,
+    ModelType model_type) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
-  bool prunned = simulator_.NaiveSIR(params0);
+  bool prunned = false;
+  if (model_type == ModelType::SIR) {
+    prunned = simulator_.NaiveSIR(params0);
+  } else if (model_type == ModelType::ISS) {
+    prunned = simulator_.NaiveISS(params0);
+  }
   BitArray observed = params0.infected() | params0.recovered();
   return JaccardSimilarity(realization.realization(), observed);
 }

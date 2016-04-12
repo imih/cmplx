@@ -34,6 +34,10 @@ class Realization {
   const BitArray& recovered() const { return recovered_; }
   const BitArray& realization() const { return realization_; }
 
+  void setRealization(const BitArray& r) {
+    realization_ = r;
+  };
+
   void print() const { std::cout << "R: " << realization_ << std::endl; }
 
  private:
@@ -42,7 +46,7 @@ class Realization {
   const int T_;
   const BitArray infected_;
   const BitArray recovered_;
-  const BitArray realization_;
+  BitArray realization_;
 };
 }  // namespace common
 }  // namespace cmplx
