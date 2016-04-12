@@ -8,13 +8,13 @@ namespace cmplx {
 namespace common {
 template <class T>
 IVector<T>::IVector() {
-  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
+  vector_ = new igraph_vector_t;
   assert(!igraph_vector_init(vector_, 0));
 }
 
 template <class T>
 IVector<T>::IVector(const std::vector<T> &v) {
-  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
+  vector_ = new igraph_vector_t;
   assert(igraph_vector_init(vector_, (int long)v.size()) == 0);
   int idx = 0;
   for (T val : v) {

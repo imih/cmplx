@@ -16,37 +16,29 @@ class SirParams {
   SirParams(const SirParams &other)
       : SirParams(other.p(), other.q(), other.maxT(), other.infected(),
                   other.susceptible()) {
-    *recovered_ = other.recovered();
+    recovered_ = other.recovered();
   }
 
-  ~SirParams() {
-    delete infected_;
-    delete susceptible_;
-    delete recovered_;
-  }
+  ~SirParams() = default;
 
   int maxT() const { return T_; }
 
   double p() const { return p_; }
   double q() const { return q_; }
 
-  int population_size() const { return susceptible_->bits_num(); }
+  int population_size() const { return susceptible_.bits_num(); }
 
-  const BitArray &infected() const { return *infected_; }
-  const BitArray &susceptible() const { return *susceptible_; }
-  const BitArray &recovered() const { return *recovered_; }
+  const BitArray &infected() const { return infected_; }
+  const BitArray &susceptible() const { return susceptible_; }
+  const BitArray &recovered() const { return recovered_; }
 
-  void set_infected(const BitArray &infected) {
-    *infected_ = BitArray(infected);
-  }
+  void set_infected(const BitArray &infected) { infected_ = infected; }
 
   void set_susceptible(const BitArray &susceptible) {
-    *susceptible_ = BitArray(susceptible);
+    susceptible_ = susceptible;
   }
 
-  void set_recovered(const BitArray &recovered) {
-    *recovered_ = BitArray(recovered);
-  }
+  void set_recovered(const BitArray &recovered) { recovered_ = recovered; }
 
   void print() const;
   void printForLattice(int n) const;
@@ -56,9 +48,9 @@ class SirParams {
   double q_;
   int T_;
 
-  BitArray *infected_;
-  BitArray *susceptible_;
-  BitArray *recovered_;
+  BitArray infected_;
+  BitArray susceptible_;
+  BitArray recovered_;
 };
 }  // namespace common
 }  // namespace cmplx
