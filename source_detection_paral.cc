@@ -485,6 +485,7 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams &params,
     sum += P_v;
   }
   // fprintf(file, "\n\n%.10lf %.10lf\n\n", snapshot.p(), snapshot.q());
+  if(print) params.realization().print();
   for (int v = 0; v < vertices; ++v) {
     // printf("%.10lf\n", P[v]);
     P[v] /= sum;
@@ -583,6 +584,7 @@ void GenerateSoftMarginDistributions(const SourceDetectionParams &params,
 
       for (int j = 0; j < (int)P.size(); ++j)
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
+      fflush(f);
 
       using namespace SMP;
       MPI::Datatype message_type = datatypeOfMessage();
