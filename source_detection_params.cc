@@ -92,7 +92,7 @@ SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
     SirParams sir_params(p, q, TMax, r, s);
     simulator.NaiveSIR(sir_params);
     Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
-    if (real.realization().bitCount() > 1)
+    if (real.realization().bitCount() > 0)
       return SourceDetectionParams(graph, real, 1000000);
   }
 }

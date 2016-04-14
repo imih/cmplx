@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParalConv(params);
 
   SourceDetectionParams params =
-      SourceDetectionParams::ParamsFromGrid(0.2, 0.5, 5);
-  cmplx::GenerateSoftMarginDistributions(params, 10);
+      SourceDetectionParams::ParamsFromGrid(0.1, 0.0, 30);
+  cmplx::GenerateSoftMarginDistributions(params, 1);
 
   MPI::Finalize();
   // clock_t end = clock();
