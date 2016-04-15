@@ -16,20 +16,24 @@ class SeqSample {
   SeqSample(int v, const common::Realization& realization);
   SeqSample(const SeqSample& seqSample);
 
-  common::BitArray realization() const { return realization_; }
-
   bool match(const common::Realization& realization) const;
+
+  const common::BitArray& infected() const { return infected_; }
+  const common::BitArray& recovered() const { return recovered_; }
 
   int t() const { return t_; }
   double w() const { return w_; }
   double pi() const { return pi_; }
   double g() const { return g_; }
 
-  void update(const common::BitArray new_realization, double newG,
-              double newPi);
+  void update(const common::BitArray& new_infected,
+              const common::BitArray& new_recovered, double newG, double newPi);
 
  private:
-  common::BitArray realization_;
+  common::BitArray realization() const { return infected_ | recovered_; }
+
+  common::BitArray infected_;
+  common::BitArray recovered_;
   int t_;
   double w_;   // w_t(x_t)
   double pi_;  // pi_t(x_t | x_{t - 1})
@@ -41,13 +45,34 @@ class SeqMCStat {
   SeqMCStat(int v, const common::Realization& target_realization,
             const common::IGraph& graph);
 
-  void SISStep();
+  double run() {
+    for (int t = 0; t < target_realization_.maxT(); ++t) {
+      SISStep();
+    }
+
+    double pos_P = 0;
+    for (const SeqSample& sample : samples_) {
+      if (sample.match(target_realization_)) {
+        pos_P += sample.w();
+      }
+    }
+    printf("%.10lf\n", pos_P);
+    return pos_P;
+  }
 
  private:
-  common::BitArray draw_g_1(const common::BitArray& cur_realization);
-  double g_1_cond(const common::BitArray& new_r, const common::BitArray& old_r);
-  double Pi_1_cond(const common::BitArray& new_r,
-                   const common::BitArray& old_r);
+  void SISStep();
+
+  std::pair<common::BitArray, common::BitArray> draw_g_1(
+      const common::BitArray& cur_inf, const common::BitArray& cur_rec);
+  double g_1_cond(const common::BitArray& new_i,
+                  const common::BitArray& new_rec,
+                  const common::BitArray& old_i,
+                  const common::BitArray& old_rec);
+  double Pi_1_cond(const common::BitArray& new_i,
+                   const common::BitArray& new_rec,
+                   const common::BitArray& old_i,
+                   const common::BitArray& old_rec);
 
   void printvc2();
 

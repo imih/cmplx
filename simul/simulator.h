@@ -39,6 +39,8 @@ class Simulator {
     return prob_distribution_(generator_) <= probability;
   }
 
+  const common::IGraph graph() { return graph_; }
+
  private:
   const common::IGraph &graph_;
   std::mt19937_64 generator_;
