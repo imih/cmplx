@@ -12,6 +12,24 @@ int main(int argc, char **argv) {
   // clock_t begin = std::clock();
   // Paralelized
   MPI::Init(argc, argv);
+  int P = 5, Q = 5;
+  int n = 5;
+  {
+    int c;
+    while ((c = getopt(argc, argv, "p:q:n:")) != EOF) {
+      switch (c) {
+        case 'p':
+          P = atoi(optarg);
+          break;
+        case 'q':
+          Q = atoi(optarg);
+          break;
+        case 'n':
+          n = atoi(optarg);
+        break;
+      }
+    }
+  }
 
   // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
@@ -21,7 +39,7 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParalConv(params);
 
   SourceDetectionParams params =
-      SourceDetectionParams::ParamsFromGrid(0.2, 0.5, 5);
+      SourceDetectionParams::ParamsFromGrid(P / 10.0, Q/ 10.0, n);
   cmplx::GenerateSoftMarginDistributions(params, 1);
 
   MPI::Finalize();

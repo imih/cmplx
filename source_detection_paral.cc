@@ -312,12 +312,12 @@ vector<double> SoftMarginParalConvMaster(
   int s0 = SIMUL_PER_REQ;
   printf("s0: %d\n", s0);
   vector<double> a(MAXA + 1, 0);
-  for (int i = 1; i <= MAXA; ++i) {
+  for (int i = 3; i <= MAXA; ++i) {
     a[i] = 1.0 / (double)(1 << i);
   }
   vector<double> p0[MAXA + 1];
   vector<double> pMAP0(MAXA + 1, 0);
-  for (int i = 1; i <= MAXA; ++i) {
+  for (int i = 3; i <= MAXA; ++i) {
     params0.setSimulations(s0);
     params0.setA(a[i]);
     printf("a[i]: %lf\n", a[i]);
@@ -334,7 +334,7 @@ vector<double> SoftMarginParalConvMaster(
     vector<double> p1[MAXA + 1];
     vector<double> pMAP1(MAXA + 1, 0);
 
-    for (int i = 15; i >= 5; --i) {
+    for (int i = MAXA; i >= 3; --i) {
       printf("s: %d a: %.10lf\n", s1, a[i]);
       params0.setA(a[i]);
      int pos = 0;
@@ -350,6 +350,7 @@ vector<double> SoftMarginParalConvMaster(
         if(p1[i][j] > 0) pos++;
       }  
       
+      if(s1 > 1000000) converge = true;
       if(pos != params.realization().realization().bitCount()) {
         converge = false;
       }
@@ -365,7 +366,7 @@ vector<double> SoftMarginParalConvMaster(
     }
 
     bool done = false;
-    for (int i = 15; i >= 5; --i) {
+    for (int i = MAXA; i >= 3; --i) {
       if (convergeGlobal[i]) {
         res = p1[i];
         int processes = MPI::COMM_WORLD.Get_size();
@@ -610,6 +611,7 @@ void GenerateSoftMarginDistributions(const SourceDetectionParams &params,
     }
   }
   fclose(f);
+  exit(0);
 }
 
 // estimates the posterior probabilty of full match
