@@ -35,11 +35,11 @@ class Simulator {
   bool NaiveISS(common::SirParams &sir_params, bool prunning = false,
       const common::BitArray &allowed_nodes = common::BitArray::zeros(1));
 
- private:
   bool eventDraw(double probability) {
     return prob_distribution_(generator_) <= probability;
   }
 
+ private:
   const common::IGraph &graph_;
   std::mt19937_64 generator_;
   std::uniform_real_distribution<double> prob_distribution_;

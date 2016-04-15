@@ -30,7 +30,7 @@ int main() {
       params.realization(), params.simulations(), params.a());
       */
 
-  std::vector<double> probs = sd.sequentialMCDetection(params.realization());
+  std::vector<double> probs; /* = sd.sequentialMCDetection(params.realization()); */
 
   for (double p : probs) {
     printf("%.10lf\n", p);

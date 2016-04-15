@@ -1,9 +1,11 @@
 #ifndef CMPLX_SEQMC_STAT_H
 #define CMPLX_SEQMC_STAT_H
 
+#include "common/igraph.h"
 #include "common/realization.h"
 #include "common/bit_array.h"
 #include "common/sir_params.h"
+#include "simul/simulator.h"
 
 #include <vector>
 
@@ -14,38 +16,48 @@ class SeqSample {
   SeqSample(int v, const common::Realization& realization);
   SeqSample(const SeqSample& seqSample);
 
-  common::BitArray infected() const { return sir_params_.infected(); }
-  common::BitArray recovered() const { return sir_params_.recovered(); }
-
-  common::SirParams& sir_params() { return sir_params_; }
-  common::SirParams sir_params_const() const { return sir_params_; }
+  common::BitArray realization() const { return realization_; }
 
   bool match(const common::Realization& realization) const;
 
   int t() const { return t_; }
-  std::vector<double> w() const { return w_; }
+  double w() const { return w_; }
+  double pi() const { return pi_; }
+  double g() const { return g_; }
 
-  void addW(double u) {
-    double lastW = w_.back();
-    w_.push_back(lastW * u);
-    t_++;
-  }
+  void update(const common::BitArray new_realization, double newG,
+              double newPi);
 
  private:
-  common::SirParams sir_params_;
+  common::BitArray realization_;
   int t_;
-  std::vector<double> w_;
+  double w_;   // w_t(x_t)
+  double pi_;  // pi_t(x_t | x_{t - 1})
+  double g_;   // g_t(x_t | x_{t - 1})
 };
 
 class SeqMCStat {
  public:
-  SeqMCStat(int v, const common::Realization& realization)
-      : realization_(realization), v_(v) {}
+  SeqMCStat(int v, const common::Realization& target_realization,
+            const common::IGraph& graph);
+
+  void SISStep();
 
  private:
-  SeqSample StartingSample();
-  common::Realization realization_;
+  common::BitArray draw_g_1(const common::BitArray& cur_realization);
+  double g_1_cond(const common::BitArray& new_r, const common::BitArray& old_r);
+  double Pi_1_cond(const common::BitArray& new_r,
+                   const common::BitArray& old_r);
+
+  void printvc2();
+
+  std::vector<SeqSample> prev_samples_;
+  std::vector<SeqSample> samples_;
+
+  common::Realization target_realization_;
+  std::vector<int> target_infected_idx_;
   int v_;
+  cmplx::simul::Simulator simulator_;
 };
 }
 

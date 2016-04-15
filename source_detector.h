@@ -5,7 +5,6 @@
 #include "common/realization.h"
 #include "common/sir_params.h"
 #include "simul/simulator.h"
-#include "seq_mc_stat.h"
 
 #include <vector>
 
@@ -46,17 +45,10 @@ class SourceDetector {
 
   double likelihood(std::vector<double> fi, double a);
 
-  std::vector<double> sequentialMCDetection(
-      const common::Realization &realization);
-
  private:
   double w_(double x, double a) {
     return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
   }
-
-  // returns posterior probability P(R = r* | theta = v)
-  double sequentialMCPosterior(int v, const common::Realization &realization);
-  SeqSample forwardSeqSample(const SeqSample &seqSample);
 
   simul::Simulator simulator_;
 };
