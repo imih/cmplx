@@ -17,20 +17,11 @@ using cmplx::SourceDetectionParams;
 
 int main() {
   SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  // DirectMCParams params = DirectMCParams::BenchmarkParams(1);
-  //SourceDetectionParams params = SourceDetectionParams::LatticeCenter();
 
   SourceDetector sd(params.graph());
-  /*
-  std::vector<double> probs =
-      sd.directMonteCarloDetection(params.realization(), params.simulations());
-      */
-  /*
-  std::vector<double> probs = sd.softMarginDetection(
-      params.realization(), params.simulations(), params.a());
-      */
 
-  std::vector<double> probs; /* = sd.sequentialMCDetection(params.realization()); */
+  std::vector<double> probs =
+      sd.seqMonteCarloDetectionSIR(params.realization());
 
   for (double p : probs) {
     printf("%.10lf\n", p);

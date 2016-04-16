@@ -18,7 +18,7 @@ include_directories(${MPFR_INCLUDES})
 
 add_subdirectory(common)
 add_subdirectory(simul)
-add_library(source_detection source_detector.cc seq_mc_stat.cc)
+add_library(source_detection source_detector.cc seq_sample.cc)
 target_include_directories(source_detection PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${MPI_LIBRARIES})
 
 target_link_libraries(source_detection common simulator igraph ${GMP_LIBRARY} ${MPFR_LIBRARIES})
