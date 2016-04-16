@@ -141,7 +141,7 @@ void DirectMCSimulParalWorker(const SourceDetectionParams &params,
 
   // workers
   // Performs simulation on request.
-  SourceDetector sd(graph);
+  DirectMonteCarloDetector sd(graph);
   while (true) {
     Message message = {-1, 0};
     MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
@@ -517,7 +517,7 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams &params,
 
   // workers
   // Performs simulation on request.
-  SourceDetector sd(graph);
+  SoftMarginDetector sd(graph);
 
   while (true) {
     Message message;
@@ -564,7 +564,6 @@ void GenerateSoftMarginDistributions(const SourceDetectionParams &params,
     MPI::COMM_WORLD.Barrier();
 
     if (rank == 0) {
-      MPI::COMM_WORLD.Barrier();
       SourceDetectionParams params_novi = SourceDetectionParams::ParamsFromGrid(
           params.realization().p(), params.realization().q(),
           (int)sqrt(params.realization().population_size()));
@@ -611,125 +610,41 @@ void GenerateSoftMarginDistributions(const SourceDetectionParams &params,
   exit(0);
 }
 
-// estimates the posterior probabilty of full match
-void FEstimatorParal(const SourceDetectionParams &params,
-                     ModelType model_type) {
-  using namespace DMC;
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-
-  int processes = MPI::COMM_WORLD.Get_size();
+void SequentialMCParal(const cmplx::SourceDetectionParams &params,
+                       int sample_size) {
   int rank = MPI::COMM_WORLD.Get_rank();
-  double p = params.realization().p();
-  double q = params.realization().q();
-  const int simulations = params.simulations();
-  int vertices = params.graph().vertices();
-  const IGraph &graph = params.graph();
-  const Realization &snapshot = params.realization();
-
-  // TODO(iva) Make only one copy!
-  // snapshot.print();
+  int processes = MPI::COMM_WORLD.Get_size();
+  SourceDetectionParams params0 = params;
+  int pop_size = params0.realization().population_size();
 
   if (rank == 0) {
-    // master process
-    int cur_simul_count = 0;
-    int cur_v = 0;
-    while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
-      cur_v++;
-    vector<double> events_resp(vertices, 0);
-    long long jobs_remaining =
-        1LL * simulations * snapshot.realization().bitCount();
-    while (jobs_remaining > 0) {
-      for (int i = 0; i < processes - 1; ++i) {
-        if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
-          Message init_message;
-          MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
-                               MessageType::SIMUL_PREREQUEST);
-          if (cur_simul_count < simulations) {
-            cur_simul_count += SIMUL_PER_REQ;
-          } else {
-            cur_simul_count = SIMUL_PER_REQ;
-            cur_v++;
-            while ((cur_v < vertices) &&
-                   (snapshot.realization().bit(cur_v) == false)) {
-              cur_v++;
-            }
-            if (cur_v >= vertices) {
-              cur_v = -1;
-            }
-          }
-          if (cur_v == -1) {
-            puts("No more jobs");
-            // There's no more jobs
-            Message message = {-1, -1};
-            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
-                                  MessageType::SIMUL_REQUEST);
-          } else {
-            Message m = {cur_v, 0};
-            MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                                  MessageType::SIMUL_REQUEST);
-          }
-        }
-      }
-
-      for (int i = 0; i < processes - 1; ++i) {
-        if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
-          Message received;
-          MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
-                               MessageType::SIMUL_RESPONSE);
-          jobs_remaining -= SIMUL_PER_REQ;
-          /***/
-          double prev = events_resp[received.source_id];
-          events_resp[received.source_id] +=
-              received.event_outcome / (double)SIMUL_PER_REQ;
-          events_resp[received.source_id] /= 2;
-          // printf("%.10lf\n", (events_resp[received.source_id] - prev));
-          /***/
-          if (!i)
-            printf("%.5f\n",
-                   jobs_remaining * 100 / ((double)simulations *
-                                           snapshot.realization().bitCount()));
-        }
-      }
+    SourceDetectionParams params_novi = SourceDetectionParams::ParamsFromGrid(
+        params.realization().p(), params.realization().q(),
+        (int)sqrt(params.realization().population_size()));
+    vector<int> r_pos = params_novi.realization().realization().positions();
+    for (int v = 1; v < processes; ++v) {
+      MPI::COMM_WORLD.Send(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
+                           MessageType::SIMUL_PARAMS);
     }
-    for (int i = 0; i < processes - 1; ++i) {
-      Message m = {-1, -1};
-      MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                            MessageType::SIMUL_REQUEST);
-    }
-
-    fprintf(stderr, "Simulations finished");
-    for (int v = 0; v < graph.vertices(); ++v)
-      printf("%.10lf\n", events_resp[v]);
-    /******/
+    params0.setRealization(params_novi.realization().realization());
   } else {
-    // workers
-    // Performs simulation on request.
-    SourceDetector sd(graph);
-    while (true) {
-      Message message = {-1, 0};
-      MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
-                           MessageType::SIMUL_PREREQUEST);
-      Message message_recv;
-      MPI::COMM_WORLD.Recv(&message_recv, 1, message_type, 0 /* source */,
-                           MessageType::SIMUL_REQUEST);
-      if (message_recv.source_id == -1) {
-        break;
-      }
+    vector<int> r_pos;
+    r_pos.resize(params.graph().vertices());
+    MPI::COMM_WORLD.Recv(&r_pos[0], (int)r_pos.size(), MPI_INT, 0,
+                         MessageType::SIMUL_PARAMS);
+    BitArray r_ba(params.graph().vertices());
+    for (int p : r_pos) r_ba.set(p, true);
+    params0.setRealization(r_ba);
+  }
+  SequentialMCDetector sd(params.graph());
+  MPI::COMM_WORLD.Barrier();
+  for (int v = rank; v < pop_size; v += processes) {
+    double Ppos = sd.seqPosterior(v, sample_size, params0.realization());
+    // TODO send
+  }
 
-      int fi = 0;
-      for (int t = 0; t < SIMUL_PER_REQ; ++t) {
-        Realization sp0 = snapshot;
-        double jac = sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
-                                                 model_type);
-        if (jac == 1.0) fi++;
-      }
-
-      message_recv.event_outcome = fi;
-      Message toSend = message_recv;
-      MPI::COMM_WORLD.Send(&toSend, 1, message_type, 0 /* dest */,
-                           MessageType::SIMUL_RESPONSE);
-    }
+  if (rank == 0) {
+    // TODO receive
   }
 }
 

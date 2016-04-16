@@ -31,9 +31,10 @@ class Simulator {
 
   // Returns  probability of drawn sample.
   double NaiveSIROneStep(common::SirParams &sir_params);
-  
+
   bool NaiveISS(common::SirParams &sir_params, bool prunning = false,
-      const common::BitArray &allowed_nodes = common::BitArray::zeros(1));
+                const common::BitArray &allowed_nodes =
+                    common::BitArray::zeros(1));
 
   bool eventDraw(double probability) {
     return prob_distribution_(generator_) <= probability;

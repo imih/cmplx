@@ -23,8 +23,8 @@ void GenerateSoftMarginDistributions(const cmplx::SourceDetectionParams& params,
                                      int distributions,
                                      ModelType modelType = ModelType::SIR);
 
-// estimates the posterior probabilty of a full match
-void FEstimatorParal(const cmplx::SourceDetectionParams& params);
+void SequentialMCParal(const cmplx::SourceDetectionParams& params,
+                       int sample_size);
 
 }  // namespace cmplx
 #endif  // SOURCE_DETECTION_PARAL_H

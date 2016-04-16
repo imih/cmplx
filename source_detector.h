@@ -20,7 +20,21 @@ class SourceDetector {
  public:
   SourceDetector(const common::IGraph& g) : simulator_(g) {}
 
-  // *******************DIRECT*************//
+  // Return starting parameters for the epidemic that starts with a single
+  // source defined by source_vertex and is capable of producing a snapshot
+  // defined by
+  // ending_params.
+  common::SirParams paramsForSingleSource(
+      int source_vertex, const common::Realization& realization);
+
+ protected:
+  simul::Simulator simulator_;
+};
+
+class DirectMonteCarloDetector : public SourceDetector {
+ public:
+  DirectMonteCarloDetector(const common::IGraph& g) : SourceDetector(g) {}
+
   // Return distribution of nodes being the source of SIR epidemic simulation
   // based on epidemic snapshot defined by sir_params.
   std::vector<double> directMonteCarloDetection(
@@ -30,15 +44,11 @@ class SourceDetector {
   int DMCSingleSourceSimulation(int source_id,
                                 const common::Realization& realization,
                                 ModelType model_type = ModelType::SIR);
+};
 
-  // Return starting parameters for the epidemic that starts with a single
-  // source defined by source_vertex and is capable of producing a snapshot
-  // defined by
-  // ending_params.
-  common::SirParams paramsForSingleSource(
-      int source_vertex, const common::Realization& realization);
-
-  //*************SOFT ****************//
+class SoftMarginDetector : public SourceDetector {
+ public:
+  SoftMarginDetector(const common::IGraph& g) : SourceDetector(g) {}
 
   std::vector<double> softMarginDetection(
       const common::Realization& realization, int no_simulations, double a,
@@ -50,35 +60,39 @@ class SourceDetector {
 
   double likelihood(std::vector<double> fi, double a);
 
-  // ****************** SEQ ***************//
-  std::vector<double> seqMonteCarloDetectionSIR(
-      const common::Realization& realization);
-
-  double seqPosterior(int v, const common::Realization& target_realization);
-
  private:
   double w_(double x, double a) {
     return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
   }
+};
 
+class SequentialMCDetector : public SourceDetector {
+ public:
+  SequentialMCDetector(const common::IGraph& g) : SourceDetector(g) {}
+
+  std::vector<double> seqMonteCarloDetectionSIR(
+      const common::Realization& realization, int sample_size);
+
+  double seqPosterior(int v, int sample_size,
+                      const common::Realization& target_realization);
+
+ private:
   std::set<int> buildReachable(const common::BitArray& infected);
-  std::pair<common::BitArray, common::BitArray> draw_g_1(
-      double p, double q, const std::vector<int>& target_infected_idx,
-      const common::BitArray& cur_inf, const common::BitArray& cur_rec);
-  double g_1_cond(double p, double q,
-                  const std::vector<int> target_infected_idx,
-                  const common::BitArray& new_i,
-                  const common::BitArray& new_rec,
-                  const common::BitArray& old_i,
-                  const common::BitArray& old_rec);
-  double Pi_1_cond(double p, double q, const common::BitArray& new_i,
-                   const common::BitArray& new_rec,
-                   const common::BitArray& old_i,
-                   const common::BitArray& old_rec);
 
+  struct NewSample {
+    common::BitArray new_inf;
+    common::BitArray new_rec;
+    double new_g;
+    double new_pi;
+  };
+  NewSample drawSample(double p, double q,
+                       const std::vector<int>& target_infected_idx,
+                       const common::BitArray& prev_inf,
+                       const common::BitArray& prev_rec);
+
+  double vc2(const std::vector<cmplx::SeqSample>& samples);
+  double ESS(const std::vector<cmplx::SeqSample>& samples);
   void printvc2(const std::vector<cmplx::SeqSample>& samples);
-
-  simul::Simulator simulator_;
 };
 }  // namespace cmplx
 #endif  // CMPLX_SOURCE_DETECTOR_H

@@ -18,10 +18,10 @@ using cmplx::SourceDetectionParams;
 int main() {
   SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
 
-  SourceDetector sd(params.graph());
+  cmplx::SequentialMCDetector sd(params.graph());
 
   std::vector<double> probs =
-      sd.seqMonteCarloDetectionSIR(params.realization());
+      sd.seqMonteCarloDetectionSIR(params.realization(), 10000);
 
   for (double p : probs) {
     printf("%.10lf\n", p);

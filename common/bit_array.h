@@ -13,6 +13,7 @@ public:
   static BitArray ones(int bits_num);
   static BitArray zeros(int bits_num);
 
+  BitArray() : BitArray(0) {}
   BitArray(int bits_num);
   BitArray(const BitArray &bit_array);
   ~BitArray() = default;
