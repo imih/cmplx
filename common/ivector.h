@@ -20,7 +20,7 @@ class IVector {
   IVector();
   IVector(const std::vector<T> &v);
   IVector(std::initializer_list<T> il);
-  IVector(const IVector<T> &iv) { igraph_vector_copy(&vector_, iv.vector()); }
+  IVector(const IVector<T> &iv) { igraph_vector_copy(vector_, iv.vector()); }
 
   ~IVector() {
     igraph_vector_destroy(vector_);
@@ -39,6 +39,9 @@ class IVector {
   // By default of type igraph_real_t.
   igraph_vector_t *vector_;
 };
+
+template class IVector<int>;
+
 }  // namespace common
 }  // namespace cmplx
 
