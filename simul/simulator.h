@@ -40,6 +40,10 @@ class Simulator {
     return prob_distribution_(generator_) <= probability;
   }
 
+  double P() {
+    return prob_distribution_(generator_);
+  }
+
   const common::IGraph graph() { return graph_; }
 
  private:

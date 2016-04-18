@@ -23,8 +23,12 @@ void GenerateSoftMarginDistributions(const cmplx::SourceDetectionParams& params,
                                      int distributions,
                                      ModelType modelType = ModelType::SIR);
 
-void SequentialMCParal(const cmplx::SourceDetectionParams& params,
-                       int sample_size);
+void GenerateSeqMonteCarloDistributions(
+    const cmplx::SourceDetectionParams& params, int distributions);
+std::vector<double> SeqMonteCarloSimulParalMaster(
+    const SourceDetectionParams &params, bool end, bool print);
+void SeqMonteCarloSimulParalWorker(const SourceDetectionParams &params);
+
 
 }  // namespace cmplx
 #endif  // SOURCE_DETECTION_PARAL_H

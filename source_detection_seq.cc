@@ -21,7 +21,7 @@ int main() {
   cmplx::SequentialMCDetector sd(params.graph());
 
   std::vector<double> probs =
-      sd.seqMonteCarloDetectionSIR(params.realization(), 10000);
+      sd.seqMonteCarloDetectionSIR(params.realization(), 160000);
 
   for (double p : probs) {
     printf("%.10lf\n", p);

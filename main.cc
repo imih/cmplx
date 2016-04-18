@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
           break;
         case 'n':
           n = atoi(optarg);
-        break;
+          break;
       }
     }
   }
@@ -39,8 +39,9 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParalConv(params);
 
   SourceDetectionParams params =
-      SourceDetectionParams::ParamsFromGrid(P / 10.0, Q/ 10.0, n);
-  cmplx::GenerateSoftMarginDistributions(params, 1);
+      SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0, n);
+  // cmplx::GenerateSoftMarginDistributions(params, 1);
+  cmplx::GenerateSeqMonteCarloDistributions(params, 1);
 
   MPI::Finalize();
   // clock_t end = clock();

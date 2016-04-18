@@ -31,6 +31,10 @@ class SeqSample {
   void update(const common::BitArray& new_infected,
               const common::BitArray& new_recovered, double newG, double newPi);
 
+  void setW(double w) {
+    w_ = w;
+  }
+
  private:
   common::BitArray realization() const { return infected_ | recovered_; }
 

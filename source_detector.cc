@@ -135,6 +135,8 @@ std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
 
 double SequentialMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization) {
+  printf("v: %d sample_size: %d bc: %d\n", v, sample_size,
+         target_realization.realization().bitCount());
   std::vector<SeqSample> prev_samples;
   prev_samples.clear();
   std::vector<SeqSample> samples;
@@ -146,6 +148,36 @@ double SequentialMCDetector::seqPosterior(
   double q = target_realization.q();
 
   for (int t = 0; t < target_realization.maxT(); ++t) {
+    //  printf("t: %d\n", t);
+    /*
+    if (ESS(samples) * (1 + pow(t + 1, 2)) < sample_size) {
+      puts("resampling...");
+      prev_samples = samples;
+      samples.clear();
+      vector<double> wSum;
+      wSum.push_back(0);
+      for (const SeqSample& sample : prev_samples) {
+        wSum.push_back(sample.w());
+        wSum.back() += wSum[(int)wSum.size() - 2];
+      }
+      for (int i = 0; i < sample_size; ++i) {
+        double p = simulator_.P() * wSum.back();
+        int lo = 0;
+        int hi = sample_size - 1;
+        while (lo < hi) {
+          int mid = (lo + hi + 1) / 2;
+          if (wSum[i] <= p) {
+            lo = mid;
+          } else
+            hi = mid - 1;
+        }
+        samples.push_back(prev_samples[lo]);
+        samples.back().setW(1);
+      }
+      prev_samples.clear();
+      printvc2(samples);
+    }
+    */
     prev_samples = samples;
     samples.clear();
 
@@ -162,12 +194,16 @@ double SequentialMCDetector::seqPosterior(
   }
 
   double pos_P = 0;
+  double sum = 0;
   for (const SeqSample& sample : samples) {
     if (sample.match(target_realization)) {
       pos_P += sample.w();
     }
+    sum += sample.w();
   }
-  printf("Post: %.10lf\n", pos_P / (int)samples.size());
+  // printf("Post: %.10lf\n", pos_P / sum);
+  // return pos_P / sum;
+  // printf("Post: %.10lf\n", pos_P / (int)samples.size());
   return pos_P / (int)samples.size();
 }
 
@@ -190,10 +226,13 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
         G *= (1 - q);
       }
     } else if (reachable.count(t) && !prev_inf.bit(t) && !prev_rec.bit(t)) {
-      G *= 0.5;
-      if (simulator_.eventDraw(0.5)) {
+      double p2 = p;
+      if (simulator_.eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
+        G *= p2;
+      } else {
+        G *= (1 - p2);
       }
     }
   }
@@ -267,6 +306,8 @@ double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
   for (const SeqSample& sample : samples) {
     avg_w += sample.w();
   }
+  avg_w /= (int)samples.size();
+
   for (const SeqSample& sample : samples) {
     vc2 += (sample.w() - avg_w) * (sample.w() - avg_w);
   }
@@ -276,13 +317,7 @@ double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
 }
 
 double SequentialMCDetector::ESS(const std::vector<cmplx::SeqSample>& samples) {
-  double p = 0;
-  double q = 0;
-  for (const SeqSample& sample : samples) {
-    p += sample.w();
-    q += sample.w() * sample.w();
-  }
-  return p * p / q;
+  return (int)samples.size() / (1 + vc2(samples));
 }
 
 }  // namespace cmplx
