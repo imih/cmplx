@@ -18,7 +18,7 @@ enum ModelType {
 
 class SourceDetector {
  public:
-  SourceDetector(const common::IGraph& g) : simulator_(g) {}
+  SourceDetector(const common::IGraph* g) : simulator_(g) {}
 
   // Return starting parameters for the epidemic that starts with a single
   // source defined by source_vertex and is capable of producing a snapshot
@@ -33,7 +33,7 @@ class SourceDetector {
 
 class DirectMonteCarloDetector : public SourceDetector {
  public:
-  DirectMonteCarloDetector(const common::IGraph& g) : SourceDetector(g) {}
+  DirectMonteCarloDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   // Return distribution of nodes being the source of SIR epidemic simulation
   // based on epidemic snapshot defined by sir_params.
@@ -48,7 +48,7 @@ class DirectMonteCarloDetector : public SourceDetector {
 
 class SoftMarginDetector : public SourceDetector {
  public:
-  SoftMarginDetector(const common::IGraph& g) : SourceDetector(g) {}
+  SoftMarginDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   std::vector<double> softMarginDetection(
       const common::Realization& realization, int no_simulations, double a,
@@ -68,7 +68,7 @@ class SoftMarginDetector : public SourceDetector {
 
 class SequentialMCDetector : public SourceDetector {
  public:
-  SequentialMCDetector(const common::IGraph& g) : SourceDetector(g) {}
+  SequentialMCDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   std::vector<double> seqMonteCarloDetectionSIR(
       const common::Realization& realization, int sample_size);

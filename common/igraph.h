@@ -16,9 +16,9 @@ class IGraph {
  public:
   // nei - the distance (number of steps) within which two vertices will be
   // connected
-  static IGraph UndirectedLattice(const std::vector<int>& dimensions);
-  static IGraph GraphFromGML(const std::string& file_name);
-  static IGraph GraphFromGDF(const std::string& file_name);
+  static IGraph* UndirectedLattice(const std::vector<int>& dimensions);
+  static IGraph* GraphFromGML(const std::string& file_name);
+  static IGraph* GraphFromGDF(const std::string& file_name);
 
   IGraph(const IGraph& i_graph) {
     graph_ = new igraph_t;
@@ -48,6 +48,7 @@ class IGraph {
   }
 
   igraph_t* graph_;
+  // TODO make thread safe!
   mutable std::unordered_map<int, IVector<int> >* adj_list_cache_;
 };
 

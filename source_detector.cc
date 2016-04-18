@@ -3,6 +3,7 @@
 #include <cstring>
 #include <mpi.h>
 #include <set>
+#include <thread>
 
 #include "common/bit_array.h"
 #include "common/realization.h"
@@ -178,6 +179,28 @@ double SequentialMCDetector::seqPosterior(
       printvc2(samples);
     }
     */
+    /*
+    auto f = [&](int i) {
+      BitArray prev_inf = samples[i].infected();
+      BitArray prev_rec = samples[i].recovered();
+      SeqSample newSample = samples[i];
+      NewSample ns = drawSample(p, q, target_infected_idx_, prev_inf, prev_rec);
+      newSample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
+      samples[i] = newSample;
+    };
+    int blockSize = 100;
+    vector<std::thread> threads;
+    for (int blok = 0; blok < (int)samples.size(); blok += blockSize) {
+      threads.clear();
+      for (int i = 0; i < blockSize; ++i) {
+        threads.push_back(std::thread(f, blok + i));
+      }
+      for (int i = 0; i < blockSize; ++i) threads[i].join();
+    }
+
+    printvc2(samples);
+    */
+
     prev_samples = samples;
     samples.clear();
 
@@ -189,6 +212,7 @@ double SequentialMCDetector::seqPosterior(
       newSample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
       samples.push_back(newSample);
     }
+
     prev_samples.clear();
     printvc2(samples);
   }
@@ -257,8 +281,8 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
         P *= (1 - q);
       } else if (!prev_inf.bit(b) && !prev_rec.bit(b)) {
         // S ->
-        const common::IGraph& graph = simulator_.graph();
-        const common::IVector<int>& adj_list = graph.adj_list(b);
+        const common::IGraph* graph = simulator_.graph();
+        const common::IVector<int>& adj_list = graph->adj_list(b);
 
         int deg = 0;
         for (int i = 0; i < (int)adj_list.size(); ++i) {
@@ -286,8 +310,8 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
 std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
   std::set<int> s;
   for (int pos : infected.positions()) {
-    const IGraph& graph = simulator_.graph();
-    const common::IVector<int>& adj_list = graph.adj_list(pos);
+    const IGraph* graph = simulator_.graph();
+    const common::IVector<int>& adj_list = graph->adj_list(pos);
     for (int i = 0; i < (int)adj_list.size(); ++i) {
       s.insert(adj_list[i]);
     }

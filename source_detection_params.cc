@@ -37,12 +37,12 @@ std::string BENCHMARK_PATH =
 }
 
 namespace cmplx {
-SourceDetectionParams SourceDetectionParams::SupFig2Params() {
+std::unique_ptr<SourceDetectionParams> SourceDetectionParams::SupFig2Params() {
   int lattice_size1 = 5;
   int lattice_size2 = 4;
-  IGraph graph = IGraph::UndirectedLattice({lattice_size1, lattice_size2});
+  IGraph* graph = IGraph::UndirectedLattice({lattice_size1, lattice_size2});
 
-  int vertices = graph.vertices();
+  int vertices = graph->vertices();
   BitArray r = BitArray::zeros(vertices);
   std::vector<int> infected = {2, 6, 7, 8, 9, 12};
   for (int inf_id : infected) {
@@ -55,18 +55,20 @@ SourceDetectionParams SourceDetectionParams::SupFig2Params() {
       Realization(p, q, maxT, r, BitArray::zeros(vertices));
 
   int simulations = 1000000000; /* supposed to be 10e9 */
-  return SourceDetectionParams(graph, realization, simulations);
+  return std::unique_ptr<SourceDetectionParams>(
+      new SourceDetectionParams(graph, realization, simulations));
 }
 
-SourceDetectionParams SourceDetectionParams::LatticeCenter() {
+std::unique_ptr<SourceDetectionParams> SourceDetectionParams::LatticeCenter() {
   int lattice_size = 3;
-  IGraph graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
-  BitArray r = BitArray::ones(graph.vertices());
+  IGraph* graph = IGraph::UndirectedLattice({lattice_size, lattice_size});
+  BitArray r = BitArray::ones(graph->vertices());
   double p = 0.2;
   double q = 0;
   Realization realization =
-      Realization(p, q, 2, r, BitArray::zeros(graph.vertices()));
-  return SourceDetectionParams(graph, realization, 1000000);
+      Realization(p, q, 2, r, BitArray::zeros(graph->vertices()));
+  return std::unique_ptr<SourceDetectionParams>(
+      new SourceDetectionParams(graph, realization, 1000000));
 }
 
 namespace {
@@ -77,33 +79,35 @@ int chooseSource(int n) {
 }
 }
 
-SourceDetectionParams SourceDetectionParams::ParamsFromGrid(double p,
-                                                            double q, int n) {
-  IGraph graph = IGraph::UndirectedLattice({n, n});
+std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGrid(
+    double p, double q, int n) {
+  IGraph* graph = IGraph::UndirectedLattice({n, n});
   int TMax = 5;
   int source_v = n * n / 2;
 
   cmplx::simul::Simulator simulator(graph);
   while (true) {
-    BitArray r = BitArray::zeros(graph.vertices());
+    BitArray r = BitArray::zeros(graph->vertices());
     r.set(source_v, true);
-    BitArray s = BitArray::ones(graph.vertices());
+    BitArray s = BitArray::ones(graph->vertices());
     s.set(source_v, false);
     SirParams sir_params(p, q, TMax, r, s);
     simulator.NaiveSIR(sir_params);
     Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
     if (real.realization().bitCount() > 1)
-      return SourceDetectionParams(graph, real, 1000000);
+      return std::unique_ptr<SourceDetectionParams>(
+          new SourceDetectionParams(graph, real, 1000000));
   }
 }
 
 // TODO determine number of simulations yourself!
-SourceDetectionParams SourceDetectionParams::BenchmarkParams(
+std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
     int realization_no) {
-  IGraph graph = IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice5.gml");
+  IGraph* graph =
+      IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice5.gml");
   double p = 0, q = 0;
   int T = 0;
-  BitArray r = BitArray::zeros(graph.vertices());
+  BitArray r = BitArray::zeros(graph->vertices());
 
   std::ifstream f_real;
   f_real.open(BENCHMARK_PATH + "/realization_num_" +
@@ -151,14 +155,15 @@ SourceDetectionParams SourceDetectionParams::BenchmarkParams(
   auto items = split(line);
   simulations = stoi(items[3]);
 
-  Realization realization(p, q, T, r, BitArray::zeros(graph.vertices()));
-  return SourceDetectionParams(graph, realization, simulations);
+  Realization realization(p, q, T, r, BitArray::zeros(graph->vertices()));
+  return std::unique_ptr<SourceDetectionParams>(
+      new SourceDetectionParams(graph, realization, simulations));
 }
 
 std::string SourceDetectionParams::summary() const {
   return std::to_string(realization_.p()) + "_" +
          std::to_string(realization_.q()) + "_" +
-         std::to_string(graph_.vertices());
+         std::to_string(graph_->vertices());
 }
 
 }  // namespace cmplx

@@ -16,12 +16,13 @@ using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
 
 int main() {
-  SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
+  auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
 
-  cmplx::SequentialMCDetector sd(params.graph());
+  cmplx::SequentialMCDetector sd(params->graph().get());
 
   std::vector<double> probs =
-      sd.seqMonteCarloDetectionSIR(params.realization(), 160000);
+      sd.seqMonteCarloDetectionSIR(params->realization(), 160000);
 
   for (double p : probs) {
     printf("%.10lf\n", p);

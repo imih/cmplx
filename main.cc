@@ -38,10 +38,10 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParal(params);
   // cmplx::SoftMarginParalConv(params);
 
-  SourceDetectionParams params =
+  std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0, n);
-  // cmplx::GenerateSoftMarginDistributions(params, 1);
-  cmplx::GenerateSeqMonteCarloDistributions(params, 1);
+  cmplx::GenerateSoftMarginDistributions(params.get(), 1);
+  //cmplx::GenerateSeqMonteCarloDistributions(params.get(), 1);
 
   MPI::Finalize();
   // clock_t end = clock();

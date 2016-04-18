@@ -7,28 +7,27 @@
 
 namespace cmplx {
 
-void DirectMCSimulParalConv(const cmplx::SourceDetectionParams& params,
+void DirectMCSimulParalConv(SourceDetectionParams* params,
                             ModelType modelType = ModelType::SIR);
-void DirectMCSimulParal(const cmplx::SourceDetectionParams& params,
+void DirectMCSimulParal(const SourceDetectionParams* params,
                         ModelType modelType = ModelType::SIR);
 
-std::vector<double> SoftMarginParalConvMaster(
-    const cmplx::SourceDetectionParams& params, bool end = true);
-void SoftMarginParalConv(const cmplx::SourceDetectionParams& params,
+std::vector<double> SoftMarginParalConvMaster(SourceDetectionParams* params,
+                                              bool end = true);
+void SoftMarginParalConv(SourceDetectionParams* params,
                          ModelType modeltype = ModelType::SIR);
-void SoftMarginParal(const cmplx::SourceDetectionParams& params,
+void SoftMarginParal(const SourceDetectionParams* params,
                      ModelType modelType = ModelType::SIR);
 
-void GenerateSoftMarginDistributions(const cmplx::SourceDetectionParams& params,
+void GenerateSoftMarginDistributions(SourceDetectionParams* params,
                                      int distributions,
                                      ModelType modelType = ModelType::SIR);
 
-void GenerateSeqMonteCarloDistributions(
-    const cmplx::SourceDetectionParams& params, int distributions);
+void GenerateSeqMonteCarloDistributions(SourceDetectionParams* params,
+                                        int distributions);
 std::vector<double> SeqMonteCarloSimulParalMaster(
-    const SourceDetectionParams &params, bool end, bool print);
-void SeqMonteCarloSimulParalWorker(const SourceDetectionParams &params);
-
+    const SourceDetectionParams* params, bool end, bool print);
+void SeqMonteCarloSimulParalWorker(const SourceDetectionParams& params);
 
 }  // namespace cmplx
 #endif  // SOURCE_DETECTION_PARAL_H

@@ -17,7 +17,7 @@ namespace simul {
 
 class Simulator {
  public:
-  Simulator(const common::IGraph &graph)
+  Simulator(const common::IGraph *graph)
       : graph_(graph), prob_distribution_(0, 1) {
     struct timeval tv;
     gettimeofday(&tv, 0);
@@ -40,14 +40,14 @@ class Simulator {
     return prob_distribution_(generator_) <= probability;
   }
 
-  double P() {
-    return prob_distribution_(generator_);
-  }
+  double P() { return prob_distribution_(generator_); }
 
-  const common::IGraph graph() { return graph_; }
+  const common::IGraph *graph() { return graph_; }
 
  private:
-  const common::IGraph &graph_;
+  // NOT owned!
+  const common::IGraph *graph_;
+
   std::mt19937_64 generator_;
   std::uniform_real_distribution<double> prob_distribution_;
 

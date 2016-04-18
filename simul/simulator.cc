@@ -45,7 +45,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
       current_node = q.pop();
       delta_nodes_pop--;
 
-      const IVector<int> &neis = graph_.adj_list(current_node);
+      const IVector<int> &neis = graph_->adj_list(current_node);
       for (int i = 0; i < neis.size(); ++i) {
         int current_neigh = neis[i];
 
@@ -100,7 +100,7 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
     long int current_node = queue.pop();
     delta_nodes_pop--;
 
-    const IVector<int> &neis = graph_.adj_list(current_node);
+    const IVector<int> &neis = graph_->adj_list(current_node);
     for (int i = 0; i < neis.size(); ++i) {
       int current_neigh = neis[i];
 
@@ -162,7 +162,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
       current_node = q.pop();
       delta_nodes_pop--;
 
-      const IVector<int> &neis = graph_.adj_list(current_node);
+      const IVector<int> &neis = graph_->adj_list(current_node);
       bool became_stifler = false;
       for (int i = 0; i < neis.size(); ++i) {
         int current_neigh = neis[i];

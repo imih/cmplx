@@ -12,15 +12,15 @@
 
 namespace cmplx {
 namespace common {
-IGraph IGraph::UndirectedLattice(const std::vector<int> &dimensions) {
+IGraph *IGraph::UndirectedLattice(const std::vector<int> &dimensions) {
   IVector<int> dim(dimensions);
   igraph_t *graph = new igraph_t;
   assert(!igraph_lattice(graph, dim.vector(), 1, IGRAPH_UNDIRECTED,
                          0 /* mutual */, 0 /* circular */));
-  return IGraph(graph);
+  return new IGraph(graph);
 }
 
-IGraph IGraph::GraphFromGML(const std::string &file_name) {
+IGraph *IGraph::GraphFromGML(const std::string &file_name) {
   igraph_t *graph = new igraph_t;
   FILE *f = fopen(file_name.c_str(), "r");
   std::cout << file_name << std::endl;
@@ -32,10 +32,10 @@ IGraph IGraph::GraphFromGML(const std::string &file_name) {
     std::cout << std::string(igraph_strerror(err)) << std::endl;
   }
   fclose(f);
-  return IGraph(graph);
+  return new IGraph(graph);
 }
 
-IGraph IGraph::GraphFromGDF(const std::string &file_name) {
+IGraph *IGraph::GraphFromGDF(const std::string &file_name) {
   std::ifstream fs;
   fs.open(file_name);
   if (!fs.is_open()) {
@@ -65,7 +65,7 @@ IGraph IGraph::GraphFromGDF(const std::string &file_name) {
   if (err) {
     std::cout << std::string(igraph_strerror(err)) << std::endl;
   }
-  return IGraph(graph);
+  return new IGraph(graph);
 }
 
 int IGraph::diameter() const {
