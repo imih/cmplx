@@ -16,8 +16,8 @@ using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
 
 int main() {
-  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
+  auto params = SourceDetectionParams::SupFig2Params();
+  //auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
 
   cmplx::SequentialMCDetector sd(params->graph().get());
 
