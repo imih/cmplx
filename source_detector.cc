@@ -139,10 +139,7 @@ double SequentialMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization) {
   printf("v: %d sample_size: %d bc: %d\n", v, sample_size,
          target_realization.realization().bitCount());
-  std::vector<SeqSample> prev_samples;
-  prev_samples.clear();
-  std::vector<SeqSample> samples;
-  samples.assign(sample_size, SeqSample(v, target_realization));
+  std::vector<SeqSample> samples(sample_size, SeqSample(v, target_realization));
 
   std::vector<int> target_infected_idx_ =
       target_realization.realization().positions();
@@ -180,6 +177,7 @@ double SequentialMCDetector::seqPosterior(
       printvc2(samples);
     }
     */
+
     /*
     auto f = [&](int i) {
       BitArray prev_inf = samples[i].infected();
@@ -202,19 +200,13 @@ double SequentialMCDetector::seqPosterior(
     printvc2(samples);
     */
 
-    prev_samples = samples;
-    samples.clear();
-
-    for (const SeqSample& sample : prev_samples) {
+    for (SeqSample& sample : samples) {
       BitArray prev_inf = sample.infected();
       BitArray prev_rec = sample.recovered();
-      SeqSample newSample = sample;
       NewSample ns = drawSample(p, q, target_infected_idx_, prev_inf, prev_rec);
-      newSample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
-      samples.push_back(newSample);
-    }
+      sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
+    } 
 
-    prev_samples.clear();
     printvc2(samples);
   }
 
