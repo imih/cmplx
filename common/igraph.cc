@@ -77,7 +77,7 @@ const IVector<int> &IGraph::adj_list(int node_id) const {
   if (!adj_list_cache_->count(node_id)) {
     !igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(),
                              node_id, IGRAPH_OUT);
-    igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
+    //igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
   }
   return adj_list_cache_->at(node_id);
 }
