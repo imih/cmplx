@@ -27,23 +27,23 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
-  IDqueue* q =  new IDqueue(I);
+  IDqueue q(I);
   //q.insertMarked(I);
 
   int dis_time = 1;
-  int delta_nodes_pop = q->size();
+  int delta_nodes_pop = q.size();
   long int num_inf_nodes = 1;  // source
   bool prunned = false;
 
-  while (q->size() && !prunned) {
+  while (q.size() && !prunned) {
     if (delta_nodes_pop == 0) {
       dis_time++;
-      delta_nodes_pop = q->size();
+      delta_nodes_pop = q.size();
     }
 
     if (dis_time <= sir_params.maxT()) {
       long int current_node;
-      current_node = q->pop();
+      current_node = q.pop();
       delta_nodes_pop--;
 
       const IVector<int> &neis = graph_->adj_list(current_node);
@@ -52,7 +52,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
         if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
           if (eventDraw(sir_params.p())) {
-            q->push(current_neigh);
+            q.push(current_neigh);
             I.set(current_neigh, true);
             S.set(current_neigh, false);
             num_inf_nodes++;
@@ -69,7 +69,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
         R.set(current_node, true);
         I.set(current_node, false);
       } else {
-        q->push(current_node);
+        q.push(current_node);
       }
     } else {
       break;
@@ -79,7 +79,6 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   sir_params.set_infected(I);
   sir_params.set_susceptible(S);
   sir_params.set_recovered(R);
-  delete q;
   return prunned;
 }
 
@@ -90,16 +89,16 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   double p = sir_params.p();
   double q = sir_params.q();
 
-  IDqueue*  queue = new IDqueue(I);
+  IDqueue  queue(I);
   //queue.insertMarked(I);
-  int delta_nodes_pop = queue->size();
+  int delta_nodes_pop = queue.size();
   int p0 = 0, p1 = 0, q0 = 0, q1 = 0;
 
-  while (queue->size()) {
+  while (queue.size()) {
     if (delta_nodes_pop == 0) {
       break;
     }
-    long int current_node = queue->pop();
+    long int current_node = queue.pop();
     delta_nodes_pop--;
 
     const IVector<int> &neis = graph_->adj_list(current_node);
@@ -109,7 +108,7 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
       if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
         if (eventDraw(p)) {
           p1++;
-          queue->push(current_neigh);
+          queue.push(current_neigh);
           I.set(current_neigh, true);
           S.set(current_neigh, false);
           // indentity prunning
@@ -124,14 +123,13 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
       I.set(current_node, false);
     } else {
       q0++;
-      queue->push(current_node);
+      queue.push(current_node);
     }
   }
 
   sir_params.set_infected(I);
   sir_params.set_recovered(R);
   sir_params.set_susceptible(S);
-  delete queue;
   return pow(1 - p, p0) * pow(p, p1) * pow(1 - q, q0) * pow(q, q1);
 }
 
@@ -147,22 +145,22 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
-  IDqueue* q = new IDqueue(I);//sir_params.population_size());
+  IDqueue q(I);//sir_params.population_size());
   //q.insertMarked(I);
 
   int dis_time = 1;
-  int delta_nodes_pop = q->size();
+  int delta_nodes_pop = q.size();
   bool prunned = false;
 
-  while (q->size() && !prunned) {
+  while (q.size() && !prunned) {
     if (delta_nodes_pop == 0) {
       dis_time++;
-      delta_nodes_pop = q->size();
+      delta_nodes_pop = q.size();
     }
 
     if (dis_time <= sir_params.maxT()) {
       long int current_node;
-      current_node = q->pop();
+      current_node = q.pop();
       delta_nodes_pop--;
 
       const IVector<int> &neis = graph_->adj_list(current_node);
@@ -172,7 +170,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
         if (S.bit(current_neigh)) {
           // spreader meets ignorant
           if (eventDraw(sir_params.p())) {
-            q->push(current_neigh);
+            q.push(current_neigh);
             S.set(current_neigh, false);
             I.set(current_neigh, true);
             if (prunning && allowed_nodes.bit(current_neigh) == 0) {
@@ -190,7 +188,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
         }
       }
       if (!became_stifler) {
-        q->push(current_node);
+        q.push(current_node);
       }
     } else {
       break;
@@ -200,7 +198,6 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
   sir_params.set_infected(I);
   sir_params.set_susceptible(S);
   sir_params.set_recovered(R);
-  delete q;
   return prunned;
 }
 
