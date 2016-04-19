@@ -16,7 +16,7 @@ class IGraph {
  public:
   // nei - the distance (number of steps) within which two vertices will be
   // connected
-  static IGraph* UndirectedLattice(const std::vector<int>& dimensions);
+  static IGraph* UndirectedLattice(const std::vector<int> dimensions);
   static IGraph* GraphFromGML(const std::string& file_name);
   static IGraph* GraphFromGDF(const std::string& file_name);
 

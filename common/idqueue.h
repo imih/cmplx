@@ -5,7 +5,6 @@
 
 #include <igraph/igraph.h>
 
-#include <cassert>
 #include <vector>
 
 namespace cmplx {
@@ -24,7 +23,7 @@ class IDqueue {
   long int size() { return igraph_dqueue_size(dqueue_); }
   bool empty() { return igraph_dqueue_empty(dqueue_); }
 
-  void push(int x) { assert(!igraph_dqueue_push(dqueue_, x)); }
+  void push(int x) { igraph_dqueue_push(dqueue_, x); }
 
   void clear() { if(size()) igraph_dqueue_clear(dqueue_); }
 

@@ -9,6 +9,7 @@
 #include <cstdlib>
 
 #include <vector>
+#include <cassert>
 
 #include "./source_detector.h"
 #include "common/bit_array.h"

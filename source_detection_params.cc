@@ -40,7 +40,8 @@ namespace cmplx {
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::SupFig2Params() {
   int lattice_size1 = 5;
   int lattice_size2 = 4;
-  IGraph* graph = IGraph::UndirectedLattice({lattice_size1, lattice_size2});
+  std::vector<int> size = std::vector<int>({lattice_size1, lattice_size2});
+  IGraph* graph = IGraph::UndirectedLattice(size);
 
   int vertices = graph->vertices();
   BitArray r = BitArray::zeros(vertices);

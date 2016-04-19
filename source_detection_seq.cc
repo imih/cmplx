@@ -17,12 +17,13 @@ using cmplx::SourceDetectionParams;
 
 int main() {
   auto params = SourceDetectionParams::SupFig2Params();
-  //auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
+  // auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
 
   cmplx::SoftMarginDetector sd(params->graph().get());
-  std::vector<double> probs = sd.softMarginDetection(params->realization(), params->simulations(), params->a());
+  std::vector<double> probs = sd.softMarginDetection(
+      params->realization(), params->simulations(), params->a());
 
-  //std::vector<double> probs =
+  // std::vector<double> probs =
   //    sd.seqMonteCarloDetectionSIR(params->realization(), 160000);
 
   for (double p : probs) {

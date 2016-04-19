@@ -4,7 +4,7 @@ namespace cmplx {
 namespace common {
 IDqueue::IDqueue(long int sz) {
   dqueue_ = (igraph_dqueue_t*) malloc(sizeof(igraph_dqueue_t));
-  assert(!igraph_dqueue_init(dqueue_, sz));
+  igraph_dqueue_init(dqueue_, sz);
   clear();
 }
 
@@ -19,7 +19,7 @@ IDqueue::IDqueue(const BitArray &bit_array) : IDqueue(bit_array.bits_num()) {
 }
 
 IDqueue::~IDqueue() {
-  //igraph_dqueue_destroy(dqueue_);
+  igraph_dqueue_destroy(dqueue_);
   if(dqueue_) igraph_free(dqueue_);
 }
 

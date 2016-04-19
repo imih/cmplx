@@ -1,6 +1,5 @@
 #include "igraph.h"
 
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <string>
@@ -12,11 +11,11 @@
 
 namespace cmplx {
 namespace common {
-IGraph *IGraph::UndirectedLattice(const std::vector<int> &dimensions) {
+IGraph *IGraph::UndirectedLattice(const std::vector<int> dimensions) {
   IVector<int> dim(dimensions);
   igraph_t *graph = new igraph_t;
-  assert(!igraph_lattice(graph, dim.vector(), 1, IGRAPH_UNDIRECTED,
-                         0 /* mutual */, 0 /* circular */));
+  igraph_lattice(graph, dim.vector(), 1, IGRAPH_UNDIRECTED,
+                         0 /* mutual */, 0 /* circular */);
   return new IGraph(graph);
 }
 
@@ -76,8 +75,8 @@ int IGraph::diameter() const {
 
 const IVector<int> &IGraph::adj_list(int node_id) const {  
   if (!adj_list_cache_->count(node_id)) {
-    assert(!igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(),
-                             node_id, IGRAPH_OUT));
+    !igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(),
+                             node_id, IGRAPH_OUT);
     igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
   }
   return adj_list_cache_->at(node_id);

@@ -9,24 +9,24 @@ namespace common {
 template <class T>
 IVector<T>::IVector() {
   vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
-  assert(!igraph_vector_init(vector_, 0));
+  !igraph_vector_init(vector_, 0);
 }
 
 template <class T>
 IVector<T>::IVector(const std::vector<T> &v) {
   vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
-  assert(igraph_vector_init(vector_, (int long)v.size()) == 0);
-  int idx = 0;
-  for (T val : v) {
-    VECTOR(*vector_)[idx] = val;
-    idx++;
+  igraph_vector_init(vector_, (int long)v.size());
+  //printf("%ld\n", size());
+  for(int i = 0; i < (int) v.size(); ++i) {
+    //igraph_vector_set(vector_, i, v[i]);
+    VECTOR(*vector_)[i] = v[i];
   }
 }
 
 template <class T>
 IVector<T>::IVector(std::initializer_list<T> il) {
   vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
-  assert(igraph_vector_init(vector_, (int long)il.size()) == 0);
+  igraph_vector_init(vector_, (int long)il.size());
   int idx = 0;
   for (T v : il) {
     VECTOR(*vector_)[idx] = v;
