@@ -34,6 +34,7 @@ void SeqSample::update(const BitArray& new_infected,
   pi_ = newPi;
   g_ = newG;
   w_ *= pi_ / g_;
+  //printf("%.10lf %.10lf %.10lf\n", pi_, g_, w_);
 }
 
 bool SeqSample::match(const common::Realization& realization) const {

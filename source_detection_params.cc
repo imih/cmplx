@@ -162,9 +162,10 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
 }
 
 std::string SourceDetectionParams::summary() const {
-  return std::to_string(realization_.p()) + "_" +
-         std::to_string(realization_.q()) + "_" +
-         std::to_string(graph_->vertices());
+  std::string s = std::to_string(realization_.p()) + "_" +
+                  std::to_string(realization_.q()) + "_" +
+                  std::to_string(graph_->vertices());
+  return s;
 }
 
 }  // namespace cmplx

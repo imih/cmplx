@@ -220,7 +220,7 @@ double SequentialMCDetector::seqPosterior(
   }
   // printf("Post: %.10lf\n", pos_P / sum);
   // return pos_P / sum;
-  // printf("Post: %.10lf\n", pos_P / (int)samples.size());
+  printf("Post: %.10lf\n", pos_P / (int)samples.size());
   return pos_P / (int)samples.size();
 }
 
@@ -313,8 +313,8 @@ std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
 }
 
 void SequentialMCDetector::printvc2(const std::vector<SeqSample>& samples) {
-  printf("vc2 %.10lf\n", vc2(samples));
-  printf("ESS %.10lf\n", ESS(samples));
+  //printf("vc2 %.10lf\n", vc2(samples));
+  //printf("ESS %.10lf\n", ESS(samples));
 }
 
 double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {

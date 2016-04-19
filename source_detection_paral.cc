@@ -638,7 +638,6 @@ MPI::Datatype datatypeOfMessage() {
   return MPI::Datatype::Create_struct(3, blockLen, offsets, types);
 }
 }  // namespace SMC
-
 vector<double> SeqMonteCarloSimulParalMaster(
     const SourceDetectionParams *params, bool end = true, bool print = true);
 vector<double> SeqMonteCarloParalConvMaster(
@@ -679,7 +678,7 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
     }
   }
   fclose(f);
-  exit(0);
+  // exit(0);
 }
 
 vector<double> SeqMonteCarloParalConvMaster(
@@ -713,11 +712,11 @@ vector<double> SeqMonteCarloParalConvMaster(
     if (delta >= c) converge = false;
     int pos = 0;
     for (int j = 0; j < (int)p1.size(); ++j) {
-      if (dabs(p1[j] - p0[j]) >= c) converge = false;
+      if (dabs(p1[j] - p0[j]) > c) converge = false;
       if (p1[j] > 0) pos++;
     }
     // if (s1 > 1000000) converge = true;
-    if (pos != bits) converge = false;
+    //if (pos != bits) converge = false;
     if (converge) {
       printf("Converged for n=%d\n", s1);
       res = p1;
@@ -736,7 +735,8 @@ vector<double> SeqMonteCarloParalConvMaster(
     }
 
     s0 = s1;
-    p0 = p1;
+    p0.clear();
+    p0.assign(p1.begin(), p1.end());
     pMAP0 = pMAP1;
   }
   return res;
@@ -871,6 +871,7 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
       MPI::COMM_WORLD.Recv(&m, 1, message_type, 0, MessageType::SIMUL_END);
       break;
     }
+    sleep(1);
   }
 }
 
