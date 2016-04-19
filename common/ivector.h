@@ -20,11 +20,14 @@ class IVector {
   IVector();
   IVector(const std::vector<T> &v);
   IVector(std::initializer_list<T> il);
-  IVector(const IVector<T> &iv) { igraph_vector_copy(vector_, iv.vector()); }
+  IVector(const IVector<T> &iv) { 
+    vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
+    igraph_vector_copy(vector_, iv.vector()); 
+  }
 
   ~IVector() {
     igraph_vector_destroy(vector_);
-    delete vector_;
+    if(vector_)igraph_free(vector_);
   }
 
   igraph_vector_t *vector() const { return vector_; }

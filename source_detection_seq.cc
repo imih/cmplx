@@ -19,10 +19,11 @@ int main() {
   auto params = SourceDetectionParams::SupFig2Params();
   //auto params = SourceDetectionParams::ParamsFromGrid(0.5, 0.5, 5);
 
-  cmplx::SequentialMCDetector sd(params->graph().get());
+  cmplx::SoftMarginDetector sd(params->graph().get());
+  std::vector<double> probs = sd.softMarginDetection(params->realization(), params->simulations(), params->a());
 
-  std::vector<double> probs =
-      sd.seqMonteCarloDetectionSIR(params->realization(), 160000);
+  //std::vector<double> probs =
+  //    sd.seqMonteCarloDetectionSIR(params->realization(), 160000);
 
   for (double p : probs) {
     printf("%.10lf\n", p);

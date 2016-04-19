@@ -8,6 +8,7 @@
 #include "common/bit_array.h"
 #include "common/realization.h"
 #include "common/ivector.h"
+#include "common/ivector.cc"
 
 using cmplx::common::IGraph;
 using cmplx::common::SirParams;

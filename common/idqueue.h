@@ -26,13 +26,15 @@ class IDqueue {
 
   void push(int x) { assert(!igraph_dqueue_push(dqueue_, x)); }
 
-  void clear() { igraph_dqueue_clear(dqueue_); }
+  void clear() { if(size()) igraph_dqueue_clear(dqueue_); }
 
   int pop() { return (int)igraph_dqueue_pop(dqueue_); }
 
   void insertMarked(const BitArray &bit_array);
 
  private:
+  IDqueue(const IDqueue&);
+
   igraph_dqueue_t *dqueue_;
 };
 }  // namespace common

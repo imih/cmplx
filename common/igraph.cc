@@ -6,9 +6,9 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
-#include "ivector.h"
-#include "ivector.cc"
+#include  "ivector.cc"
 
 namespace cmplx {
 namespace common {
@@ -74,7 +74,7 @@ int IGraph::diameter() const {
   return (int)diam;
 }
 
-const IVector<int> &IGraph::adj_list(int node_id) const {
+const IVector<int> &IGraph::adj_list(int node_id) const {  
   if (!adj_list_cache_->count(node_id)) {
     assert(!igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(),
                              node_id, IGRAPH_OUT));
