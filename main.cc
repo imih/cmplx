@@ -12,11 +12,12 @@ int main(int argc, char **argv) {
   // clock_t begin = std::clock();
   // Paralelized
   MPI::Init(argc, argv);
+  bool seq = false;
   int P = 5, Q = 5;
   int n = 5;
   {
     int c;
-    while ((c = getopt(argc, argv, "p:q:n:")) != EOF) {
+    while ((c = getopt(argc, argv, "p:q:n:s")) != EOF) {
       switch (c) {
         case 'p':
           P = atoi(optarg);
@@ -26,6 +27,9 @@ int main(int argc, char **argv) {
           break;
         case 'n':
           n = atoi(optarg);
+          break;
+        case 's':
+          seq = true;
           break;
       }
     }
@@ -40,8 +44,11 @@ int main(int argc, char **argv) {
 
   std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGrid(P / 10.0, Q / 10.0, n);
-  cmplx::GenerateSoftMarginDistributions(params.get(), 1);
-  //cmplx::GenerateSeqMonteCarloDistributions(params.get(), 1);
+  if (seq) {
+    cmplx::GenerateSeqMonteCarloDistributions(params.get(), 1);
+  } else {
+    cmplx::GenerateSoftMarginDistributions(params.get(), 1);
+  }
 
   MPI::Finalize();
   // clock_t end = clock();
