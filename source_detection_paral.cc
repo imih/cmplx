@@ -135,7 +135,7 @@ void DirectMCSimulParalConv(SourceDetectionParams *params,
       printf("c: %lf\n", delta);
       if (delta >= c) converge = false;
       for (int i = 0; i < (int)p1.size(); ++i) {
-        if (dabs(p0[i] - p1[i]) >= c) converge = false;
+        if (dabs((p0[i] - p1[i]) / p1[i]) > c) converge = false;
       }
 
       if (converge) {
@@ -652,9 +652,11 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
   // SourceDetectionParams params0 = params;
 
   for (int d = 0; d < distributions; ++d) {
+    /*
     MPI::COMM_WORLD.Barrier();
     share_params(params);
     MPI::COMM_WORLD.Barrier();
+    */
 
     if (rank == 0) {
       std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
@@ -716,7 +718,7 @@ vector<double> SeqMonteCarloParalConvMaster(
       if (p1[j] > 0) pos++;
     }
     // if (s1 > 1000000) converge = true;
-    //if (pos != bits) converge = false;
+    if (2 * pos < bits) converge = false;
     if (converge) {
       printf("Converged for n=%d\n", s1);
       res = p1;

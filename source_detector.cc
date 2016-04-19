@@ -203,9 +203,10 @@ double SequentialMCDetector::seqPosterior(
     for (SeqSample& sample : samples) {
       BitArray prev_inf = sample.infected();
       BitArray prev_rec = sample.recovered();
-      NewSample ns = drawSample(p, q, target_infected_idx_, prev_inf, prev_rec);
+      NewSample ns = drawSample(t, target_realization.maxT(), p, q,
+                                target_infected_idx_, prev_inf, prev_rec);
       sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
-    } 
+    }
 
     printvc2(samples);
   }
@@ -220,13 +221,14 @@ double SequentialMCDetector::seqPosterior(
   }
   // printf("Post: %.10lf\n", pos_P / sum);
   // return pos_P / sum;
-  printf("Post: %.10lf\n", pos_P / (int)samples.size());
+  // printf("Post: %.10lf\n", pos_P / (int)samples.size());
   return pos_P / (int)samples.size();
 }
 
 SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
-    double p, double q, const std::vector<int>& target_infected_idx,
-    const BitArray& prev_inf, const BitArray& prev_rec) {
+    int t, int tMAX, double p, double q,
+    const std::vector<int>& target_infected_idx, const BitArray& prev_inf,
+    const BitArray& prev_rec) {
   SequentialMCDetector::NewSample sample;
   std::set<int> reachable = buildReachable(prev_inf);
   BitArray next_inf = prev_inf;
@@ -243,7 +245,9 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
         G *= (1 - q);
       }
     } else if (reachable.count(t) && !prev_inf.bit(t) && !prev_rec.bit(t)) {
-      double p2 = p;
+      double p2 = p; // + (1 - p) * ((t + 1) / tMAX);
+      if(t == tMAX - 2 && p2 < 0.5) p2 = 1.5 * p;
+      if(t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
@@ -313,8 +317,8 @@ std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
 }
 
 void SequentialMCDetector::printvc2(const std::vector<SeqSample>& samples) {
-  //printf("vc2 %.10lf\n", vc2(samples));
-  //printf("ESS %.10lf\n", ESS(samples));
+  // printf("vc2 %.10lf\n", vc2(samples));
+  // printf("ESS %.10lf\n", ESS(samples));
 }
 
 double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {

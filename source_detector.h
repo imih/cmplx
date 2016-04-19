@@ -85,7 +85,7 @@ class SequentialMCDetector : public SourceDetector {
     double new_g;
     double new_pi;
   };
-  NewSample drawSample(double p, double q,
+  NewSample drawSample(int t, int tMax, double p, double q,
                        const std::vector<int>& target_infected_idx,
                        const common::BitArray& prev_inf,
                        const common::BitArray& prev_rec);
