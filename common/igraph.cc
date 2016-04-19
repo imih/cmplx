@@ -7,20 +7,20 @@
 #include <sstream>
 #include <iostream>
 
-#include  "ivector.cc"
+#include "ivector.cc"
 
 namespace cmplx {
 namespace common {
 IGraph *IGraph::UndirectedLattice(const std::vector<int> dimensions) {
   IVector<int> dim(dimensions);
-  igraph_t *graph = new igraph_t;
-  igraph_lattice(graph, dim.vector(), 1, IGRAPH_UNDIRECTED,
-                         0 /* mutual */, 0 /* circular */);
+  igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
+  igraph_lattice(graph, dim.vector(), 1, IGRAPH_UNDIRECTED, 0 /* mutual */,
+                 0 /* circular */);
   return new IGraph(graph);
 }
 
 IGraph *IGraph::GraphFromGML(const std::string &file_name) {
-  igraph_t *graph = new igraph_t;
+  igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
   FILE *f = fopen(file_name.c_str(), "r");
   std::cout << file_name << std::endl;
   if (f == NULL) {
@@ -59,7 +59,7 @@ IGraph *IGraph::GraphFromGDF(const std::string &file_name) {
   fs.close();
 
   IVector<int> iedges(edges);
-  igraph_t *graph = new igraph_t;
+  igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
   int err = igraph_create(graph, iedges.vector(), nodes, 0);
   if (err) {
     std::cout << std::string(igraph_strerror(err)) << std::endl;
@@ -73,11 +73,11 @@ int IGraph::diameter() const {
   return (int)diam;
 }
 
-const IVector<int> &IGraph::adj_list(int node_id) const {  
+const IVector<int> &IGraph::adj_list(int node_id) const {
   if (!adj_list_cache_->count(node_id)) {
-    !igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(),
-                             node_id, IGRAPH_OUT);
-    //igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
+    igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(), node_id,
+                     IGRAPH_OUT);
+    // igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
   }
   return adj_list_cache_->at(node_id);
 }
