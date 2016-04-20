@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include <mpi.h>
-#include <set>
+#include <map>
 #include <thread>
 
 #include "common/bit_array.h"
@@ -221,7 +221,7 @@ double SequentialMCDetector::seqPosterior(
   }
   // printf("Post: %.10lf\n", pos_P / sum);
   // return pos_P / sum;
-  // printf("Post: %.10lf\n", pos_P / (int)samples.size());
+  printf("Post: %.10lf\n", pos_P / (int)samples.size());
   return pos_P / (int)samples.size();
 }
 
@@ -233,6 +233,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
   std::set<int> reachable = buildReachable(prev_inf);
   BitArray next_inf = prev_inf;
   BitArray next_rec = prev_rec;
+  const common::IGraph* graph = simulator_.graph();
   double G = 1;
   for (int t : target_infected_idx) {
     if (prev_inf.bit(t)) {
@@ -245,9 +246,14 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
         G *= (1 - q);
       }
     } else if (reachable.count(t) && !prev_inf.bit(t) && !prev_rec.bit(t)) {
-      double p2 = p; // + (1 - p) * ((t + 1) / tMAX);
-      if(t == tMAX - 2 && p2 < 0.5) p2 = 1.5 * p;
-      if(t == tMAX - 1) p2 = 1;
+      const common::IVector<int>& adj_list = graph->adj_list(t);
+      int D = 0;
+      for (int i = 0; i < (int)adj_list.size(); ++i) {
+        if (prev_inf.bit(adj_list[i])) D++;
+      }
+
+      double p2 = 1 - pow((1 - p), D);
+      if (t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
@@ -278,23 +284,20 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
         P *= (1 - q);
       } else if (!prev_inf.bit(b) && !prev_rec.bit(b)) {
         // S ->
-        const common::IGraph* graph = simulator_.graph();
         const common::IVector<int>& adj_list = graph->adj_list(b);
-
-        int deg = 0;
+        int D = 0;
         for (int i = 0; i < (int)adj_list.size(); ++i) {
-          if (prev_inf.bit(adj_list[i])) deg++;
+          if (prev_inf.bit(adj_list[i])) D++;
         }
-        // printf("b: %d deg: %d ", b, deg);
 
         if (!next_inf.bit(b)) {
           // S -> S
-          P *= pow(1 - p, deg);
+          P *= pow(1 - p, D);
         }
         if (next_inf.bit(b)) {
           // S -> I
-          if (!deg) P = 0;
-          P *= (1 - pow(1 - p, deg));
+          if (!D) P = 0;
+          P *= (1 - pow(1 - p, D));
         }
       }
     }

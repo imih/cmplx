@@ -135,7 +135,7 @@ void DirectMCSimulParalConv(SourceDetectionParams *params,
       printf("c: %lf\n", delta);
       if (delta >= c) converge = false;
       for (int i = 0; i < (int)p1.size(); ++i) {
-        if (dabs((p0[i] - p1[i]) / p1[i]) > c) converge = false;
+        if (dabs(p0[i] - p1[i]) > c) converge = false;
       }
 
       if (converge) {
@@ -652,11 +652,9 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
   // SourceDetectionParams params0 = params;
 
   for (int d = 0; d < distributions; ++d) {
-    /*
     MPI::COMM_WORLD.Barrier();
     share_params(params);
     MPI::COMM_WORLD.Barrier();
-    */
 
     if (rank == 0) {
       std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
@@ -685,13 +683,15 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
 
 vector<double> SeqMonteCarloParalConvMaster(
     cmplx::SourceDetectionParams *params, bool end) {
+  std::string filename = "conv_seq_distr_" + params->summary();
+  FILE* f = fopen(filename.c_str(), "a");
   using namespace SMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
   int rank = MPI::COMM_WORLD.Get_rank();
   assert(rank == 0);
 
-  int s0 = 100;
+  int s0 = 10000;
   printf("s0: %d\n", s0);
 
   params->setSimulations(s0);
@@ -701,25 +701,35 @@ vector<double> SeqMonteCarloParalConvMaster(
 
   vector<double> res;
   int bits = params->realization().realization().bitCount();
+  int convergeG = 0;
   while (true) {
     int s1 = 2 * s0;
     printf("s2: %d\n", s1);
     params->setSimulations(s1);
 
-    double converge = true;
+    bool converge = true;
     vector<double> p1 = SeqMonteCarloSimulParalMaster(params, false, true);
     double pMAP1 = *std::max_element(p1.begin(), p1.end());
     double delta = dabs(pMAP1 - pMAP0) / pMAP1;
-    printf("c: %lf\n", delta);
+    printf("\rc: %lf ", delta);
     if (delta >= c) converge = false;
     int pos = 0;
     for (int j = 0; j < (int)p1.size(); ++j) {
-      if (dabs(p1[j] - p0[j]) > c) converge = false;
-      if (p1[j] > 0) pos++;
+      if (p1[j] > 0 && (dabs(p1[j] - p0[j]) / p1[j] > 2 * c)) converge = false;
+      if (p1[j] > 0) {
+        printf("%lf ", dabs(p1[j] - p0[j]) / p1[j]);
+        pos++;
+      }
     }
-    // if (s1 > 1000000) converge = true;
-    if (2 * pos < bits) converge = false;
-    if (converge) {
+    printf("\n");
+    if (s1 > 1000000) converge = true;
+    if (pos < bits) converge = false;
+    if (converge)
+      convergeG++;
+    else
+      convergeG = 0;
+    if (convergeG) {
+      fprintf(f, "%d,%d\n", params->graph()->vertices(), s1);
       printf("Converged for n=%d\n", s1);
       res = p1;
       MPI::COMM_WORLD.Get_size();
@@ -741,6 +751,7 @@ vector<double> SeqMonteCarloParalConvMaster(
     p0.assign(p1.begin(), p1.end());
     pMAP0 = pMAP1;
   }
+  fclose(f);
   return res;
 }
 
