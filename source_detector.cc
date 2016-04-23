@@ -10,6 +10,8 @@
 #include "common/ivector.h"
 #include "common/ivector.cc"
 
+#include <gmp.h>
+
 using cmplx::common::IGraph;
 using cmplx::common::SirParams;
 using cmplx::common::Realization;
@@ -215,14 +217,19 @@ double SequentialMCDetector::seqPosterior(
   double sum = 0;
   for (const SeqSample& sample : samples) {
     if (sample.match(target_realization)) {
+      //    printf("T_: %s\n",
+      // target_realization.realization().to_string().c_str());
+      //    printf("R_: %s\n", sample.recovered().to_string().c_str());
+      //    printf("I_: %s\n", sample.infected().to_string().c_str());
+      //    printf("%.10lf\n", sample.w());
       pos_P += sample.w();
     }
     sum += sample.w();
   }
   // printf("Post: %.10lf\n", pos_P / sum);
   // return pos_P / sum;
-  printf("Post: %.10lf\n", pos_P / (int)samples.size());
-  return pos_P / (int)samples.size();
+  printf("\nPost: %.10lf\n", pos_P);
+  return pos_P;
 }
 
 SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
@@ -253,6 +260,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
       }
 
       double p2 = 1 - pow((1 - p), D);
+      p2 += t * (1 - p2) / (tMAX - 1);
       if (t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
