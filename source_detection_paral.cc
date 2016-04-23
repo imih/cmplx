@@ -69,6 +69,7 @@ void share_params(SourceDetectionParams *params) {
         params->realization().p(), params->realization().q(),
         (int)sqrt(params->realization().population_size()));
     vector<int> r_pos = params_novi->realization().realization().positions();
+    r_pos.push_back(-1);
     for (int v = 1; v < processes; ++v) {
       MPI::COMM_WORLD.Send(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
                            MessageType::SIMUL_PARAMS);
@@ -76,11 +77,14 @@ void share_params(SourceDetectionParams *params) {
     params->setRealization(params_novi->realization().realization());
   } else {
     vector<int> r_pos;
-    r_pos.resize(params->graph()->vertices());
+    r_pos.resize(params->graph()->vertices() + 1);
     MPI::COMM_WORLD.Recv(&r_pos[0], (int)r_pos.size(), MPI_INT, 0,
                          MessageType::SIMUL_PARAMS);
     BitArray r_ba(params->graph()->vertices());
-    for (int p : r_pos) r_ba.set(p, true);
+    for (int p : r_pos) {
+      if (p == -1) break;
+      r_ba.set(p, true);
+    }
     params->setRealization(r_ba);
   }
 }
@@ -684,7 +688,7 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
 vector<double> SeqMonteCarloParalConvMaster(
     cmplx::SourceDetectionParams *params, bool end) {
   std::string filename = "conv_seq_distr_" + params->summary();
-  FILE* f = fopen(filename.c_str(), "a");
+  FILE *f = fopen(filename.c_str(), "a");
   using namespace SMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -722,7 +726,7 @@ vector<double> SeqMonteCarloParalConvMaster(
       }
     }
     printf("\n");
-    if (s1 > 1000000) converge = true;
+    // if (s1 > 1000000) converge = true;
     if (pos < bits) converge = false;
     if (converge)
       convergeG++;
