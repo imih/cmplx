@@ -613,7 +613,7 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     }
   }
   fclose(f);
-  exit(0);
+  //exit(0);
 }
 
 /******* SMC *******/
