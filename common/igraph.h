@@ -8,6 +8,8 @@
 
 #include "ivector.h"
 
+#include <memory>
+
 namespace cmplx {
 namespace common {
 
@@ -19,29 +21,46 @@ class IGraph {
   static IGraph* UndirectedLattice(const std::vector<int> dimensions);
   static IGraph* GraphFromGML(const std::string& file_name);
   static IGraph* GraphFromGDF(const std::string& file_name);
+  static IGraph* BarabasiAlbert(int nodes);
+  static IGraph* ErdosRenyi(int nodes, double p);
 
   ~IGraph() {
     delete adj_list_cache_;
-    if(graph_) igraph_destroy(graph_);
-    if(graph_) igraph_free(graph_);
+    if (graph_) igraph_destroy(graph_);
+    if (graph_) igraph_free(graph_);
   }
 
   const igraph_t& graph() const { return *graph_; }
 
   int diameter() const;
+  bool is_connected() const;
 
   int vertices() const { return (int)igraph_vcount(graph_); }
 
   const IVector<int>& adj_list(int node_id) const;
 
+  int deg(int node_id) const { return adj_list(node_id).size(); }
+  int kCore(int node_id) const;
+  double closeness(int node_id) const;
+  double betweenness(int node_id) const;
+  double eigenvector_centrality(int node_id) const;
+
+
+  void writeGML(std::string file_name);
+
  private:
   IGraph(igraph_t* graph_) : graph_(graph_) {
     adj_list_cache_ = new std::unordered_map<int, IVector<int> >();
     adj_list_cache_->clear();
+    cores_ = std::unique_ptr<IVector<int> >(new IVector<int>());
+    closeness_ = std::unique_ptr<IVector<double> >(new IVector<double>());
+    betweenness_ = std::unique_ptr<IVector<double> >(new IVector<double>());
+    eigenvector_centrality_ =
+        std::unique_ptr<IVector<double> >(new IVector<double>());
   }
 
   IGraph(const IGraph& i_graph) {
-    graph_ = (igraph_t*) malloc(sizeof(igraph_t));
+    graph_ = (igraph_t*)malloc(sizeof(igraph_t));
     igraph_copy(graph_, &i_graph.graph());
     adj_list_cache_ = new std::unordered_map<int, IVector<int> >();
     adj_list_cache_->clear();
@@ -50,6 +69,10 @@ class IGraph {
   igraph_t* graph_;
   // TODO make thread safe!
   mutable std::unordered_map<int, IVector<int> >* adj_list_cache_;
+  mutable std::unique_ptr<IVector<int> > cores_;
+  mutable std::unique_ptr<IVector<double> > closeness_;
+  mutable std::unique_ptr<IVector<double> > betweenness_;
+  mutable std::unique_ptr<IVector<double> > eigenvector_centrality_;
 };
 
 }  // namespace common
