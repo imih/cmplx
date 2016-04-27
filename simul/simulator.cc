@@ -162,6 +162,9 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
       long int current_node;
       current_node = q.pop();
       delta_nodes_pop--;
+      if(!I.bit(current_node)) {
+        continue;
+      }
 
       const IVector<int> &neis = graph_->adj_list(current_node);
       bool became_stifler = false;
@@ -170,9 +173,9 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
         if (S.bit(current_neigh)) {
           // spreader meets ignorant
           if (eventDraw(sir_params.p())) {
-            q.push(current_neigh);
             S.set(current_neigh, false);
             I.set(current_neigh, true);
+            q.push(current_neigh);
             if (prunning && allowed_nodes.bit(current_neigh) == 0) {
               prunned = true;
               break;
