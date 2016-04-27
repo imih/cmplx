@@ -10,8 +10,6 @@
 #include "common/ivector.h"
 #include "common/ivector.cc"
 
-#include <gmp.h>
-
 using cmplx::common::IGraph;
 using cmplx::common::SirParams;
 using cmplx::common::Realization;
@@ -260,7 +258,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
       }
 
       double p2 = 1 - pow((1 - p), D);
-      p2 += t * (1 - p2) / (tMAX - 1);
+      //p2 += t * (1 - p2) / (tMAX - 1);
       if (t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
@@ -328,7 +326,7 @@ std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
 }
 
 void SequentialMCDetector::printvc2(const std::vector<SeqSample>& samples) {
-  // printf("vc2 %.10lf\n", vc2(samples));
+  printf("vc2 %.10lf\n", vc2(samples));
   // printf("ESS %.10lf\n", ESS(samples));
 }
 

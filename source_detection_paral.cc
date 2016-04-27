@@ -588,6 +588,7 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   std::string filename = "distr_" + params->summary();
+  if(model_type == ModelType::ISS) filename = "iss_" + filename;
   FILE *f = fopen(filename.c_str(), "a");
 
   for (int d = 0; d < distributions; ++d) {
@@ -682,7 +683,7 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
     }
   }
   fclose(f);
-  // exit(0);
+  exit(0);
 }
 
 vector<double> SeqMonteCarloParalConvMaster(
@@ -719,7 +720,7 @@ vector<double> SeqMonteCarloParalConvMaster(
     if (delta >= c) converge = false;
     int pos = 0;
     for (int j = 0; j < (int)p1.size(); ++j) {
-      if (p1[j] > 0 && (dabs(p1[j] - p0[j]) / p1[j] > 2 * c)) converge = false;
+      if (p1[j] > 0 && (dabs(p1[j] - p0[j]) > c)) converge = false;
       if (p1[j] > 0) {
         printf("%lf ", dabs(p1[j] - p0[j]) / p1[j]);
         pos++;
