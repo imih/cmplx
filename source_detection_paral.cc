@@ -338,12 +338,12 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
   int s0 = SIMUL_PER_REQ;
   printf("s0: %d\n", s0);
   vector<double> a(MAXA + 1, 0);
-  for (int i = 1; i <= MAXA; ++i) {
+  for (int i = 3; i <= MAXA; ++i) {
     a[i] = 1.0 / (double)(1 << i);
   }
   vector<double> p0[MAXA + 1];
   vector<double> pMAP0(MAXA + 1, 0);
-  for (int i = 1; i <= MAXA; ++i) {
+  for (int i = 3; i <= MAXA; ++i) {
     params->setSimulations(s0);
     params->setA(a[i]);
     printf("a[i]: %lf\n", a[i]);
@@ -361,7 +361,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     vector<double> p1[MAXA + 1];
     vector<double> pMAP1(MAXA + 1, 0);
 
-    for (int i = MAXA; i >= 1; --i) {
+    for (int i = MAXA; i >= 3; --i) {
       printf("s: %d a: %.10lf\n", s1, a[i]);
       params->setA(a[i]);
       double converge = true;
@@ -388,7 +388,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     }
 
     bool done = false;
-    for (int i = MAXA; i >= 1; --i) {
+    for (int i = MAXA; i >= 3; --i) {
       if (convergeGlobal[i]) {
         res = p1[i];
         MPI::COMM_WORLD.Get_size();
@@ -587,6 +587,7 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     MPI::COMM_WORLD.Barrier();
     share_params(params, model_type);
     MPI::COMM_WORLD.Barrier();
+    int bits = params->realization().realization().bitCount();
 
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
