@@ -33,7 +33,7 @@ const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
 std::string BENCHMARK_PATH =
-    "/home/iva/dipl/Supplementary_data_code/Data/Benchmark data";
+    "/home/iva/dipl/Supplementary_data_code/Data/benchmark_data";
 }
 
 namespace cmplx {
@@ -122,39 +122,40 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
   }
 }
 
-
-std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(const std::string& file_name, int source_node) {
- IGraph* graph = IGraph::GraphFromGML(file_name);
-double p = 0.5;
-double q = 0.5;
-int TMax = 5;
-cmplx::simul::Simulator simulator(graph);
-    BitArray r = BitArray::zeros(graph->vertices());
-    r.set(source_node, true);
-    BitArray s = BitArray::ones(graph->vertices());
-    s.set(source_node, false);
-    SirParams sir_params(p, q, TMax, r, s);
-    simulator.NaiveSIR(sir_params);
-    Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
-    //if (real.realization().bitCount() > 0) {
-      SourceDetectionParams* params = new SourceDetectionParams(graph, real, 1000000);
-      params->setSourceId(source_node);
-      return std::unique_ptr<SourceDetectionParams>(
-  params);
+std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
+    const std::string& file_name, int source_node) {
+  IGraph* graph = IGraph::GraphFromGML(file_name);
+  double p = 0.5;
+  double q = 0.5;
+  int TMax = 5;
+  cmplx::simul::Simulator simulator(graph);
+  BitArray r = BitArray::zeros(graph->vertices());
+  r.set(source_node, true);
+  BitArray s = BitArray::ones(graph->vertices());
+  s.set(source_node, false);
+  SirParams sir_params(p, q, TMax, r, s);
+  simulator.NaiveSIR(sir_params);
+  Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
+  // if (real.realization().bitCount() > 0) {
+  SourceDetectionParams* params =
+      new SourceDetectionParams(graph, real, 1000000);
+  params->setSourceId(source_node);
+  return std::unique_ptr<SourceDetectionParams>(params);
 }
 
 // TODO determine number of simulations yourself!
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
     int realization_no) {
   IGraph* graph =
-      IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice5.gml");
+      IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice30.gml");
   double p = 0, q = 0;
   int T = 0;
   BitArray r = BitArray::zeros(graph->vertices());
 
   std::ifstream f_real;
-  f_real.open(BENCHMARK_PATH + "/realization_num_" +
-              std::to_string(realization_no) + ".txt");
+  std::string filename = BENCHMARK_PATH + "/realizations/realization_" +
+              std::to_string(realization_no) + ".txt";
+  f_real.open(filename);
   if (!f_real.is_open()) {
     std::cout << std::strerror(errno) << std::endl;
     exit(1);
@@ -165,13 +166,13 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
     auto items = split(line);
     switch (line_no) {
       case P_LINE:
-        p = stod(items[2]);
+        p = stod(items[1]);
         break;
       case Q_LINE:
-        q = stod(items[2]);
+        q = stod(items[1]);
         break;
       case T_LINE:
-        T = stoi(items[2]);
+        T = stoi(items[1]);
         break;
     }
 

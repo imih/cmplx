@@ -23,8 +23,13 @@ void GenerateSoftMarginDistributions(SourceDetectionParams* params,
                                      int distributions,
                                      ModelType modelType = ModelType::SIR);
 
+void SoftMarginBenchmarkConv(SourceDetectionParams* params, int benchmark_no,
+                             ModelType model_type = ModelType::SIR);
+
 void GenerateSeqMonteCarloDistributions(SourceDetectionParams* params,
                                         int distributions);
+void SeqMonteCarloBenchmark(SourceDetectionParams *params,
+                                        int benchmark_no);
 std::vector<double> SeqMonteCarloSimulParalMaster(
     const SourceDetectionParams* params, bool end, bool print);
 void SeqMonteCarloSimulParalWorker(const SourceDetectionParams& params);

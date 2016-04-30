@@ -71,7 +71,7 @@ void share_params(SourceDetectionParams *params, ModelType model_type) {
       MPI::COMM_WORLD.Send(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
                            MessageType::SIMUL_PARAMS);
     }
-   } else {
+  } else {
     vector<int> r_pos;
     r_pos.resize(params->graph()->vertices() + 1);
     MPI::COMM_WORLD.Recv(&r_pos[0], (int)r_pos.size(), MPI_INT, 0,
@@ -84,7 +84,7 @@ void share_params(SourceDetectionParams *params, ModelType model_type) {
     params->setRealization(r_ba);
   }
 }
-} // namespace
+}  // namespace
 
 void DirectMCSimulParalWorker(const SourceDetectionParams *, ModelType);
 vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *, bool,
@@ -375,7 +375,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
         if (dabs(p1[i][j] - p0[i][j]) >= c) converge = false;
         if (p1[i][j] > 0) pos++;
       }
-      //if (s1 > 1000000) converge = true;
+      // if (s1 > 1000000) converge = true;
       if (pos != bits) converge = false;
       if (converge) {
         convergeGlobal[i]++;
@@ -579,6 +579,83 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams *params,
   }
 }
 
+void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
+                             ModelType model_type) {
+  using namespace SMP;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+
+  int rank = MPI::COMM_WORLD.Get_rank();
+  int processes = MPI::COMM_WORLD.Get_size();
+  if (rank == 0) {
+    // std::vector<double> P = SoftMarginParalConvMaster(params, true);
+    double c = 0.05;
+    double a = 0.031;
+    int s0 = SIMUL_PER_REQ;
+    printf("s0: %d\n", s0);
+    params->setSimulations(s0);
+    params->setA(a);
+    vector<double> p0 = SoftMarginSimulParalMaster(params, false, false);
+    double pMAP0 = *std::max_element(p0.begin(), p0.end());
+
+    int bits = params->realization().realization().bitCount();
+    vector<double> P;
+    int s1 = 2 * s0;
+    while (true) {
+      s1 = 2 * s0;
+      printf("s: %d\n", s1);
+      params->setSimulations(s1);
+      printf("s: %d\n", s1);
+      double converge = true;
+      vector<double> p1 = SoftMarginSimulParalMaster(params, false, false);
+      double pMAP1 = *std::max_element(p1.begin(), p1.end());
+      double delta = dabs(pMAP1 - pMAP0) / pMAP1;
+      printf("c: %lf\n", delta);
+      if (delta >= c) converge = false;
+
+      int pos = 0;
+      for (int j = 0; j < (int)p1.size(); ++j) {
+        if (dabs(p1[j] - p0[j]) >= c) converge = false;
+        if (p1[j] > 0) pos++;
+      }
+      if (pos != bits) converge = false;
+      if (converge) {
+        printf("Converged for n=%dn", s1);
+        P = p1;
+        break;
+      } else {
+        printf("Not converged.\n");
+      }
+      s0 = s1;
+      p0.assign(p1.begin(), p1.end());
+      pMAP0 = pMAP1;
+    }
+
+    std::string filename =
+        "SMbenchmark_" + std::to_string(benchmark_no) + ".info";
+    FILE *f = fopen(filename.c_str(), "w+");
+    fprintf(f, "%s\n", params->summary().c_str());
+    fprintf(f, "s: %d\n", s1);
+    for (int j = 0; j < (int)P.size(); ++j) {
+      fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
+      printf("%.10lf\n", P[j]);
+    }
+    fclose(f);
+
+    using namespace SMP;
+    MPI::Datatype message_type = datatypeOfMessage();
+    message_type.Commit();
+    for (int v = 1; v < processes; ++v) {
+      Message end_message;
+      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                            MessageType::SIMUL_END);
+    }
+  } else {
+    SoftMarginSimulParalWorker(params, model_type);
+  }
+  exit(0);
+}
+
 void GenerateSoftMarginDistributions(SourceDetectionParams *params,
                                      int distributions, ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
@@ -591,12 +668,12 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
 
-  std::string filename = "barabasi900_2_" + params->summary();
-  if(model_type == ModelType::ISS) {
-    filename = "iss_distr_" + params->summary();
-  }
-  FILE *f = fopen(filename.c_str(), "a");
-      if(model_type == ModelType::SIR) {
+      std::string filename = "barabasi900_2_" + params->summary();
+      if (model_type == ModelType::ISS) {
+        filename = "iss_distr_" + params->summary();
+      }
+      FILE *f = fopen(filename.c_str(), "a");
+      if (model_type == ModelType::SIR) {
         fprintf(f, "-%d ", params->sourceID());
       }
 
@@ -605,7 +682,6 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
         printf("%.10lf\n", P[j]);
       }
       fclose(f);
-
 
       using namespace SMP;
       MPI::Datatype message_type = datatypeOfMessage();
@@ -649,6 +725,7 @@ vector<double> SeqMonteCarloSimulParalMaster(
 vector<double> SeqMonteCarloParalConvMaster(
     cmplx::SourceDetectionParams *params, bool end);
 void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params);
+
 void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
                                         int distributions) {
   int rank = MPI::COMM_WORLD.Get_rank();
@@ -684,6 +761,37 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
     }
   }
   fclose(f);
+  exit(0);
+}
+
+void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
+  int rank = MPI::COMM_WORLD.Get_rank();
+  int processes = MPI::COMM_WORLD.Get_size();
+  if (rank == 0) {
+    std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
+    std::string filename =
+        "SEQbenchmark_" + std::to_string(benchmark_no) + ".info";
+    FILE *f = fopen(filename.c_str(), "w+");
+    fprintf(f, "%s\n", params->summary().c_str());
+    fprintf(f, "s: %d\n", params->simulations());
+
+    for (int j = 0; j < (int)P.size(); ++j) {
+      fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
+      printf("%.10lf\n", P[j]);
+    }
+    fclose(f);
+
+    using namespace SMC;
+    MPI::Datatype message_type = datatypeOfMessage();
+    message_type.Commit();
+    for (int v = 1; v < processes; ++v) {
+      Message end_message;
+      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                            MessageType::SIMUL_END);
+    }
+  } else {
+    SeqMonteCarloSimulParalWorker(params);
+  }
   exit(0);
 }
 
@@ -728,7 +836,6 @@ vector<double> SeqMonteCarloParalConvMaster(
       }
     }
     printf("\n");
-    // if (s1 > 1000000) converge = true;
     if (pos < bits) converge = false;
     if (converge)
       convergeG++;
