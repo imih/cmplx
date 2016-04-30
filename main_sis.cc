@@ -1,9 +1,10 @@
 #include <mpi.h>
-#include <ctime> 
-#include <string> 
+#include <ctime>
+
 #include "source_detection_params.h"
 #include "source_detection_paral.h"
-#include "source_detector.h" 
+#include "source_detector.h"
+
 using cmplx::SourceDetectionParams;
 
 // -type {-P 10p -Q 10q}
@@ -13,13 +14,10 @@ int main(int argc, char **argv) {
   MPI::Init(argc, argv);
   bool seq = false;
   int P = 5, Q = 5;
-  int n = 30;
-  int g = 0;
-  int v = 0;
-  bool erdos = false;
+  int n = 5;
   {
     int c;
-    while ((c = getopt(argc, argv, "g:v:p:q:n:se")) != EOF) {
+    while ((c = getopt(argc, argv, "p:q:n:s")) != EOF) {
       switch (c) {
         case 'p':
           P = atoi(optarg);
@@ -33,19 +31,10 @@ int main(int argc, char **argv) {
         case 's':
           seq = true;
           break;
-        case 'g':
-          g = atoi(optarg);
-          break;
-        case 'v':
-          v = atoi(optarg);
-          break;
-        case 'e':
-          erdos = true;
-          break;
       }
     }
   }
-  
+
   // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   // cmplx::DirectMCSimulParalConv(params, cmplx::ModelType::SIR);
@@ -53,13 +42,9 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParal(params);
   // cmplx::SoftMarginParalConv(params);
 
-
-  std::string file_name = "/home/imiholic/graphs/barabasi1_100_" + std::to_string(g) + ".gml";
-  if(erdos) {
-   file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" + std::to_string(g) + ".gml";
-   }
-  auto params =  SourceDetectionParams::ParamsFromGML(file_name, v);
-    cmplx::GenerateSoftMarginDistributions(params.get(), 1);
+  std::unique_ptr<SourceDetectionParams> params =
+      SourceDetectionParams::ParamsFromGridISS(P / 10.0, Q / 10.0, n);
+    cmplx::GenerateSoftMarginDistributions(params.get(), 1, cmplx::ModelType::ISS);
 
   MPI::Finalize();
   // clock_t end = clock();

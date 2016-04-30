@@ -33,6 +33,7 @@ IGraph *IGraph::ErdosRenyi(int nodes, double p) {
   return new IGraph(graph);
 }
 
+/*
 bool IGraph::is_connected() const {
   igraph_bool_t bool_t;
   igraph_is_connected(graph_, &bool_t, IGRAPH_WEAK);
@@ -42,7 +43,9 @@ bool IGraph::is_connected() const {
 int IGraph::kCore(int node_id) const {
   if (cores_.get()->empty()) {
     igraph_coreness(graph_, cores_.get()->vector(),
-                    IGRAPH_ALL /* undirected */);
+*/
+//                    IGRAPH_ALL /* undirected */);
+/*
   }
   return (*cores_.get())[node_id];
 }
@@ -52,7 +55,9 @@ double IGraph::closeness(int node_id) const {
     igraph_vs_t *vs_t = (igraph_vs_t *)malloc(sizeof(igraph_vs_t));
     igraph_vs_all(vs_t);
     igraph_closeness(graph_, closeness_.get()->vector(), *vs_t, IGRAPH_ALL,
-                     NULL, true /* normalize*/);
+*/
+ //                    NULL, true /* normalize*/);
+/*
     delete vs_t;
   }
   return (*closeness_.get())[node_id];
@@ -80,12 +85,15 @@ double IGraph::eigenvector_centrality(int node_id) const {
         (igraph_arpack_options_t *)malloc(sizeof(igraph_arpack_options_t));
     igraph_arpack_options_init(options);
     igraph_eigenvector_centrality(
-        graph_, eigenvector_centrality_.get()->vector(), NULL, 0 /* directed */,
-        1 /* scale */, NULL, options);
+*/
+ //       graph_, eigenvector_centrality_.get()->vector(), NULL, 0 /* directed */,
+  //      1 /* scale */, NULL, options);
+/*
     delete options;
   }
   return (*eigenvector_centrality_.get())[node_id];
 }
+*/
 
 IGraph *IGraph::GraphFromGML(const std::string &file_name) {
   igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));

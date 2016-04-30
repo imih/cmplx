@@ -18,6 +18,7 @@ using cmplx::common::SirParams;
 using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
 
+/*
 void generateBarabasi(int no, int poc = 0) {
   for (int t = poc; t < poc + no; ++t) {
     printf("%d\n", t);
@@ -65,10 +66,11 @@ void generateErdosRenyi(int no, int poc = 0) {
     }
   }
 }
+*/
 
 int main() {
   // generateBarabasi(50, 0);
-  generateErdosRenyi(50, 0);
+ // generateErdosRenyi(50, 0);
 
   // fclose(f);
 

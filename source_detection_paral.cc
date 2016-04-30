@@ -61,21 +61,17 @@ MPI::Datatype datatypeOfMessage() {
 namespace cmplx {
 
 namespace {
-void share_params(SourceDetectionParams *params) {
+void share_params(SourceDetectionParams *params, ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank == 0) {
-    auto params_novi = SourceDetectionParams::ParamsFromGrid(
-        params->realization().p(), params->realization().q(),
-        (int)sqrt(params->realization().population_size()));
-    vector<int> r_pos = params_novi->realization().realization().positions();
+    vector<int> r_pos = params->realization().realization().positions();
     r_pos.push_back(-1);
     for (int v = 1; v < processes; ++v) {
       MPI::COMM_WORLD.Send(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
                            MessageType::SIMUL_PARAMS);
     }
-    params->setRealization(params_novi->realization().realization());
-  } else {
+   } else {
     vector<int> r_pos;
     r_pos.resize(params->graph()->vertices() + 1);
     MPI::COMM_WORLD.Recv(&r_pos[0], (int)r_pos.size(), MPI_INT, 0,
@@ -88,7 +84,7 @@ void share_params(SourceDetectionParams *params) {
     params->setRealization(r_ba);
   }
 }
-}
+} // namespace
 
 void DirectMCSimulParalWorker(const SourceDetectionParams *, ModelType);
 vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *, bool,
@@ -342,12 +338,12 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
   int s0 = SIMUL_PER_REQ;
   printf("s0: %d\n", s0);
   vector<double> a(MAXA + 1, 0);
-  for (int i = 3; i <= MAXA; ++i) {
+  for (int i = 1; i <= MAXA; ++i) {
     a[i] = 1.0 / (double)(1 << i);
   }
   vector<double> p0[MAXA + 1];
   vector<double> pMAP0(MAXA + 1, 0);
-  for (int i = 3; i <= MAXA; ++i) {
+  for (int i = 1; i <= MAXA; ++i) {
     params->setSimulations(s0);
     params->setA(a[i]);
     printf("a[i]: %lf\n", a[i]);
@@ -365,7 +361,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     vector<double> p1[MAXA + 1];
     vector<double> pMAP1(MAXA + 1, 0);
 
-    for (int i = MAXA; i >= 3; --i) {
+    for (int i = MAXA; i >= 1; --i) {
       printf("s: %d a: %.10lf\n", s1, a[i]);
       params->setA(a[i]);
       double converge = true;
@@ -379,7 +375,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
         if (dabs(p1[i][j] - p0[i][j]) >= c) converge = false;
         if (p1[i][j] > 0) pos++;
       }
-      if (s1 > 1000000) converge = true;
+      //if (s1 > 1000000) converge = true;
       if (pos != bits) converge = false;
       if (converge) {
         convergeGlobal[i]++;
@@ -392,7 +388,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     }
 
     bool done = false;
-    for (int i = MAXA; i >= 3; --i) {
+    for (int i = MAXA; i >= 1; --i) {
       if (convergeGlobal[i]) {
         res = p1[i];
         MPI::COMM_WORLD.Get_size();
@@ -587,23 +583,29 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
                                      int distributions, ModelType model_type) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
-  std::string filename = "distr_" + params->summary();
-  if(model_type == ModelType::ISS) filename = "iss_" + filename;
-  FILE *f = fopen(filename.c_str(), "a");
-
   for (int d = 0; d < distributions; ++d) {
     MPI::COMM_WORLD.Barrier();
-    share_params(params);
+    share_params(params, model_type);
     MPI::COMM_WORLD.Barrier();
 
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
 
+  std::string filename = "barabasi900_2_" + params->summary();
+  if(model_type == ModelType::ISS) {
+    filename = "iss_distr_" + params->summary();
+  }
+  FILE *f = fopen(filename.c_str(), "a");
+      if(model_type == ModelType::SIR) {
+        fprintf(f, "-%d ", params->sourceID());
+      }
+
       for (int j = 0; j < (int)P.size(); ++j) {
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
         printf("%.10lf\n", P[j]);
       }
-      fflush(f);
+      fclose(f);
+
 
       using namespace SMP;
       MPI::Datatype message_type = datatypeOfMessage();
@@ -617,7 +619,6 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
       SoftMarginSimulParalWorker(params, model_type);
     }
   }
-  fclose(f);
   exit(0);
 }
 
@@ -658,7 +659,7 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
 
   for (int d = 0; d < distributions; ++d) {
     MPI::COMM_WORLD.Barrier();
-    share_params(params);
+    share_params(params, ModelType::SIR);
     MPI::COMM_WORLD.Barrier();
 
     if (rank == 0) {
