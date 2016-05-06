@@ -78,7 +78,7 @@ plotSirGridBig <- function() {
 }
 
 plotSisBig <- function() {
-  par(mfrow=c(4,1), mai = c(0.2732, 0.5412, 0.2712, 0.2772))
+  par(mfrow=c(3,1), mai = c(0.2732, 0.5412, 0.2712, 0.2772))
   PrintVioplot(0, 900, col = "orange", prefix = "~/dipl/res/iss_grid/iss_distr_0.")
   PrintVioplot(5, 900, col = "orange", prefix = "~/dipl/res/iss_grid/iss_distr_0.")
   PrintVioplot(10, 900, col = "orange", prefix = "~/dipl/res/iss_grid/iss_distr_0.")
@@ -193,11 +193,11 @@ createSeqBenchmarkDF <- function() {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 42:65) {
+  for(id in 41:65) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 67:70) {
+  for(id in 67:71) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
@@ -205,11 +205,7 @@ createSeqBenchmarkDF <- function() {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 82:126) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 128:160) {
+  for(id in 82:160) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
@@ -410,9 +406,39 @@ benchAccSim <- function() {
                             expression(group("(",list(10^8, 10^9),"]"))), 
          fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
   
+  
+  
   true_SEQMAP <- function(data_) {
     return(nrow(data_[data_$true_source == data_$SEQ_MAP,])/nrow(data_))
   }
+  
+  bp2MC_data4 = c(true_SEQMAP(MC_SIMUL4(data)), true_SEQMAP(MC_SIMUL4(dataA)), true_SEQMAP(MC_SIMUL4(dataB)), 
+                  true_SEQMAP(MC_SIMUL4(dataC)), true_SEQMAP(MC_SIMUL4(dataD)))
+  bp2MC_data5 = c(true_SEQMAP(MC_SIMUL5(data)), true_SEQMAP(MC_SIMUL5(dataA)), true_SEQMAP(MC_SIMUL5(dataB)), 
+                  true_SEQMAP(MC_SIMUL5(dataC)), true_SEQMAP(MC_SIMUL5(dataD)))
+  bp2MC_data6 = c(true_SEQMAP(MC_SIMUL6(data)), true_SEQMAP(MC_SIMUL6(dataA)), true_SEQMAP(MC_SIMUL6(dataB)), 
+                  true_SEQMAP(MC_SIMUL6(dataC)), true_SEQMAP(MC_SIMUL6(dataD)))
+  bp2MC_data7 = c(true_SEQMAP(MC_SIMUL7(data)), true_SEQMAP(MC_SIMUL7(dataA)), true_SEQMAP(MC_SIMUL7(dataB)), 
+                  true_SEQMAP(MC_SIMUL7(dataC)), true_SEQMAP(MC_SIMUL7(dataD)))
+  bp2MC_data8 = c(true_SEQMAP(MC_SIMUL8(data)), true_SEQMAP(MC_SIMUL8(dataA)), true_SEQMAP(MC_SIMUL8(dataB)), 
+                  true_SEQMAP(MC_SIMUL8(dataC)), true_SEQMAP(MC_SIMUL8(dataD)))
+  bp2MC_data9 = c(true_SEQMAP(MC_SIMUL9(data)), true_SEQMAP(MC_SIMUL9(dataA)), true_SEQMAP(MC_SIMUL9(dataB)), 
+                  true_SEQMAP(MC_SIMUL9(dataC)), true_SEQMAP(MC_SIMUL9(dataD)))
+  bp2MC_data <- rbind(bp2MC_data4, bp2MC_data5, bp2MC_data6, bp2MC_data7, bp2MC_data8, bp2MC_data9)
+  #par(mfrow = c(2, 1), xpd = TRUE)
+  bp2MC <- barplot(bp2MC_data, beside = T,
+                   main=" Accuracy of Sequential Importance w.r.t. true source node", 
+                   names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
+                   col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+  text(x = bp1MC, y = bp1MC_data, label =  round(bp1MC_data, 2), pos = 3, cex = 0.7)
+  legend(0.3, 1.2, legend = c(expression(group("(",list(0, 10^4),"]")),
+                              expression(group("(",list(10^4, 10^5),"]")),
+                              expression(group("(",list(10^5, 10^6),"]")),
+                              expression(group("(",list(10^6, 10^7),"]")),
+                              expression(group("(",list(10^7, 10^8),"]")),
+                              expression(group("(",list(10^8, 10^9),"]"))), 
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+  
   
   SEQ_SIMUL4 <- function(data) {
     return(data[data$SEQ_simul <= 10000,])
@@ -476,18 +502,18 @@ benchAccSim <- function() {
                     MAP_MAP(SEQ_SIMUL9(dataC)), MAP_MAP(SEQ_SIMUL9(dataD)))
   
   bp2SEQ_data = rbind(bp2SEQ_data4, bp2SEQ_data5, bp2SEQ_data6, bp2SEQ_data7, bp2SEQ_data8, bp2SEQ_data9)
-  #bp2SEQ <- barplot(bp2SEQ_data, beside = T,
-  #                  main=" Accuracy of Sequential Monte Carlo w.r.t. DirectMC MAP estimation", 
-  #                  names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
-  #                  col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1")
-  #)
-  #text(x = bp2SEQ, y = bp2SEQ_data, label =  round(bp2SEQ_data, 2), pos = 3, cex = 0.7)
-  #legend(0.3, 1.0, legend =c(expression(group("(",list(0, 10000),"]")),
-  #                         expression(group("(",list(10^4, 10^5),"]")),
-  #                         expression(group("(",list(10^5, 10^6),"]")),
-  #                         expression(group("(",list(10^6, 10^7),"]")),
-  #                         expression(group("(",list(10^7, 10^8),"]")),
-  #                         expression(group("(",list(10^8, 10^9),"]"))), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+  bp2SEQ <- barplot(bp2SEQ_data, beside = T,
+                    main=" Accuracy of Sequential Monte Carlo w.r.t. DirectMC MAP estimation", 
+                    names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
+                    col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1")
+  )
+  text(x = bp2SEQ, y = bp2SEQ_data, label =  round(bp2SEQ_data, 2), pos = 3, cex = 0.7)
+  legend(0.3, 1.0, legend =c(expression(group("(",list(0, 10000),"]")),
+                           expression(group("(",list(10^4, 10^5),"]")),
+                           expression(group("(",list(10^5, 10^6),"]")),
+                           expression(group("(",list(10^6, 10^7),"]")),
+                           expression(group("(",list(10^7, 10^8),"]")),
+                           expression(group("(",list(10^8, 10^9),"]"))), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
 }
 
 benchSimAcc <- function() {
@@ -518,7 +544,7 @@ benchSimAcc <- function() {
   MC_SIMUL9 <- function(data) {
     return(data[(data$MC_simul >100000000) & (data$MC_simul <= 1000000000),])
   }
-  
+
   bp1MC_data4 = c(true_MCMAP(MC_SIMUL4(data)), true_MCMAP(MC_SIMUL4(dataA)), true_MCMAP(MC_SIMUL4(dataB)), 
                   true_MCMAP(MC_SIMUL4(dataC)), true_MCMAP(MC_SIMUL4(dataD)))
   bp1MC_data5 = c(true_MCMAP(MC_SIMUL5(data)), true_MCMAP(MC_SIMUL5(dataA)), true_MCMAP(MC_SIMUL5(dataB)), 
@@ -532,7 +558,7 @@ benchSimAcc <- function() {
   bp1MC_data9 = c(true_MCMAP(MC_SIMUL9(data)), true_MCMAP(MC_SIMUL9(dataA)), true_MCMAP(MC_SIMUL9(dataB)), 
                   true_MCMAP(MC_SIMUL9(dataC)), true_MCMAP(MC_SIMUL9(dataD)))
   bp1MC_data <- cbind(bp1MC_data4, bp1MC_data5, bp1MC_data6, bp1MC_data7, bp1MC_data8, bp1MC_data9)
-  par(mfrow = c(1, 1), xpd = TRUE)
+  par(mfrow = c(2, 1), xpd = TRUE)
   bp1MC <- barplot(bp1MC_data, beside = T,
                    main=" Accuracy of Direct Monte Carlo w.r.t. true source node\ngrouped by number of simulations for Direct Monte Carlo", 
                    names.arg = c(expression(group("(",list(0, 10^4),"]")),
@@ -548,6 +574,40 @@ benchSimAcc <- function() {
   true_SEQMAP <- function(data_) {
     return(nrow(data_[data_$true_source == data_$SEQ_MAP,])/nrow(data_))
   }
+  
+  bp2MC_data4 = c(true_SEQMAP(MC_SIMUL4(data)),  true_SEQMAP(MC_SIMUL4(dataA)), 
+                  true_SEQMAP(MC_SIMUL4(dataB)), 
+                  true_SEQMAP(MC_SIMUL4(dataC)), true_SEQMAP(MC_SIMUL4(dataD)))
+  bp2MC_data5 = c(true_SEQMAP(MC_SIMUL5(data)),  true_SEQMAP(MC_SIMUL5(dataA)), 
+                  true_SEQMAP(MC_SIMUL5(dataB)), 
+                  true_SEQMAP(MC_SIMUL5(dataC)), true_SEQMAP(MC_SIMUL5(dataD)))
+  bp2MC_data6 = c(true_SEQMAP(MC_SIMUL6(data)),  true_SEQMAP(MC_SIMUL6(dataA)), 
+                  true_SEQMAP(MC_SIMUL6(dataB)), 
+                  true_SEQMAP(MC_SIMUL6(dataC)), true_SEQMAP(MC_SIMUL6(dataD)))
+  bp2MC_data7 = c(true_SEQMAP(MC_SIMUL7(data)),  true_SEQMAP(MC_SIMUL7(dataA)), 
+                  true_SEQMAP(MC_SIMUL7(dataB)), 
+                  true_SEQMAP(MC_SIMUL7(dataC)), true_SEQMAP(MC_SIMUL7(dataD)))
+  bp2MC_data8 = c(true_SEQMAP(MC_SIMUL8(data)),  true_SEQMAP(MC_SIMUL8(dataA)), 
+                  true_SEQMAP(MC_SIMUL8(dataB)), 
+                  true_SEQMAP(MC_SIMUL8(dataC)), true_SEQMAP(MC_SIMUL8(dataD)))
+  bp2MC_data9 = c(true_SEQMAP(MC_SIMUL9(data)),  true_SEQMAP(MC_SIMUL9(dataA)), 
+                  true_SEQMAP(MC_SIMUL9(dataB)), 
+                  true_SEQMAP(MC_SIMUL9(dataC)), true_SEQMAP(MC_SIMUL9(dataD)))
+  bp2MC_data <- cbind(bp2MC_data4, bp2MC_data5, bp2MC_data6, bp2MC_data7, 
+                      bp2MC_data8, bp2MC_data9)
+  
+  bp2MC <- barplot(bp2MC_data, beside = T,
+                   main=" Accuracy of Sequential Monte Carlo w.r.t. true source node\ngrouped by number of simulations for Direct Monte Carlo", 
+                   names.arg = c(expression(group("(",list(0, 10^4),"]")),
+                                 expression(group("(",list(10^4, 10^5),"]")),
+                                 expression(group("(",list(10^5, 10^6),"]")),
+                                 expression(group("(",list(10^6, 10^7),"]")),
+                                 expression(group("(",list(10^7, 10^8),"]")),
+                                 expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
+                   col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  text(x = bp2MC, y = bp2MC_data, label =  round(bp2MC_data, 2), pos = 3, cex = 0.7)
+  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  
   par(mfrow = c(2, 1), xpd = TRUE)
   
   SEQ_SIMUL4 <- function(data) {
@@ -568,6 +628,34 @@ benchSimAcc <- function() {
   SEQ_SIMUL9 <- function(data) {
     return(data[(data$SEQ_simul >100000000) & (data$SEQ_simul <= 1000000000),])
   }
+  
+  bp0SEQ_data4 <- c(true_MCMAP(SEQ_SIMUL4(data)),  true_MCMAP(SEQ_SIMUL4(dataA)), true_MCMAP(SEQ_SIMUL4(dataB)),
+                    true_MCMAP(SEQ_SIMUL4(dataC)), true_MCMAP(SEQ_SIMUL4(dataD)))
+  bp0SEQ_data5 <- c(true_MCMAP(SEQ_SIMUL5(data)),  true_MCMAP(SEQ_SIMUL5(dataA)), true_MCMAP(SEQ_SIMUL5(dataB)),
+                    true_MCMAP(SEQ_SIMUL5(dataC)), true_MCMAP(SEQ_SIMUL5(dataD)))
+  bp0SEQ_data6 <- c(true_MCMAP(SEQ_SIMUL6(data)),  true_MCMAP(SEQ_SIMUL6(dataA)), true_MCMAP(SEQ_SIMUL6(dataB)),
+                    true_MCMAP(SEQ_SIMUL6(dataC)), true_MCMAP(SEQ_SIMUL6(dataD)))
+  bp0SEQ_data7 <- c(true_MCMAP(SEQ_SIMUL7(data)),  true_MCMAP(SEQ_SIMUL7(dataA)), true_MCMAP(SEQ_SIMUL7(dataB)),
+                    true_MCMAP(SEQ_SIMUL7(dataC)), true_MCMAP(SEQ_SIMUL7(dataD)))
+  bp0SEQ_data8 <- c(true_MCMAP(SEQ_SIMUL8(data)),  true_MCMAP(SEQ_SIMUL8(dataA)), true_MCMAP(SEQ_SIMUL8(dataB)),
+                    true_MCMAP(SEQ_SIMUL8(dataC)), true_MCMAP(SEQ_SIMUL8(dataD)))
+  bp0SEQ_data9 <- c(true_MCMAP(SEQ_SIMUL9(data)),  true_MCMAP(SEQ_SIMUL9(dataA)), true_MCMAP(SEQ_SIMUL9(dataB)),
+                    true_MCMAP(SEQ_SIMUL9(dataC)), true_MCMAP(SEQ_SIMUL9(dataD)))
+  
+  bp0SEQ_data = cbind(bp0SEQ_data4, bp0SEQ_data5, bp0SEQ_data6, bp0SEQ_data7, bp0SEQ_data8, bp0SEQ_data9)
+  bp0SEQ <- barplot(bp0SEQ_data, beside = T,
+                    main=" Accuracy of Direct Monte Carlo w.r.t. true source node\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
+                    names.arg = c(expression(group("(",list(0, 10^4),"]")),
+                                  expression(group("(",list(10^4, 10^5),"]")),
+                                  expression(group("(",list(10^5, 10^6),"]")),
+                                  expression(group("(",list(10^6, 10^7),"]")),
+                                  expression(group("(",list(10^7, 10^8),"]")),
+                                  expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
+                    col =  c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  text(x = bp0SEQ, y = bp0SEQ_data, label =  round(bp0SEQ_data, 2), pos = 3, cex = 0.7)
+  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  
+  
   bp1SEQ_data4 <- c(true_SEQMAP(SEQ_SIMUL4(data)), true_SEQMAP(SEQ_SIMUL4(dataA)), true_SEQMAP(SEQ_SIMUL4(dataB)),
                     true_SEQMAP(SEQ_SIMUL4(dataC)), true_SEQMAP(SEQ_SIMUL4(dataD)))
   bp1SEQ_data5 <- c(true_SEQMAP(SEQ_SIMUL5(data)), true_SEQMAP(SEQ_SIMUL5(dataA)), true_SEQMAP(SEQ_SIMUL5(dataB)),
@@ -612,8 +700,8 @@ benchSimAcc <- function() {
   
   bp2SEQ_data = cbind(bp2SEQ_data4, bp2SEQ_data5, bp2SEQ_data6, bp2SEQ_data7, bp2SEQ_data8, bp2SEQ_data9)
   bp2SEQ <- barplot(bp2SEQ_data, beside = T,
-                    main=" Accuracy of Sequential Monte Carlo w.r.t. DirectMC MAP estimation\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
-                    names.arg = c(expression(group("(",list(0, 10000),"]")),
+                    main=" Accuracy of Sequential Importance Sampling w.r.t. DirectMC MAP estimation\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
+                    names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                   expression(group("(",list(10^4, 10^5),"]")),
                                   expression(group("(",list(10^5, 10^6),"]")),
                                   expression(group("(",list(10^6, 10^7),"]")),
@@ -667,4 +755,5 @@ SeqBenchmarkAnalysis <- function() {
   BenchSimNo()
   BenchRelMAP()
   benchSimAcc()
+  benchAccSim()
 }

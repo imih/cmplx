@@ -35,8 +35,9 @@ class SeqSample {
     w_ = w;
   }
 
- private:
   common::BitArray realization() const { return infected_ | recovered_; }
+
+ private:
 
   common::BitArray infected_;
   common::BitArray recovered_;

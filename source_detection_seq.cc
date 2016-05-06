@@ -74,6 +74,7 @@ int main() {
 
   // fclose(f);
 
+  auto params = cmplx::SourceDetectionParams::BenchmarkParams(1);
   /*
   for (double p : probs) {
     printf("%.10lf\n", p);

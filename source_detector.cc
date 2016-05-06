@@ -147,57 +147,36 @@ double SequentialMCDetector::seqPosterior(
   double q = target_realization.q();
 
   for (int t = 0; t < target_realization.maxT(); ++t) {
-    //  printf("t: %d\n", t);
     /*
-    if (ESS(samples) * (1 + pow(t + 1, 2)) < sample_size) {
+    if(vc2(samples) >= (1 << t)) {
       puts("resampling...");
-      prev_samples = samples;
+      std::vector<SeqSample> prev_samples = samples;
       samples.clear();
-      vector<double> wSum;
-      wSum.push_back(0);
-      for (const SeqSample& sample : prev_samples) {
-        wSum.push_back(sample.w());
-        wSum.back() += wSum[(int)wSum.size() - 2];
+      double sum = 0;
+      vector<double> P;
+      P.push_back(0);
+      for(const SeqSample& sample: prev_samples) {
+        sum += sample.w();
+        P.push_back(P.back() + sample.w());
       }
+
       for (int i = 0; i < sample_size; ++i) {
-        double p = simulator_.P() * wSum.back();
+        double p = simulator_.P() * sum;
         int lo = 0;
         int hi = sample_size - 1;
         while (lo < hi) {
           int mid = (lo + hi + 1) / 2;
-          if (wSum[i] <= p) {
+          if (P[i] <= p) {
             lo = mid;
           } else
             hi = mid - 1;
         }
         samples.push_back(prev_samples[lo]);
-        samples.back().setW(1);
+        samples.back().setW(sum / sample_size);
       }
       prev_samples.clear();
       printvc2(samples);
     }
-    */
-
-    /*
-    auto f = [&](int i) {
-      BitArray prev_inf = samples[i].infected();
-      BitArray prev_rec = samples[i].recovered();
-      SeqSample newSample = samples[i];
-      NewSample ns = drawSample(p, q, target_infected_idx_, prev_inf, prev_rec);
-      newSample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
-      samples[i] = newSample;
-    };
-    int blockSize = 100;
-    vector<std::thread> threads;
-    for (int blok = 0; blok < (int)samples.size(); blok += blockSize) {
-      threads.clear();
-      for (int i = 0; i < blockSize; ++i) {
-        threads.push_back(std::thread(f, blok + i));
-      }
-      for (int i = 0; i < blockSize; ++i) threads[i].join();
-    }
-
-    printvc2(samples);
     */
 
     for (SeqSample& sample : samples) {
@@ -214,12 +193,13 @@ double SequentialMCDetector::seqPosterior(
   double pos_P = 0;
   double sum = 0;
   for (const SeqSample& sample : samples) {
+    printf("%d\n", sample.realization().bitCount() -
+                       target_realization.realization().bitCount());
     if (sample.match(target_realization)) {
-      //    printf("T_: %s\n",
-      // target_realization.realization().to_string().c_str());
-      //    printf("R_: %s\n", sample.recovered().to_string().c_str());
-      //    printf("I_: %s\n", sample.infected().to_string().c_str());
-      //    printf("%.10lf\n", sample.w());
+      printf("T_: %s\n", target_realization.realization().to_string().c_str());
+      printf("R_: %s\n", sample.recovered().to_string().c_str());
+      printf("I_: %s\n", sample.infected().to_string().c_str());
+      printf("%.10lf\n", sample.w());
       pos_P += sample.w();
     }
     sum += sample.w();
@@ -231,7 +211,7 @@ double SequentialMCDetector::seqPosterior(
 }
 
 SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
-    int t, int tMAX, double p, double q,
+    int T, int tMAX, double p, double q,
     const std::vector<int>& target_infected_idx, const BitArray& prev_inf,
     const BitArray& prev_rec) {
   SequentialMCDetector::NewSample sample;
@@ -242,13 +222,14 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
   double G = 1;
   for (int t : target_infected_idx) {
     if (prev_inf.bit(t)) {
-      if (simulator_.eventDraw(q)) {
-        G *= q;
+      double q2 = q; 
+      if (simulator_.eventDraw(q2)) {
+        G *= q2;
         // try I -> R
         next_rec.set(t, true);
         next_inf.set(t, false);
       } else {
-        G *= (1 - q);
+        G *= (1 - q2);
       }
     } else if (reachable.count(t) && !prev_inf.bit(t) && !prev_rec.bit(t)) {
       const common::IVector<int>& adj_list = graph->adj_list(t);
@@ -258,7 +239,9 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
       }
 
       double p2 = 1 - pow((1 - p), D);
-      //p2 += t * (1 - p2) / (tMAX - 1);
+      // p2 *= 0.95;
+      // f(p2 < 0.5) p2 = 0.5;
+      // p2 += t * (1 - p2) / (tMAX - 1);
       if (t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
