@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
   MPI::Init(argc, argv);
   bool seq = false;
   int P = 5, Q = 5;
-  int n = 5;
+  int n = 30;
   {
     int c;
     while ((c = getopt(argc, argv, "p:q:n:s")) != EOF) {

@@ -33,7 +33,7 @@ const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
 std::string BENCHMARK_PATH =
-    "/home/iva/dipl/Supplementary_data_code/Data/benchmark_data";
+    "/home/imiholic";
 }
 
 namespace cmplx {
@@ -116,7 +116,7 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
     SirParams sir_params(p, q, TMax, r, s);
     simulator.NaiveISS(sir_params);
     Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
-    if (real.realization().bitCount() >= 1)
+    if (real.realization().bitCount() > 1)
       return std::unique_ptr<SourceDetectionParams>(
           new SourceDetectionParams(graph, real, 1000000));
   }
@@ -125,10 +125,12 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
+  if(graph->adj_list(source_node).size() <= 5) exit(1);
   double p = 0.5;
   double q = 0.5;
   int TMax = 5;
   cmplx::simul::Simulator simulator(graph);
+  while (true) {
   BitArray r = BitArray::zeros(graph->vertices());
   r.set(source_node, true);
   BitArray s = BitArray::ones(graph->vertices());
@@ -136,11 +138,13 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
   SirParams sir_params(p, q, TMax, r, s);
   simulator.NaiveSIR(sir_params);
   Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
-  // if (real.realization().bitCount() > 0) {
+  if (real.realization().bitCount() > 1) {
   SourceDetectionParams* params =
       new SourceDetectionParams(graph, real, 1000000);
   params->setSourceId(source_node);
   return std::unique_ptr<SourceDetectionParams>(params);
+}
+}
 }
 
 // TODO determine number of simulations yourself!
@@ -186,22 +190,9 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
 
   f_real.close();
 
-  std::ifstream f_sol;
-  f_sol.open(BENCHMARK_PATH + "/solutions/inverse_solution_" +
-             std::to_string(realization_no) + ".txt");
-  if (!f_sol.is_open()) {
-    std::cout << std::strerror(errno) << std::endl;
-    exit(1);
-  }
-  int simulations = 0;
-  getline(f_sol, line);
-  f_sol.close();
-  auto items = split(line);
-  simulations = stoi(items[3]);
-
   Realization realization(p, q, T, r, BitArray::zeros(graph->vertices()));
   return std::unique_ptr<SourceDetectionParams>(
-      new SourceDetectionParams(graph, realization, simulations));
+      new SourceDetectionParams(graph, realization, 10000));
 }
 
 std::string SourceDetectionParams::summary() const {
