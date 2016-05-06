@@ -59,6 +59,14 @@ int main(int argc, char **argv) {
    file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" + std::to_string(g) + ".gml";
    }
   auto params =  SourceDetectionParams::ParamsFromGML(file_name, v);
+  int rank = MPI::COMM_WORLD.Get_rank();
+if(rank == 0) {
+std::string filename = "barabasi100_deg_5_" + params->summary();
+FILE* f = fopen(filename.c_str(), "a");
+fprintf(f, "g%d, ", g);
+fclose(f);
+}
+
     cmplx::GenerateSoftMarginDistributions(params.get(), 1);
 
   MPI::Finalize();

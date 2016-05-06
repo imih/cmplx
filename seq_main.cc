@@ -29,8 +29,6 @@ int main(int argc, char **argv) {
   }
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
-  printf("B: %d\n", params.get()->realization().realization().bitCount());
-  printf("%d\n", n);
   if (!seq) {
     cmplx::SoftMarginBenchmarkConv(params.get(), n);
   } else
