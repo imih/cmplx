@@ -222,7 +222,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
   double G = 1;
   for (int t : target_infected_idx) {
     if (prev_inf.bit(t)) {
-      double q2 = q; 
+      double q2 = q;
       if (simulator_.eventDraw(q2)) {
         G *= q2;
         // try I -> R

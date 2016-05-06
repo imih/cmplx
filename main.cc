@@ -1,13 +1,13 @@
 #include <mpi.h>
-#include <ctime> 
-#include <string> 
+#include <ctime>
+#include <string>
 #include "source_detection_params.h"
 #include "source_detection_paral.h"
-#include "source_detector.h" 
+#include "source_detector.h"
 using cmplx::SourceDetectionParams;
 
 // -type {-P 10p -Q 10q}
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // clock_t begin = std::clock();
   // Paralelized
   MPI::Init(argc, argv);
@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
       }
     }
   }
-  
+
   // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
   // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
   // cmplx::DirectMCSimulParalConv(params, cmplx::ModelType::SIR);
@@ -53,21 +53,22 @@ int main(int argc, char **argv) {
   // cmplx::SoftMarginParal(params);
   // cmplx::SoftMarginParalConv(params);
 
-
-  std::string file_name = "/home/imiholic/graphs/barabasi1_100_" + std::to_string(g) + ".gml";
-  if(erdos) {
-   file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" + std::to_string(g) + ".gml";
-   }
-  auto params =  SourceDetectionParams::ParamsFromGML(file_name, v);
+  std::string file_name =
+      "/home/imiholic/graphs/barabasi1_100_" + std::to_string(g) + ".gml";
+  if (erdos) {
+    file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" +
+                std::to_string(g) + ".gml";
+  }
+  auto params = SourceDetectionParams::ParamsFromGML(file_name, v);
   int rank = MPI::COMM_WORLD.Get_rank();
-if(rank == 0) {
-std::string filename = "barabasi100_deg_5_" + params->summary();
-FILE* f = fopen(filename.c_str(), "a");
-fprintf(f, "g%d, ", g);
-fclose(f);
-}
+  if (rank == 0) {
+    std::string filename = "barabasi100_deg_5_" + params->summary();
+    FILE* f = fopen(filename.c_str(), "a");
+    fprintf(f, "g%d, ", g);
+    fclose(f);
+  }
 
-    cmplx::GenerateSoftMarginDistributions(params.get(), 1);
+  cmplx::GenerateSoftMarginDistributions(params.get(), 1);
 
   MPI::Finalize();
   // clock_t end = clock();

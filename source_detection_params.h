@@ -18,9 +18,11 @@ class SourceDetectionParams {
   static std::unique_ptr<SourceDetectionParams> ParamsFromGrid(double p,
                                                                double q, int n);
   static std::unique_ptr<SourceDetectionParams> ParamsFromGridISS(double p,
-                                                               double q, int n);
+                                                                  double q,
+                                                                  int n);
 
-  static std::unique_ptr<SourceDetectionParams> ParamsFromGML(const std::string& file_name, int source_node);
+  static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
+      const std::string &file_name, int source_node);
 
   ~SourceDetectionParams() = default;
 
@@ -37,7 +39,7 @@ class SourceDetectionParams {
   }
 
   std::string summary() const;
-  void setSourceId(int source_id) {source_id_ = source_id; }
+  void setSourceId(int source_id) { source_id_ = source_id; }
   int sourceID() { return source_id_; }
 
  private:

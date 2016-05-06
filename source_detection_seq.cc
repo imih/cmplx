@@ -70,7 +70,7 @@ void generateErdosRenyi(int no, int poc = 0) {
 
 int main() {
   // generateBarabasi(50, 0);
- // generateErdosRenyi(50, 0);
+  // generateErdosRenyi(50, 0);
 
   // fclose(f);
 

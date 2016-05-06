@@ -44,7 +44,8 @@ int main(int argc, char **argv) {
 
   std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGridISS(P / 10.0, Q / 10.0, n);
-    cmplx::GenerateSoftMarginDistributions(params.get(), 1, cmplx::ModelType::ISS);
+  cmplx::GenerateSoftMarginDistributions(params.get(), 1,
+                                         cmplx::ModelType::ISS);
 
   MPI::Finalize();
   // clock_t end = clock();

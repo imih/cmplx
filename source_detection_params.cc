@@ -32,8 +32,7 @@ const int Q_LINE = 2;
 const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
-std::string BENCHMARK_PATH =
-    "/home/imiholic";
+std::string BENCHMARK_PATH = "/home/imiholic";
 }
 
 namespace cmplx {
@@ -125,26 +124,26 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
-  if(graph->adj_list(source_node).size() <= 5) exit(1);
+  if (graph->adj_list(source_node).size() <= 5) exit(1);
   double p = 0.5;
   double q = 0.5;
   int TMax = 5;
   cmplx::simul::Simulator simulator(graph);
   while (true) {
-  BitArray r = BitArray::zeros(graph->vertices());
-  r.set(source_node, true);
-  BitArray s = BitArray::ones(graph->vertices());
-  s.set(source_node, false);
-  SirParams sir_params(p, q, TMax, r, s);
-  simulator.NaiveSIR(sir_params);
-  Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
-  if (real.realization().bitCount() > 1) {
-  SourceDetectionParams* params =
-      new SourceDetectionParams(graph, real, 1000000);
-  params->setSourceId(source_node);
-  return std::unique_ptr<SourceDetectionParams>(params);
-}
-}
+    BitArray r = BitArray::zeros(graph->vertices());
+    r.set(source_node, true);
+    BitArray s = BitArray::ones(graph->vertices());
+    s.set(source_node, false);
+    SirParams sir_params(p, q, TMax, r, s);
+    simulator.NaiveSIR(sir_params);
+    Realization real(p, q, TMax, sir_params.infected(), sir_params.recovered());
+    if (real.realization().bitCount() > 1) {
+      SourceDetectionParams* params =
+          new SourceDetectionParams(graph, real, 1000000);
+      params->setSourceId(source_node);
+      return std::unique_ptr<SourceDetectionParams>(params);
+    }
+  }
 }
 
 // TODO determine number of simulations yourself!
@@ -158,7 +157,7 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
 
   std::ifstream f_real;
   std::string filename = BENCHMARK_PATH + "/realizations/realization_" +
-              std::to_string(realization_no) + ".txt";
+                         std::to_string(realization_no) + ".txt";
   f_real.open(filename);
   if (!f_real.is_open()) {
     std::cout << std::strerror(errno) << std::endl;
