@@ -29,10 +29,10 @@ class SourceDetectionParams {
   const std::unique_ptr<common::IGraph> &graph() const { return graph_; }
 
   const common::Realization &realization() const { return realization_; }
-  int simulations() const { return simulations_; }
+  long long simulations() const { return simulations_; }
   double a() const { return a_; }
 
-  void setSimulations(int simulations) { simulations_ = simulations; }
+  void setSimulations(long long simulations) { simulations_ = simulations; }
   void setA(double a) { a_ = a; }
   void setRealization(const common::BitArray &r) {
     realization_.setRealization(r);
@@ -44,13 +44,13 @@ class SourceDetectionParams {
 
  private:
   SourceDetectionParams(common::IGraph *graph, const common::Realization &r,
-                        int simulations, double a = 0.05)
+                        long long  simulations, double a = 0.05)
       : graph_(graph), realization_(r), a_(a), simulations_(simulations) {}
 
   std::unique_ptr<common::IGraph> graph_;
   common::Realization realization_;
   double a_;
-  int simulations_;
+  long long simulations_;
   int source_id_;
 };
 

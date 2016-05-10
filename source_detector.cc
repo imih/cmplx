@@ -147,8 +147,7 @@ double SequentialMCDetector::seqPosterior(
   double q = target_realization.q();
 
   for (int t = 0; t < target_realization.maxT(); ++t) {
-    /*
-    if(vc2(samples) >= (1 << t)) {
+    if(vc2(samples) >= (1LL << t)) {
       puts("resampling...");
       std::vector<SeqSample> prev_samples = samples;
       samples.clear();
@@ -177,7 +176,6 @@ double SequentialMCDetector::seqPosterior(
       prev_samples.clear();
       printvc2(samples);
     }
-    */
 
     for (SeqSample& sample : samples) {
       BitArray prev_inf = sample.infected();
@@ -193,13 +191,13 @@ double SequentialMCDetector::seqPosterior(
   double pos_P = 0;
   double sum = 0;
   for (const SeqSample& sample : samples) {
-    printf("%d\n", sample.realization().bitCount() -
-                       target_realization.realization().bitCount());
+    //printf("%d\n", sample.realization().bitCount() -
+    //                   target_realization.realization().bitCount());
     if (sample.match(target_realization)) {
-      printf("T_: %s\n", target_realization.realization().to_string().c_str());
-      printf("R_: %s\n", sample.recovered().to_string().c_str());
-      printf("I_: %s\n", sample.infected().to_string().c_str());
-      printf("%.10lf\n", sample.w());
+      //printf("T_: %s\n", target_realization.realization().to_string().c_str());
+      //printf("R_: %s\n", sample.recovered().to_string().c_str());
+      //printf("I_: %s\n", sample.infected().to_string().c_str());
+      //printf("%.10lf\n", sample.w());
       pos_P += sample.w();
     }
     sum += sample.w();

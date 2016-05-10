@@ -186,7 +186,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
             became_stifler = true;
             I.set(current_node, false);
             R.set(current_node, true);
-            break;
+            //break;
           }
         }
       }

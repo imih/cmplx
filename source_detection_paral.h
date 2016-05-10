@@ -12,6 +12,9 @@ void DirectMCSimulParalConv(SourceDetectionParams* params,
 void DirectMCSimulParal(const SourceDetectionParams* params,
                         ModelType modelType = ModelType::SIR);
 
+void DirectMCBenchmark(SourceDetectionParams* params, int benchmark_no);
+
+
 std::vector<double> SoftMarginParalConvMaster(SourceDetectionParams* params,
                                               bool end = true);
 void SoftMarginParalConv(SourceDetectionParams* params,
