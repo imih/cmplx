@@ -98,26 +98,52 @@ generateEnt <- function() {
 }
 
 doBarabasi100 <- function() {
-  
-  mergeBarabasi <- function() {
-    data1 = read.table(file = "~/dipl/res/barabasi1_100_0.ent", header = TRUE, sep = ",")
-    data2 = read.table(file = "~/dipl/res/barabasi1_100_1.ent", header = TRUE, sep = ",")
-    data3 = read.table(file = "~/dipl/res/barabasi1_100_2.ent", header = TRUE, sep = ",")
-    data4 = read.table(file = "~/dipl/res/barabasi1_100_3.ent", header = TRUE, sep = ",")
-    data5 = read.table(file = "~/dipl/res/barabasi1_100_4.ent", header = TRUE, sep = ",")
-    data6 = read.table(file = "~/dipl/res/barabasi1_100_5.ent", header = TRUE, sep = ",")
-    
-    data1 = rbind(data1, data2, data3, data4, data5, data6)
-    
-    return(data1)
+    library(vioplot)
+    make_line <- function(line, p, q) {
+    g = as.numeric(strsplit(line$V1, split = "g")[[1]][2])
+    source_id  = -as.numeric(strsplit(line$V2, split = " ")[[1]][2])
+    dataP <- as.numeric(strsplit(line$V2, split = " ")[[1]][3:102])
+    SM_MAP = which(dataP == max(dataP), arr.ind = TRUE) - 1
+    SM_MAP_P = max(dataP)
+    SM_entropy = PrepareEntropy(rbind(dataP))
+    dataPs = paste(strsplit(line$V2, split = " ")[[1]][3:102], collapse = " ")
+    library(stringr)
+    dataInfo = read.table(file = str_c(cbind("~/dipl/graphs/barabasi1_100_", toString(g),  ".info"), collapse = ""), header = TRUE, sep = ",")
+    return(merge(x = data.frame(g = g, id = source_id, p = p, q = q, SM_MAP = SM_MAP,
+                                SM_MAP_P = SM_MAP_P, Entropy = SM_entropy, dataP = dataPs, 
+                                stringsAsFactors = FALSE), 
+                 y = dataInfo, by = "id"))
   }
-  data <- mergeBarabasi();
+  barabasi_data <- NULL
+  dataA = read.table(file = "~/dipl/res/bara/barabasi100_0.300000_0.300000_100", header = FALSE, 
+                     sep = ",", stringsAsFactors = FALSE)
+  for(i in 1:nrow(dataA)) {
+     rbind(barabasi_data, make_line(dataA[i,], 0.3, 0.3)) -> barabasi_data
+  } 
+  dataB = read.table(file = "~/dipl/res/bara/barabasi100_0.300000_0.700000_100", header = FALSE, 
+                       sep = ",", stringsAsFactors = FALSE)
+  for(i in 1:nrow(dataB)) {
+    rbind(barabasi_data, make_line(dataB[i,], 0.3, 0.7)) -> barabasi_data
+  }
+  dataC = read.table(file = "~/dipl/res/bara/barabasi100_0.700000_0.300000_100", header = FALSE, 
+                       sep = ",", stringsAsFactors = FALSE)
+  for(i in 1:nrow(dataC)) {
+    rbind(barabasi_data, make_line(dataC[i,], 0.7, 0.3)) -> barabasi_data
+  }
+  dataD = read.table(file = "~/dipl/res/bara/barabasi100_0.700000_0.700000_100", header = FALSE, 
+                       sep = ",", stringsAsFactors = FALSE)
+  for(i in 1:nrow(dataD)) {
+    rbind(barabasi_data, make_line(dataD[i,], 0.7, 0.7)) -> barabasi_data
+  }
+  data = barabasi_data
+
+  #TODO nastavak
   hist(data$deg, breaks = 6);
   vioplot(data[data$deg <= 5,]$Entropy, data[(data$deg > 5) & (data$deg <= 10),]$Entropy,
           data[(data$deg > 10) & (data$deg <= 15),]$Entropy,
-          data[(data$deg > 15) & (data$deg <= 20),]$Entropy,
-          data[(data$deg > 20) & (data$deg <= 25),]$Entropy,
-          data[(data$deg > 25) & (data$deg <= 30),]$Entropy
+          data[(data$deg > 15) & (data$deg <= 20),]$Entropy
+        #  data[(data$deg > 20) & (data$deg <= 25),]$Entropy,
+        #  data[(data$deg > 25) & (data$deg <= 30),]$Entropy
   );
   #TODO generate more samples for degrees > 5 (at least 50 per degree group)
   
@@ -128,8 +154,8 @@ doBarabasi100 <- function() {
           data[(data$clos > 0.25) & (data$clos <= 0.3),]$Entropy,
           data[(data$clos > 0.3) & (data$clos <= 0.35),]$Entropy,
           data[(data$clos > 0.35) & (data$clos <= 0.4),]$Entropy,
-          data[(data$clos > 0.4) & (data$clos <= 0.45),]$Entropy,
-          data[data$clos > 0.45,]$Entropy
+          data[(data$clos > 0.4) & (data$clos <= 0.45),]$Entropy
+         # data[data$clos > 0.45,]$Entropy
   )
   
   hist(data$betw, breaks = 5)
@@ -166,14 +192,17 @@ createSeqBenchmarkDF <- function() {
     MC_MAP_P = max(as.numeric(data_sol[3:902,]))
     P_dMC = paste(paste(data_sol[3:902,]), sep="", collapse="")
     MC_true_rank = rank(-as.numeric(strsplit(P_dMC, split = " ")[[1]]), ties.method = "first")[true_source + 1]
-    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQbenchmark_", row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
+    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQ_RCbenchmark_", row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
                           stringsAsFactors = FALSE)
     SEQ_simul = as.numeric(strsplit(data_seq[2,], split = " ")[[1]][2])
     SEQ_MAP = which(as.numeric(unlist(strsplit(data_seq[3,], split = " "))) == max(
       as.numeric(unlist(strsplit(data_seq[3,], split = " ")))), arr.ind = TRUE) - 1
     SEQ_MAP_P = max(as.numeric(unlist(strsplit(data_seq[3,], split = " "))))
-    SEQ_rel_err = abs(SEQ_MAP_P - 
-                        as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]) / as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]
+    SEQ_rel_err = ifelse( as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1] == 0,
+                          abs(SEQ_MAP_P - 
+                                as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]),
+                          abs(SEQ_MAP_P - 
+                                as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]) / as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1])
     P_SEQ = data_seq[3,]
     SEQ_true_rank = rank(-as.numeric(strsplit(P_SEQ, split = " ")[[1]]), ties.method = "first")[true_source + 1]
     SEQ_MAP_rank = rank(-as.numeric(strsplit(P_SEQ, split = " ")[[1]]), ties.method = "first")[MC_MAP + 1]
@@ -185,30 +214,19 @@ createSeqBenchmarkDF <- function() {
   }
   
   seq_bench_df <- NULL
-  for(id in 1:31) {
+  for(id in 1:52) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 34:39) {
+  for(id in 54:146) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 41:65) {
+  for(id in 148:160) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 67:71) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 73:80) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 82:160) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
+  
   return(seq_bench_df)
 }
 
@@ -329,7 +347,7 @@ BenchSimNo <- function() {
   dataSeq8 = c(sum((data$SEQ_simul >10000000) & (data$SEQ_simul <= 100000000))/ nrow(data),
                sum((dataA$SEQ_simul >10000000) & (dataA$SEQ_simul <= 100000000))  / nrow(dataA),
                sum((dataB$SEQ_simul >10000000) & (dataB$SEQ_simul <= 100000000)) / nrow(dataB),
-               sum((dataC$SEQ_simul >10000000) & (dataC$SEQ_simul <= 100000000)),
+               sum((dataC$SEQ_simul >10000000) & (dataC$SEQ_simul <= 100000000)) / nrow(dataC),
                sum((dataD$SEQ_simul >10000000) & (dataD$SEQ_simul <= 100000000)))
   dataSeq9 = c(sum((data$SEQ_simul >100000000) & (data$SEQ_simul <= 1000000000)),
                sum((dataA$SEQ_simul >100000000) & (dataA$SEQ_simul <= 1000000000)),
@@ -399,11 +417,11 @@ benchAccSim <- function() {
                    col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
   text(x = bp1MC, y = bp1MC_data, label =  round(bp1MC_data, 2), pos = 3, cex = 0.7)
   legend(0.3, 1.2, legend = c(expression(group("(",list(0, 10^4),"]")),
-                            expression(group("(",list(10^4, 10^5),"]")),
-                            expression(group("(",list(10^5, 10^6),"]")),
-                            expression(group("(",list(10^6, 10^7),"]")),
-                            expression(group("(",list(10^7, 10^8),"]")),
-                            expression(group("(",list(10^8, 10^9),"]"))), 
+                              expression(group("(",list(10^4, 10^5),"]")),
+                              expression(group("(",list(10^5, 10^6),"]")),
+                              expression(group("(",list(10^6, 10^7),"]")),
+                              expression(group("(",list(10^7, 10^8),"]")),
+                              expression(group("(",list(10^8, 10^9),"]"))), 
          fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
   
   
@@ -478,11 +496,11 @@ benchAccSim <- function() {
                     col =  c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
   text(x = bp1SEQ, y = bp1SEQ_data, label =  round(bp1SEQ_data, 2), pos = 3, cex = 0.7)
   legend(0.3, 1.2, legend =  c(expression(group("(",list(0, 10^4),"]")),
-                             expression(group("(",list(10^4, 10^5),"]")),
-                             expression(group("(",list(10^5, 10^6),"]")),
-                             expression(group("(",list(10^6, 10^7),"]")),
-                             expression(group("(",list(10^7, 10^8),"]")),
-                             expression(group("(",list(10^8, 10^9),"]"))), 
+                               expression(group("(",list(10^4, 10^5),"]")),
+                               expression(group("(",list(10^5, 10^6),"]")),
+                               expression(group("(",list(10^6, 10^7),"]")),
+                               expression(group("(",list(10^7, 10^8),"]")),
+                               expression(group("(",list(10^8, 10^9),"]"))), 
          fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
   
   MAP_MAP <- function(data) {
@@ -509,11 +527,11 @@ benchAccSim <- function() {
   )
   text(x = bp2SEQ, y = bp2SEQ_data, label =  round(bp2SEQ_data, 2), pos = 3, cex = 0.7)
   legend(0.3, 1.0, legend =c(expression(group("(",list(0, 10000),"]")),
-                           expression(group("(",list(10^4, 10^5),"]")),
-                           expression(group("(",list(10^5, 10^6),"]")),
-                           expression(group("(",list(10^6, 10^7),"]")),
-                           expression(group("(",list(10^7, 10^8),"]")),
-                           expression(group("(",list(10^8, 10^9),"]"))), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+                             expression(group("(",list(10^4, 10^5),"]")),
+                             expression(group("(",list(10^5, 10^6),"]")),
+                             expression(group("(",list(10^6, 10^7),"]")),
+                             expression(group("(",list(10^7, 10^8),"]")),
+                             expression(group("(",list(10^8, 10^9),"]"))), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
 }
 
 benchSimAcc <- function() {
@@ -544,7 +562,7 @@ benchSimAcc <- function() {
   MC_SIMUL9 <- function(data) {
     return(data[(data$MC_simul >100000000) & (data$MC_simul <= 1000000000),])
   }
-
+  
   bp1MC_data4 = c(true_MCMAP(MC_SIMUL4(data)), true_MCMAP(MC_SIMUL4(dataA)), true_MCMAP(MC_SIMUL4(dataB)), 
                   true_MCMAP(MC_SIMUL4(dataC)), true_MCMAP(MC_SIMUL4(dataD)))
   bp1MC_data5 = c(true_MCMAP(MC_SIMUL5(data)), true_MCMAP(MC_SIMUL5(dataA)), true_MCMAP(MC_SIMUL5(dataB)), 
@@ -756,4 +774,5 @@ SeqBenchmarkAnalysis <- function() {
   BenchRelMAP()
   benchSimAcc()
   benchAccSim()
+  scatterPlotSimulations()
 }

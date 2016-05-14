@@ -28,7 +28,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
   assert(I.bitCount() == 1);
   IDqueue q(I);
-  //q.insertMarked(I);
+  // q.insertMarked(I);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
@@ -88,8 +88,8 @@ void Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   double p = sir_params.p();
   double q = sir_params.q();
 
-  IDqueue  queue(I);
-  //queue.insertMarked(I);
+  IDqueue queue(I);
+  // queue.insertMarked(I);
   int delta_nodes_pop = queue.size();
   int p0 = 0, p1 = 0, q0 = 0, q1 = 0;
 
@@ -143,8 +143,8 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
-  IDqueue q(I);//sir_params.population_size());
-  //q.insertMarked(I);
+  IDqueue q(I);  // sir_params.population_size());
+  // q.insertMarked(I);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
@@ -160,7 +160,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
       long int current_node;
       current_node = q.pop();
       delta_nodes_pop--;
-      if(!I.bit(current_node)) {
+      if (!I.bit(current_node)) {
         continue;
       }
 
@@ -184,7 +184,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
             became_stifler = true;
             I.set(current_node, false);
             R.set(current_node, true);
-            //break;
+            // break;
           }
         }
       }
