@@ -124,7 +124,15 @@ void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
     for (int i = 0; i < (int)P.size(); ++i)
       fprintf(f, "%.10lf%c", P[i], i + 1 == (int)P.size() ? '\n' : ' ');
     fclose(f);
-    /*TODO send end message? */
+    using namespace DMC;
+    MPI::Datatype message_type = datatypeOfMessage();
+    message_type.Commit();
+    int processes = MPI::COMM_WORLD.Get_size();
+    for (int v = 1; v < processes; ++v) {
+      Message end_message;
+      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                            MessageType::SIMUL_END);
+    }
   } else {
     DirectMCSimulParalWorker(params, ModelType::SIR);
   }
