@@ -74,7 +74,7 @@ class SequentialMCDetector : public SourceDetector {
       const common::Realization& realization, int sample_size);
 
   double seqPosterior(int v, int sample_size,
-                      const common::Realization& target_realization);
+                      const common::Realization& target_realization, bool resampling = false);
 
  private:
   std::set<int> buildReachable(const common::BitArray& infected);

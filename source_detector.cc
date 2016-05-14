@@ -136,7 +136,8 @@ std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
 }
 
 double SequentialMCDetector::seqPosterior(
-    int v, int sample_size, const common::Realization& target_realization) {
+    int v, int sample_size, const common::Realization& target_realization,
+    bool resampling) {
   printf("v: %d sample_size: %d bc: %d\n", v, sample_size,
          target_realization.realization().bitCount());
   std::vector<SeqSample> samples(sample_size, SeqSample(v, target_realization));
@@ -147,14 +148,14 @@ double SequentialMCDetector::seqPosterior(
   double q = target_realization.q();
 
   for (int t = 0; t < target_realization.maxT(); ++t) {
-    if(vc2(samples) >= (1LL << t)) {
+    if (resampling && (vc2(samples) >= (1LL << t))) {
       puts("resampling...");
       std::vector<SeqSample> prev_samples = samples;
       samples.clear();
       double sum = 0;
       vector<double> P;
       P.push_back(0);
-      for(const SeqSample& sample: prev_samples) {
+      for (const SeqSample& sample : prev_samples) {
         sum += sample.w();
         P.push_back(P.back() + sample.w());
       }
@@ -191,19 +192,11 @@ double SequentialMCDetector::seqPosterior(
   double pos_P = 0;
   double sum = 0;
   for (const SeqSample& sample : samples) {
-    //printf("%d\n", sample.realization().bitCount() -
-    //                   target_realization.realization().bitCount());
     if (sample.match(target_realization)) {
-      //printf("T_: %s\n", target_realization.realization().to_string().c_str());
-      //printf("R_: %s\n", sample.recovered().to_string().c_str());
-      //printf("I_: %s\n", sample.infected().to_string().c_str());
-      //printf("%.10lf\n", sample.w());
       pos_P += sample.w();
     }
     sum += sample.w();
   }
-  // printf("Post: %.10lf\n", pos_P / sum);
-  // return pos_P / sum;
   printf("\nPost: %.10lf\n", pos_P);
   return pos_P;
 }

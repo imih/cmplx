@@ -784,7 +784,6 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
   int processes = MPI::COMM_WORLD.Get_size();
   std::string filename = "seq_distr_" + params->summary();
   FILE *f = fopen(filename.c_str(), "a");
-  // SourceDetectionParams params0 = params;
 
   for (int d = 0; d < distributions; ++d) {
     MPI::COMM_WORLD.Barrier();
@@ -822,14 +821,13 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   if (rank == 0) {
     std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
     std::string filename =
-        "SEQ_RCbenchmark_" + std::to_string(benchmark_no) + ".info";
+        "SEQ_RCbenchmark2_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "w+");
     fprintf(f, "%s\n", params->summary().c_str());
     fprintf(f, "s: %lld\n", params->simulations());
 
     for (int j = 0; j < (int)P.size(); ++j) {
       fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
-      // printf("%.10lf\n", P[j]);
     }
     fclose(f);
 
@@ -849,8 +847,6 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
 
 vector<double> SeqMonteCarloParalConvMaster(
     cmplx::SourceDetectionParams *params, bool end) {
-  std::string filename = "conv_seq_distr_" + params->summary();
-  FILE *f = fopen(filename.c_str(), "a");
   using namespace SMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -890,7 +886,6 @@ vector<double> SeqMonteCarloParalConvMaster(
     for (int j = 0; j < (int)p1.size(); ++j) {
       if (p1[j] > 0 && (dabs(p1[j] - p0[j]) > c)) converge = false;
       if (p1[j] > 0) {
-        // printf("%lf ", dabs(p1[j] - p0[j]) / p1[j]);
         pos++;
       }
     }
@@ -901,7 +896,6 @@ vector<double> SeqMonteCarloParalConvMaster(
     else
       convergeG = 0;
     if (convergeG > 0) {
-      fprintf(f, "%d,%d\n", params->graph()->vertices(), s0);
       printf("Converged for n=%d\n", s0);
       res = p0;
       MPI::COMM_WORLD.Get_size();
@@ -923,7 +917,6 @@ vector<double> SeqMonteCarloParalConvMaster(
     p0.assign(p1.begin(), p1.end());
     pMAP0 = pMAP1;
   }
-  fclose(f);
   params->setSimulations(s0);
   return res;
 }
@@ -994,12 +987,9 @@ vector<double> SeqMonteCarloSimulParalMaster(
     sum += events_resp[v];
   }
 
-  // if (print) params->realization().print();
   for (int v = 0; v < vertices; ++v) {
     if (sum > 0) events_resp[v] /= sum;
-    // if (print) printf("%.10lf\n", events_resp[v]);
   }
-  // printf("\n");
   return events_resp;
 }
 
@@ -1014,10 +1004,8 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
   const IGraph *graph = params->graph().get();
   Realization snapshot = params->realization();
 
-  // workers
   // Performs simulation on request.
   SequentialMCDetector sd(graph);
-  // printf("vers: %d\n",  params->graph().vertices());
 
   while (true) {
     Message message;
@@ -1033,7 +1021,6 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
       double Pos =
           sd.seqPosterior(message_recv.source_id, sample_size, snapshot);
       message_recv.event_outcome = Pos;
-      // printf("---%.10lf\n", Pos);
       /****/
 
       Message toSend = message_recv;
