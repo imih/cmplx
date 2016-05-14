@@ -116,7 +116,7 @@ void DirectMCBenchmark(SourceDetectionParams* params, int benchmark_no) {
         "DMbenchmark_" + std::to_string(benchmark_no) + ".info";
     FILE* f = fopen(filename.c_str(), "w+");
     vector<ll> sims = {(ll) 1e3, (ll)1e4, (ll) 1e5, 
-      (ll) 1e6, (ll) 1e7 , (ll) 1e8, (ll) 1e9};
+      (ll) 1e6, (ll) 1e7}; // , (ll) 1e8, (ll) 1e9};
     for(ll sim : sims) {
       params->setSimulations(sim); 
       std::vector<double> P;
@@ -214,8 +214,6 @@ void DirectMCSimulParalWorker(const SourceDetectionParams *params,
       MPI::COMM_WORLD.Recv(&message_recv, 1, message_type, 0 /* source */,
                            MessageType::SIMUL_REQUEST);
       int outcomes = 0;
-      if(message_recv.batch_size < 10) 
-        message_recv.batch_size = SIMUL_PER_REQ;
       for (int t = 0; t < message_recv.batch_size; ++t) {
         Realization sp0 = snapshot;
         outcomes += sd.DMCSingleSourceSimulation(
@@ -256,7 +254,7 @@ vector<double> DirectMCSimulParalMaster(
   vector<int> events_resp(vertices, 0);
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
-  int SIMUL_PER_REQ = std::min(1000000LL, std::max(10000LL, simulations / 100));
+  int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
   assert(simulations % SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
@@ -698,11 +696,10 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     share_params(params);
     MPI::COMM_WORLD.Barrier();
     int bits = params->realization().realization().bitCount();
-
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
 
-      std::string filename = "barabasi100_deg_5_" + params->summary();
+      std::string filename = "barabasi100_" + params->summary();
       if (model_type == ModelType::ISS) {
         filename = "iss_distr_" + params->summary();
       }

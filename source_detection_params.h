@@ -22,7 +22,9 @@ class SourceDetectionParams {
                                                                   int n);
 
   static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
-      const std::string &file_name, int source_node);
+    const std::string& file_name, int source_node, double p, double q);
+  //static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
+  //    const std::string &file_name, int source_node);
 
   ~SourceDetectionParams() = default;
 

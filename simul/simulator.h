@@ -30,7 +30,7 @@ class Simulator {
                     common::BitArray::zeros(1));
 
   // Returns  probability of drawn sample.
-  double NaiveSIROneStep(common::SirParams &sir_params);
+  void NaiveSIROneStep(common::SirParams &sir_params);
 
   bool NaiveISS(common::SirParams &sir_params, bool prunning = false,
                 const common::BitArray &allowed_nodes =

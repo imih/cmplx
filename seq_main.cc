@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
   if (!seq) {
-    cmplx::SoftMarginBenchmarkConv(params.get(), n);
+   cmplx::DirectMCBenchmark(params.get(), n);
   } else
     cmplx::SeqMonteCarloBenchmark(params.get(), n);
 

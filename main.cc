@@ -46,28 +46,21 @@ int main(int argc, char** argv) {
     }
   }
 
-  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
-  // cmplx::DirectMCSimulParalConv(params, cmplx::ModelType::SIR);
-  // cmplx::DirectMCSimulParal(params);
-  // cmplx::SoftMarginParal(params);
-  // cmplx::SoftMarginParalConv(params);
-
   std::string file_name =
       "/home/imiholic/graphs/barabasi1_100_" + std::to_string(g) + ".gml";
   if (erdos) {
     file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" +
                 std::to_string(g) + ".gml";
   }
-  auto params = SourceDetectionParams::ParamsFromGML(file_name, v);
+  auto params = SourceDetectionParams::ParamsFromGML(
+    file_name, v, P / 10.0, Q / 10.0);
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
-    std::string filename = "barabasi100_deg_5_" + params->summary();
+    std::string filename = "barabasi100_" + params->summary();
     FILE* f = fopen(filename.c_str(), "a");
     fprintf(f, "g%d, ", g);
     fclose(f);
   }
-
   cmplx::GenerateSoftMarginDistributions(params.get(), 1);
 
   MPI::Finalize();

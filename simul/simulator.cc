@@ -49,8 +49,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
       const IVector<int> &neis = graph_->adj_list(current_node);
       for (int i = 0; i < neis.size(); ++i) {
         int current_neigh = neis[i];
-
-        if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
+        if (S.bit(current_neigh)) {
           if (eventDraw(sir_params.p())) {
             q.push(current_neigh);
             I.set(current_neigh, true);
@@ -82,7 +81,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   return prunned;
 }
 
-double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
+void Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   BitArray I = sir_params.infected();
   BitArray R = sir_params.recovered();
   BitArray S = sir_params.susceptible();
@@ -105,7 +104,7 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
     for (int i = 0; i < neis.size(); ++i) {
       int current_neigh = neis[i];
 
-      if (I.bit(current_neigh) == 0 && R.bit(current_node) == 0) {
+      if (S.bit(current_neigh)) {
         if (eventDraw(p)) {
           p1++;
           queue.push(current_neigh);
@@ -130,7 +129,6 @@ double Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   sir_params.set_infected(I);
   sir_params.set_recovered(R);
   sir_params.set_susceptible(S);
-  return pow(1 - p, p0) * pow(p, p1) * pow(1 - q, q0) * pow(q, q1);
 }
 
 bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
