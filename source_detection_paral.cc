@@ -110,12 +110,12 @@ void DirectMCSimulParal(const SourceDetectionParams *params,
 
 typedef long long ll;
 std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
-                                                 ModelType model_type);
+                                                 ModelType model_type, int benchmark_no);
 void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
     std::vector<double> P =
-        DirectMCSimulParalConvMaster(params, ModelType::SIR);
+        DirectMCSimulParalConvMaster(params, ModelType::SIR, benchmark_no);
     std::string filename =
         "DMbenchmarkConv_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "w+");
@@ -124,6 +124,7 @@ void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
     for (int i = 0; i < (int)P.size(); ++i)
       fprintf(f, "%.10lf%c", P[i], i + 1 == (int)P.size() ? '\n' : ' ');
     fclose(f);
+    exit(1);
     using namespace DMC;
     MPI::Datatype message_type = datatypeOfMessage();
     message_type.Commit();
@@ -139,17 +140,19 @@ void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
 }
 
 std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
-                                                 ModelType model_type) {
+                                                 ModelType model_type, int benchmark_no) {
   using namespace DMC;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
-  std::vector<int> sims = {
-      SIMUL_PER_REQ,        2 * SIMUL_PER_REQ,    4 * SIMUL_PER_REQ,
-      8 * SIMUL_PER_REQ,    10 * SIMUL_PER_REQ,   20 * SIMUL_PER_REQ,
-      40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,   100 * SIMUL_PER_REQ,
-      200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,  800 * SIMUL_PER_REQ,
-      1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ, 4000 * SIMUL_PER_REQ};
+  std::vector<int> sims = { 
+    100 * SIMUL_PER_REQ, 200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,  800 * SIMUL_PER_REQ,
+    1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ, 4000 * SIMUL_PER_REQ, 8000 * SIMUL_PER_REQ, 
+    10000 * SIMUL_PER_REQ };
+
+
+  std::string filename = "DMbenchmark_" + std::to_string(benchmark_no) + ".info";
+  FILE* f = fopen(filename.c_str(), "a+");
 
   /***************  */
   double c = 0.05;  //
@@ -158,25 +161,39 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
   double pml0 = 0;
   params->setSimulations(s0);
   vector<double> p0 = DirectMCSimulParalMaster(params, false, false);
+  fprintf(f, "%d, ", s0);
+  for(int i = 0; i < (int) p0.size(); ++i) 
+    fprintf(f, "%.10lf%c", p0[i], (i  + 1 == (int) p0.size()) ? '\n' : ' ');
+  fflush(f);
+
   pml0 = *std::max_element(p0.begin(), p0.end());
   int s_id = 1;
+  int bits = params->realization().realization().bitCount();
   while (true) {
     int s1 = sims[s_id++];
     printf("s: %d\n", s1);
     params->setSimulations(s1);
     vector<double> p1 = DirectMCSimulParalMaster(params, false, false);
+    fprintf(f, "%d, ", s1);
+    for(int i = 0; i < (int) p1.size(); ++i) 
+      fprintf(f, "%.10lf%c", p1[i], (i  + 1 == (int) p1.size()) ? '\n' : ' ');
+    fflush(f);
 
     double pml1 = *std::max_element(p0.begin(), p0.end());
+    bool converge = true;
     if (isnan(pml1)) {
+      converge = false;
       printf("NAN! %d \n", s1);
     }
-    bool converge = true;
     double delta = dabs(pml1 - pml0) / pml1;
     printf("c: %lf\n", delta);
     if (delta > c) converge = false;
+    int pos = 0;
     for (int i = 0; i < (int)p1.size(); ++i) {
       if (dabs(p0[i] - p1[i]) > c) converge = false;
+      if(p1[i] > 0) pos++;
     }
+    if(pos == 0) converge = false;
 
     if (converge) {
       printf("Converged for %d\n", s0);
@@ -193,6 +210,7 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
     p0 = p1;
   }
   params->setSimulations(s0);
+  fclose(f);
   return p0;
 }
 
@@ -203,7 +221,7 @@ void DirectMCSimulParalConv(SourceDetectionParams *params,
   if (rank != 0) {
     DirectMCSimulParalWorker(params, model_type);
   } else {
-    std::vector<double> P = DirectMCSimulParalConvMaster(params, model_type);
+    std::vector<double> P = DirectMCSimulParalConvMaster(params, model_type, 0);
   }
 }
 
