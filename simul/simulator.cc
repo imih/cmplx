@@ -45,6 +45,10 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
       long int current_node;
       current_node = q.pop();
       delta_nodes_pop--;
+      if(!I.bit(current_node)) {
+        puts("DOGODILO SE");
+        continue;
+      }
 
       const IVector<int> &neis = graph_->adj_list(current_node);
       for (int i = 0; i < neis.size(); ++i) {
