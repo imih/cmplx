@@ -445,7 +445,6 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
         if (p1[i][j] > 0) pos++;
       }
       if (pos != bits) converge = false;
-      if (s0 >= 2000000) converge = true;
       if (converge) {
         convergeGlobal[i]++;
         printf("Converged for n=%d a=%lf\n", s0, a[i]);

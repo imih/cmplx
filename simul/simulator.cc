@@ -28,7 +28,6 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
   assert(I.bitCount() == 1);
   IDqueue q(I);
-  // q.insertMarked(I);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
