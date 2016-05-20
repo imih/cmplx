@@ -25,7 +25,6 @@ void SoftMarginParal(const SourceDetectionParams* params,
 void GenerateSoftMarginDistributions(SourceDetectionParams* params,
                                      int distributions,
                                      ModelType modelType = ModelType::SIR);
-
 void SoftMarginBenchmarkConv(SourceDetectionParams* params, int benchmark_no,
                              ModelType model_type = ModelType::SIR);
 
@@ -36,6 +35,9 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params,
 std::vector<double> SeqMonteCarloSimulParalMaster(
     const SourceDetectionParams* params, bool end, bool print);
 void SeqMonteCarloSimulParalWorker(const SourceDetectionParams& params);
+void SeqMonteCarloBenchmarkStepByStep(
+    cmplx::SourceDetectionParams *params, int benchmark_no);
+
 
 }  // namespace cmplx
 #endif  // SOURCE_DETECTION_PARAL_H
