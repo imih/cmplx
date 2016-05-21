@@ -124,7 +124,7 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node, double p, double q) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
-  if (graph->adj_list(source_node).size() <= 5) exit(1);
+  //if (graph->adj_list(source_node).size() <= 5) exit(1);
   int TMax = 5;
   cmplx::simul::Simulator simulator(graph);
   while (true) {
@@ -147,6 +147,8 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
 // TODO determine number of simulations yourself!
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
     int realization_no) {
+  while(realization_no > 160) realization_no -= 160;
+
   IGraph* graph =
       IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice30.gml");
   double p = 0, q = 0;

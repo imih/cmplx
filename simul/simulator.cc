@@ -27,8 +27,9 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
+  assert(S.bitCount() == S.bits_num() - 1);
   IDqueue q(I);
-  // q.insertMarked(I);
+  assert(q.size() == 1);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
@@ -86,6 +87,8 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 }
 
 void Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
+  puts("DEPRECATED");
+  exit(1); 
   BitArray I = sir_params.infected();
   BitArray R = sir_params.recovered();
   BitArray S = sir_params.susceptible();
@@ -93,7 +96,7 @@ void Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   double q = sir_params.q();
 
   IDqueue queue(I);
-  // queue.insertMarked(I);
+
   int delta_nodes_pop = queue.size();
   int p0 = 0, p1 = 0, q0 = 0, q1 = 0;
 
@@ -148,7 +151,6 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
 
   assert(I.bitCount() == 1);
   IDqueue q(I);  // sir_params.population_size());
-  // q.insertMarked(I);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();
@@ -188,7 +190,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
             became_stifler = true;
             I.set(current_node, false);
             R.set(current_node, true);
-            // break;
+            //break;
           }
         }
       }
