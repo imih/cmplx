@@ -84,7 +84,8 @@ vector<double> normalize(vector<double> P) {
 vector<double> SoftMarginDetector::softMarginDetection(
     const Realization& realization, int no_simulations, double a,
     ModelType model_type) {
-  vector<double> P; P.clear();
+  vector<double> P;
+  P.clear();
   int population_size = realization.population_size();
   for (int v = 0; v < population_size; ++v) {
     vector<double> fi;
@@ -112,7 +113,7 @@ double SoftMarginDetector::SMSingleSourceSimulation(
 }
 
 double SoftMarginDetector::likelihood(vector<double> fi, double a) {
-  int n = (int) fi.size();
+  int n = (int)fi.size();
   double P = 0;
   for (int i = 0; i < n; ++i) {
     P += w_(fi[i], a);
@@ -122,7 +123,8 @@ double SoftMarginDetector::likelihood(vector<double> fi, double a) {
 
 std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
     const common::Realization& realization, int sample_size) {
-  vector<double> P; P.clear();
+  vector<double> P;
+  P.clear();
   int population_size = realization.population_size();
   double sum = 0;
   for (int v = 0; v < population_size; ++v) {
@@ -155,7 +157,8 @@ double SequentialMCDetector::seqPosterior(
       std::vector<SeqSample> prev_samples = samples;
       samples.clear();
       double sum = 0;
-      vector<double> P;  P.clear();
+      vector<double> P;
+      P.clear();
       P.push_back(0);
       for (const SeqSample& sample : prev_samples) {
         sum += sample.w();
@@ -324,6 +327,53 @@ double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
 
 double SequentialMCDetector::ESS(const std::vector<cmplx::SeqSample>& samples) {
   return (int)samples.size() / (1 + vc2(samples));
+}
+
+SeqSample ConfigurationalBiasMCDetector::drawFullSample(
+    int v, const common::Realization& target_realization) {
+  SeqSample sample(v, target_realization);
+  int maxT = target_realization.maxT();
+  double p = target_realization.p();
+  double q = target_realization.q();
+  vector<int> target_infected_idx =
+      target_realization.realization().positions();
+
+  for (int t = 0; t < target_realization.maxT(); ++t) {
+    BitArray prev_inf = sample.infected();
+    BitArray prev_rec = sample.recovered();
+    NewSample ns =
+        drawSample(t, maxT, p, q, target_infected_idx, prev_inf, prev_rec);
+    sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
+  }
+  return sample;
+}
+
+double ConfigurationalBiasMCDetector::seqPosterior(
+    int v, int sample_size, const common::Realization& target_realization,
+    bool resampling) {
+  std::vector<SeqSample> samples(sample_size,
+                                 drawFullSample(v, target_realization));
+  for (int it = 0; it < 10; ++it) {
+    for (SeqSample& sample : samples) {
+      SeqSample y = drawFullSample(v, target_realization);
+      double p = y.w() / sample.w();
+      if (p > 1) p = 1;
+      if (simulator_.eventDraw(p)) {
+        sample = y;
+      }
+    }
+    printvc2(samples);
+  }
+  double pos_P = 0;
+  double sum = 0;
+  for (const SeqSample& sample : samples) {
+    if (sample.match(target_realization)) {
+      pos_P += sample.w();
+    }
+    sum += sample.w();
+  }
+  printf("\nPost: %.10lf\n", pos_P);
+  return pos_P;
 }
 
 }  // namespace cmplx

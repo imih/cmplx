@@ -17,11 +17,11 @@ enum ModelType {
 };
 
 enum ResamplingType {
- NONE,
- REJECTION_CONTROL,
- SIMPLE_RANDOM_SAMPLING,
- RESIDUAL_SAMPLING,
- PARTIAL_REJECTION_CONTROL
+  NONE,
+  REJECTION_CONTROL,
+  SIMPLE_RANDOM_SAMPLING,
+  RESIDUAL_SAMPLING,
+  PARTIAL_REJECTION_CONTROL
 };
 
 class SourceDetector {
@@ -81,10 +81,11 @@ class SequentialMCDetector : public SourceDetector {
   std::vector<double> seqMonteCarloDetectionSIR(
       const common::Realization& realization, int sample_size);
 
-  double seqPosterior(int v, int sample_size,
-                      const common::Realization& target_realization, bool resampling = false);
+  virtual double seqPosterior(int v, int sample_size,
+                              const common::Realization& target_realization,
+                              bool resampling = false);
 
- private:
+ protected:
   std::set<int> buildReachable(const common::BitArray& infected);
 
   struct NewSample {
@@ -93,6 +94,7 @@ class SequentialMCDetector : public SourceDetector {
     double new_g;
     double new_pi;
   };
+
   NewSample drawSample(int t, int tMax, double p, double q,
                        const std::vector<int>& target_infected_idx,
                        const common::BitArray& prev_inf,
@@ -102,5 +104,18 @@ class SequentialMCDetector : public SourceDetector {
   double ESS(const std::vector<cmplx::SeqSample>& samples);
   void printvc2(const std::vector<cmplx::SeqSample>& samples);
 };
+
+class ConfigurationalBiasMCDetector : public SequentialMCDetector {
+ public:
+  ConfigurationalBiasMCDetector(const common::IGraph* g)
+      : SequentialMCDetector(g) {}
+
+  SeqSample drawFullSample(int v, const common::Realization& target_realization);
+
+  double seqPosterior(int v, int sample_size,
+                      const common::Realization& target_realization,
+                      bool resampling = false);
+};
+
 }  // namespace cmplx
 #endif  // CMPLX_SOURCE_DETECTOR_H

@@ -38,8 +38,8 @@ int main(int argc, char **argv) {
   } else if(sm) {
    cmplx::SoftMarginBenchmarkConv(params.get(), n);
   } else {
-    //cmplx::SeqMonteCarloBenchmark(params.get(), n);
-    SeqMonteCarloBenchmarkStepByStep(params.get(), n);
+    cmplx::SeqMonteCarloBenchmark(params.get(), n);
+    //SeqMonteCarloBenchmarkStepByStep(params.get(), n);
   }
 
   MPI::Finalize();

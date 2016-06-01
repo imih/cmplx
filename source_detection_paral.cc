@@ -920,7 +920,7 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   if (rank == 0) {
     std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
     std::string filename =
-        "SEQBenchmark3_" + params->summary();
+        "CBMCBenchmark_" + params->summary();
     FILE *f = fopen(filename.c_str(), "a+");
     fprintf(f, "source: %d\n", params->sourceID());
     fprintf(f, "%s\n", params->summary().c_str());
@@ -954,6 +954,8 @@ vector<double> SeqMonteCarloParalConvMaster(
   assert(rank == 0);
 
   std::vector<int> sims = {
+      SIMUL_PER_REQ / 100,        2 * SIMUL_PER_REQ / 100,   4 * SIMUL_PER_REQ / 100,
+      SIMUL_PER_REQ / 10,        2 * SIMUL_PER_REQ / 10,   4 * SIMUL_PER_REQ / 10,
       SIMUL_PER_REQ,        2 * SIMUL_PER_REQ,   4 * SIMUL_PER_REQ,
       8 * SIMUL_PER_REQ,    10 * SIMUL_PER_REQ,  20 * SIMUL_PER_REQ,
       40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,  100 * SIMUL_PER_REQ,
@@ -1106,7 +1108,8 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
   Realization snapshot = params->realization();
 
   // Performs simulation on request.
-  SequentialMCDetector sd(graph);
+  //SequentialMCDetector sd(graph);
+  ConfigurationalBiasMCDetector sd(graph);
 
   while (true) {
     Message message;
