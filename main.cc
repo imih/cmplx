@@ -54,15 +54,22 @@ int main(int argc, char** argv) {
   }
   auto params = SourceDetectionParams::ParamsFromGML(
     file_name, v, P / 10.0, Q / 10.0);
+
+/*
+  auto params = SourceDetectionParams::ParamsFromGrid(
+    P / 10.0, Q / 10.0, n);
+*/
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
-    std::string filename = "barabasi100_" + params->summary();
+    std::string filename = "erdos_renyi_100_0.01_" + params->summary();
     FILE* f = fopen(filename.c_str(), "a");
-    fprintf(f, "g%d, ", g);
+    fprintf(f, "g: %d, bc: %d, ", g, params.get()->realization().realization().bitCount());
     fclose(f);
   }
-  cmplx::GenerateSoftMarginDistributions(params.get(), 1);
-
+  MPI::COMM_WORLD.Barrier();
+  cmplx::GenerateSoftMarginDistributions(
+    params.get(), 1);
+  //cmplx::SeqMonteCarloBenchmark(params.get(), 1);
   MPI::Finalize();
   // clock_t end = clock();
   // printf("%lf sec\n", double(end - begin) / CLOCKS_PER_SEC);

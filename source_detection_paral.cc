@@ -137,7 +137,7 @@ void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
   } else {
     DirectMCSimulParalWorker(params, ModelType::SIR);
   }
-  exit(1);
+  exit(0);
 }
 
 std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
@@ -294,7 +294,7 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
   vector<int> events_resp(vertices, 0);
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
-  int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
+  //int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
   assert(simulations % SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
@@ -350,6 +350,7 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
 
   printf("\r\r\n");
   vector<double> p;
+  p.clear();
   for (int v = 0; v < vertices; ++v) {
     // if (print) printf("%.10f\n", events_resp[v] / sum);
     p.push_back(events_resp[v] / sum);
@@ -393,6 +394,7 @@ void SoftMarginParal(const SourceDetectionParams *params,
   }
 }
 
+
 vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
                                          bool end) {
   using namespace SMP;
@@ -400,14 +402,12 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
   message_type.Commit();
   int convergeG = 0;
     std::vector<int> sims = {
-        10 * SIMUL_PER_REQ,   20 * SIMUL_PER_REQ,
-        40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,   100 * SIMUL_PER_REQ,
-        200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,  800 * SIMUL_PER_REQ,
-        1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ, 4000 * SIMUL_PER_REQ,
-        8000 * SIMUL_PER_REQ};
+      //SIMUL_PER_REQ, 2 * SIMUL_PER_REQ,  4 * SIMUL_PER_REQ, 
+     10 * SIMUL_PER_REQ, 20 * SIMUL_PER_REQ,  40 * SIMUL_PER_REQ, 100 * SIMUL_PER_REQ, 200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ, 800 * SIMUL_PER_REQ}; 
 
+/*
     double c = 0.05;
-    double a = pow(2, -10);
+    double a = pow(2, -5);
     int s0 = sims[0];
     printf("s0: %d\n", s0);
     params->setSimulations(s0);
@@ -418,11 +418,11 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     double pMAP0 = *std::max_element(p0.begin(), p0.end());
     int bits = params->realization().realization().bitCount();
     vector<double> P;
+    P.clear();
     for (int s_id = 1; s_id < (int)sims.size(); ++s_id) {
       int s1 = sims[s_id];
       printf("s: %d\n", s1);
       params->setSimulations(s1);
-      printf("s: %d\n", s1);
       vector<double> p1 = SoftMarginSimulParalMaster(params, false, false);
       int MAP1 = 
         std::max_element(p1.begin(), p1.end()) - p1.begin();
@@ -434,10 +434,17 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
       if (delta > c) converge = false;
       int pos = 0;
       for (int j = 0; j < (int)p1.size(); ++j) {
-        if (dabs(p1[j] - p0[j]) > c) converge = false;
+        if (dabs(p1[j] - p0[j]) > c) {
+         puts("--c ");
+         converge = false;
+         break;
+         }
         if (p1[j] > 0) pos++;
       }
-      if (pos == 0) converge = false;
+      if (pos == 0) {
+        puts("--0 ");
+        converge = false;
+      }
       if (converge) {
         convergeG++;
         printf("Converged for n=%d\n", s0);
@@ -454,7 +461,8 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
       MAP0 = MAP1;
    }
 
-/*
+*/
+
   double c = 0.05;
   const int MAXA = 15;
   int s0 = sims[0];
@@ -478,13 +486,13 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
   int bits = params->realization().realization().bitCount();
   for (int s = 1; s < (int)sims.size(); ++s) {
     int s1 = sims[s];
-    printf("s: %d\n", s1);
+    printf("\ns: %d\n", s1);
     params->setSimulations(s1);
     vector<double> p1[MAXA + 1];
     vector<double> pMAP1(MAXA + 1, 0);
 
     for (int i = MAXA; i >= 3; --i) {
-      printf("s: %d a: %.10lf\n", s1, a[i]);
+      printf("\ns: %d a: %.10lf\n", s1, a[i]);
       params->setA(a[i]);
       double converge = true;
       p1[i] = SoftMarginSimulParalMaster(params, false, false);
@@ -501,7 +509,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
       if (converge) {
         convergeGlobal[i]++;
         printf("Converged for n=%d a=%lf\n", s0, a[i]);
-        if (convergeGlobal[i]) break;
+        if (convergeGlobal[i] > 0) break;
       } else {
         convergeGlobal[i] = 0;
         printf("Not converged.\n");
@@ -510,7 +518,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
 
     bool done = false;
     for (int i = MAXA; i >= 3; --i) {
-      if (convergeGlobal[i]) {
+      if (convergeGlobal[i] > 0) {
         P = p0[i];
         params->setSimulations(s0);
         params->setA(a[i]);
@@ -532,8 +540,8 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
     for (int i = 3; i <= MAXA; ++i) p0[i] = p1[i];
     pMAP0 = pMAP1;
     if (done) break;
+    P = p1[MAXA];
   }
-*/
   return P;
 }
 
@@ -572,6 +580,7 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
   vector<long long> events_resp_size(vertices, 0);
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
+  assert(jobs_remaining % SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
@@ -627,16 +636,33 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
   printf("\r\n");
   /*****/
   std::vector<double> P;
+  P.clear();
   double sum = 0;
+
+  int first_size = 0;
+  bool normalize = false;
   for (int v = 0; v < vertices; ++v) {
-    if (events_resp_size[v]) events_resp_sum[v] /= events_resp_size[v];
-    P.push_back(events_resp_sum[v]);
-    sum += P.back();
+    if(!first_size)  first_size = events_resp_size[0];
+    if(first_size && events_resp_size[v] &&  
+      events_resp_size[v] != first_size) {
+      std::cout 
+        << std::endl << events_resp_size[v] << " "<< first_size << std::endl;
+     puts("PROBLEM!");
+     normalize = true;
+     break;
+    }
   }
+
+  for (int v = 0; v < vertices; ++v) {
+    P.push_back(
+     (normalize && events_resp_size[v]) ? (events_resp_sum[v] / events_resp_size[v]) : events_resp_sum[v]); 
+    sum += P.back();
+    if(P.back() > 0.01) printf("%.2lf ", P.back());
+  }
+  printf("\n");
   for (int v = 0; v < vertices; ++v) {
     if (sum > 0) P[v] /= sum;
   }
-  printf("\n");
   return P;
 }
 
@@ -700,14 +726,14 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
   int convergeG = 0;
   if (rank == 0) {
     std::vector<int> sims = {
-        10 * SIMUL_PER_REQ,   20 * SIMUL_PER_REQ,
-        40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,   100 * SIMUL_PER_REQ,
-        200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,  800 * SIMUL_PER_REQ,
-        1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ, 4000 * SIMUL_PER_REQ,
-        8000 * SIMUL_PER_REQ};
+        //SIMUL_PER_REQ,   2 * SIMUL_PER_REQ,
+        //4 * SIMUL_PER_REQ,     
+        10 * SIMUL_PER_REQ, 20 * SIMUL_PER_REQ,
+        40 * SIMUL_PER_REQ, 100 * SIMUL_PER_REQ,
+        200 * SIMUL_PER_REQ, 400 * SIMUL_PER_REQ,  1000 * SIMUL_PER_REQ};
 
     double c = 0.05;
-    double a = pow(2, -10);
+    double a = pow(2, -5);
     int s0 = sims[0];
     printf("s0: %d\n", s0);
     params->setSimulations(s0);
@@ -718,11 +744,11 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
     double pMAP0 = *std::max_element(p0.begin(), p0.end());
     int bits = params->realization().realization().bitCount();
     vector<double> P;
+    P.clear();
     for (int s_id = 1; s_id < (int)sims.size(); ++s_id) {
       int s1 = sims[s_id];
-      printf("s: %d\n", s1);
       params->setSimulations(s1);
-      printf("s: %d\n", s1);
+      printf("\ns: %d\n", s1);
       vector<double> p1 = SoftMarginSimulParalMaster(params, false, false);
       int MAP1 = 
         std::max_element(p1.begin(), p1.end()) - p1.begin();
@@ -752,6 +778,7 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
       p0.assign(p1.begin(), p1.end());
       pMAP0 = pMAP1;
       MAP0 = MAP1;
+      P = p1;
     }
 
     std::string filename =
@@ -786,31 +813,35 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     MPI::COMM_WORLD.Barrier();
     share_params(params);
     MPI::COMM_WORLD.Barrier();
+    sleep(2);
     int bits = params->realization().realization().bitCount();
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
 
-      std::string filename = "sir2_distr_" + params->summary();
+      std::string filename = "erdos_renyi_100_0.01_" + params->summary();
       if (model_type == ModelType::ISS) {
         filename = "iss_distr_" + params->summary();
       }
       FILE *f = fopen(filename.c_str(), "a");
       if (model_type == ModelType::SIR) {
         fprintf(f, "-%d ", params->sourceID());
-      }
+      } else fprintf(f, "bc:%d, ", bits);
       for (int j = 0; j < (int)P.size(); ++j) {
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
       }
       fclose(f);
 
+       /*
       using namespace SMP;
       MPI::Datatype message_type = datatypeOfMessage();
       message_type.Commit();
+
       for (int v = 1; v < processes; ++v) {
         Message end_message;
         MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
                               MessageType::SIMUL_END);
       }
+     */
     } else {
       SoftMarginSimulParalWorker(params, model_type);
     }
@@ -889,7 +920,7 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   if (rank == 0) {
     std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
     std::string filename =
-        "barabasi100_" + params->summary();
+        "SEQBenchmark3_" + params->summary();
     FILE *f = fopen(filename.c_str(), "a+");
     fprintf(f, "source: %d\n", params->sourceID());
     fprintf(f, "%s\n", params->summary().c_str());
@@ -937,6 +968,7 @@ vector<double> SeqMonteCarloParalConvMaster(
   double c = 0.05;
 
   vector<double> res;
+  res.clear();
   int bits = params->realization().realization().bitCount();
   int convergeG = 0;
   int s_id = 1;

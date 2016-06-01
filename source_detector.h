@@ -16,6 +16,14 @@ enum ModelType {
   ISS
 };
 
+enum ResamplingType {
+ NONE,
+ REJECTION_CONTROL,
+ SIMPLE_RANDOM_SAMPLING,
+ RESIDUAL_SAMPLING,
+ PARTIAL_REJECTION_CONTROL
+};
+
 class SourceDetector {
  public:
   SourceDetector(const common::IGraph* g) : simulator_(g) {}
@@ -62,7 +70,7 @@ class SoftMarginDetector : public SourceDetector {
 
  private:
   double w_(double x, double a) {
-    return exp(-1.0 * (x - 1) * (x - 1) / (a * a));
+    return exp(-1.0l * (x - 1) * (x - 1) / (a * a));
   }
 };
 

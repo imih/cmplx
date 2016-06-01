@@ -150,7 +150,10 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
+  assert(R.bitCount() == 0);
   IDqueue q(I);  // sir_params.population_size());
+  assert(q.size() == 1);
+  assert(S.bitCount() == S.bits_num() - 1);
 
   int dis_time = 1;
   int delta_nodes_pop = q.size();

@@ -36,6 +36,7 @@ SirParams SourceDetector::paramsForSingleSource(
 vector<double> DirectMonteCarloDetector::directMonteCarloDetection(
     const Realization& realization, int no_simulations, ModelType model_type) {
   std::vector<double> outcomes_prob;
+  outcomes_prob.clear();
   int population_size = realization.population_size();
   double sum = 0;
   for (int v = 0; v < population_size; ++v) {
@@ -83,10 +84,11 @@ vector<double> normalize(vector<double> P) {
 vector<double> SoftMarginDetector::softMarginDetection(
     const Realization& realization, int no_simulations, double a,
     ModelType model_type) {
-  vector<double> P;
+  vector<double> P; P.clear();
   int population_size = realization.population_size();
   for (int v = 0; v < population_size; ++v) {
     vector<double> fi;
+    fi.clear();
     for (int s = 0; s < no_simulations; ++s) {
       fi.push_back(SMSingleSourceSimulation(v, realization, model_type));
     }
@@ -110,17 +112,17 @@ double SoftMarginDetector::SMSingleSourceSimulation(
 }
 
 double SoftMarginDetector::likelihood(vector<double> fi, double a) {
-  int n = (int)fi.size();
+  int n = (int) fi.size();
   double P = 0;
   for (int i = 0; i < n; ++i) {
     P += w_(fi[i], a);
   }
-  return P / n;
+  return P;
 }
 
 std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
     const common::Realization& realization, int sample_size) {
-  vector<double> P;
+  vector<double> P; P.clear();
   int population_size = realization.population_size();
   double sum = 0;
   for (int v = 0; v < population_size; ++v) {
@@ -153,7 +155,7 @@ double SequentialMCDetector::seqPosterior(
       std::vector<SeqSample> prev_samples = samples;
       samples.clear();
       double sum = 0;
-      vector<double> P;
+      vector<double> P;  P.clear();
       P.push_back(0);
       for (const SeqSample& sample : prev_samples) {
         sum += sample.w();
