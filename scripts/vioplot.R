@@ -177,7 +177,11 @@ doBarabasi100 <- function() {
 
 createSeqBenchmarkDF <- function() {
   addSeqBenchmarkRow <- function(row_id) {
-    data_r = read.table(paste("~/dipl/Supplementary_data_code/Data/benchmark_data/realizations/realization_", row_id, ".txt", sep = ""), header = FALSE, sep = "\n", 
+    ben_id = row_id
+    while(ben_id > 160) {
+      ben_id = ben_id - 160
+    }
+    data_r = read.table(paste("~/dipl/Supplementary_data_code/Data/benchmark_data/realizations/realization_", ben_id, ".txt", sep = ""), header = FALSE, sep = "\n", 
                         stringsAsFactors = FALSE, comment.char = "x")
     true_source = as.numeric(strsplit(data_r[1,], split = " ")[[1]][2])
     p = as.numeric(strsplit(data_r[2,], split = " ")[[1]][2])
@@ -185,14 +189,16 @@ createSeqBenchmarkDF <- function() {
     T = as.numeric(strsplit(data_r[4,], split = " ")[[1]][2])
     realization_size = sum(as.numeric(data_r[6:905,]))
     
-    data_sol = read.table(paste("~/dipl/Supplementary_data_code/Data/benchmark_data/solutions/inverse_solution_", row_id, ".txt", sep = ""), header = FALSE, sep = "\n", 
+    data_sol = read.table(paste("~/dipl/Supplementary_data_code/Data/benchmark_data/solutions/inverse_solution_", ben_id, ".txt", sep = ""), header = FALSE, sep = "\n", 
                           stringsAsFactors = FALSE, comment.char = "x")
     MC_simul = as.numeric(strsplit(data_sol[1,], split = " ")[[1]][4])
     MC_MAP = which(as.numeric(data_sol[3:902,]) == max(as.numeric(data_sol[3:902,])), arr.ind = TRUE) - 1
     MC_MAP_P = max(as.numeric(data_sol[3:902,]))
     P_dMC = paste(paste(data_sol[3:902,]), sep="", collapse="")
     MC_true_rank = rank(-as.numeric(strsplit(P_dMC, split = " ")[[1]]), ties.method = "first")[true_source + 1]
-    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQ_RCbenchmark_", row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
+    # SEQ vulgaris: SEQ_RCbenchmark2_*.info: need more trials
+    # SM vulagris: SM_benchmark
+    data_seq = read.table(paste("~/dipl/res/sm_benchmark/SMbenchmark_", row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
                           stringsAsFactors = FALSE)
     SEQ_simul = as.numeric(strsplit(data_seq[2,], split = " ")[[1]][2])
     SEQ_MAP = which(as.numeric(unlist(strsplit(data_seq[3,], split = " "))) == max(
@@ -214,19 +220,10 @@ createSeqBenchmarkDF <- function() {
   }
   
   seq_bench_df <- NULL
-  for(id in 1:52) {
+  for(id in 1:800) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 54:146) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 148:160) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  
   return(seq_bench_df)
 }
 
@@ -258,7 +255,7 @@ SeqBenchmarkAccuracyTrue <- function() {
   legend(0.6, 1, legend = c("Direct Monte Carlo", "Sequential Importance Sampling"), fill =c("orange", "cyan4"))
 }
 
-MAPMAPAccuracy <- function() {
+MAPMAPAccubracy <- function() {
   data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
@@ -327,8 +324,11 @@ BenchSimNo <- function() {
   text(x = bp7, y = MC_simuls, round(MC_simuls, 2), pos = 3, cex = 0.70)
   legend(0.6, 0.6, legend = c("All", "A", "B", "C", "D"), fill =c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
   
-  dataSeq4 = c(sum(data$SEQ_simul <= 10000), sum(dataA$SEQ_simul <= 10000),sum(dataB$SEQ_simul <= 10000),
-               sum(dataC$SEQ_simul <= 10000), sum(dataD$SEQ_simul <= 10000))
+  dataSeq4 = c(sum(data$SEQ_simul <= 10000) / nrow(data), 
+               sum(dataA$SEQ_simul <= 10000) / nrow(dataA),
+               sum(dataB$SEQ_simul <= 10000) / nrow(dataB),
+               sum(dataC$SEQ_simul <= 10000) / nrow(dataC), 
+               sum(dataD$SEQ_simul <= 10000) / nrow(dataD))
   dataSeq5 = c(sum((data$SEQ_simul >10000) & (data$SEQ_simul <= 100000))/ nrow(data),
                sum((dataA$SEQ_simul >10000) & (dataA$SEQ_simul <= 100000)) / nrow(dataA),
                sum((dataB$SEQ_simul >10000) & (dataB$SEQ_simul <= 100000)) / nrow(dataB),
@@ -448,7 +448,7 @@ benchAccSim <- function() {
                    main=" Accuracy of Sequential Importance w.r.t. true source node", 
                    names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
                    col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
-  text(x = bp1MC, y = bp1MC_data, label =  round(bp1MC_data, 2), pos = 3, cex = 0.7)
+  text(x = bp1MC, y = bp2MC_data, label =  round(bp2MC_data, 2), pos = 3, cex = 0.7)
   legend(0.3, 1.2, legend = c(expression(group("(",list(0, 10^4),"]")),
                               expression(group("(",list(10^4, 10^5),"]")),
                               expression(group("(",list(10^5, 10^6),"]")),
