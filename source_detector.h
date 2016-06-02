@@ -78,14 +78,17 @@ class SequentialMCDetector : public SourceDetector {
  public:
   SequentialMCDetector(const common::IGraph* g) : SourceDetector(g) {}
 
-  std::vector<double> seqMonteCarloDetectionSIR(
+  virtual std::vector<double> seqMonteCarloDetectionSIR(
       const common::Realization& realization, int sample_size);
 
   virtual double seqPosterior(int v, int sample_size,
                               const common::Realization& target_realization,
+                              bool maximize_hits = true,
                               bool resampling = false);
 
  protected:
+  virtual double posFromSample(const std::vector<SeqSample>& samples,
+                               const common::Realization& target_realization);
   std::set<int> buildReachable(const common::BitArray& infected);
 
   struct NewSample {
@@ -98,11 +101,29 @@ class SequentialMCDetector : public SourceDetector {
   NewSample drawSample(int t, int tMax, double p, double q,
                        const std::vector<int>& target_infected_idx,
                        const common::BitArray& prev_inf,
-                       const common::BitArray& prev_rec);
+                       const common::BitArray& prev_rec,
+                       bool maximize_hits = true);
 
   double vc2(const std::vector<cmplx::SeqSample>& samples);
   double ESS(const std::vector<cmplx::SeqSample>& samples);
   void printvc2(const std::vector<cmplx::SeqSample>& samples);
+};
+
+class SequentialSoftMCDetector : public SequentialMCDetector {
+ public:
+  SequentialSoftMCDetector(const common::IGraph* g) : SequentialMCDetector(g) {}
+
+  std::vector<double> seqMonteCarloDetectionSIR(
+      const common::Realization& realization, int sample_size);
+
+ protected:
+  double posFromSample(const std::vector<SeqSample>& samples,
+                       const common::Realization& target_realization);
+
+ private:
+  double w_(double x, double a) {
+    return exp(-1.0l * (x - 1) * (x - 1) / (a * a));
+  }
 };
 
 class ConfigurationalBiasMCDetector : public SequentialMCDetector {
@@ -110,11 +131,12 @@ class ConfigurationalBiasMCDetector : public SequentialMCDetector {
   ConfigurationalBiasMCDetector(const common::IGraph* g)
       : SequentialMCDetector(g) {}
 
-  SeqSample drawFullSample(int v, const common::Realization& target_realization);
+  SeqSample drawFullSample(int v,
+                           const common::Realization& target_realization);
 
   double seqPosterior(int v, int sample_size,
                       const common::Realization& target_realization,
-                      bool resampling = false);
+                      bool maximize_hits = true, bool resampling = false);
 };
 
 }  // namespace cmplx

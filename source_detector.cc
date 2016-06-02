@@ -141,7 +141,7 @@ std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
 
 double SequentialMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization,
-    bool resampling) {
+    bool maximize_hits, bool resampling) {
   printf("v: %d sample_size: %d bc: %d\n", v, sample_size,
          target_realization.realization().bitCount());
   std::vector<SeqSample> samples(sample_size, SeqSample(v, target_realization));
@@ -186,14 +186,21 @@ double SequentialMCDetector::seqPosterior(
     for (SeqSample& sample : samples) {
       BitArray prev_inf = sample.infected();
       BitArray prev_rec = sample.recovered();
-      NewSample ns = drawSample(t, target_realization.maxT(), p, q,
-                                target_infected_idx_, prev_inf, prev_rec);
+      NewSample ns =
+          drawSample(t, target_realization.maxT(), p, q, target_infected_idx_,
+                     prev_inf, prev_rec, maximize_hits);
       sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
     }
 
     printvc2(samples);
   }
 
+  return posFromSample(samples, target_realization);
+}
+
+double SequentialMCDetector::posFromSample(
+    const std::vector<SeqSample>& samples,
+    const common::Realization& target_realization) {
   double pos_P = 0;
   double sum = 0;
   for (const SeqSample& sample : samples) {
@@ -209,7 +216,7 @@ double SequentialMCDetector::seqPosterior(
 SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
     int T, int tMAX, double p, double q,
     const std::vector<int>& target_infected_idx, const BitArray& prev_inf,
-    const BitArray& prev_rec) {
+    const BitArray& prev_rec, bool maximize_hits) {
   SequentialMCDetector::NewSample sample;
   std::set<int> reachable = buildReachable(prev_inf);
   BitArray next_inf = prev_inf;
@@ -238,7 +245,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
       // p2 *= 0.95;
       // f(p2 < 0.5) p2 = 0.5;
       // p2 += t * (1 - p2) / (tMAX - 1);
-      if (t == tMAX - 1) p2 = 1;
+      if (maximize_hits && t == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
@@ -329,6 +336,37 @@ double SequentialMCDetector::ESS(const std::vector<cmplx::SeqSample>& samples) {
   return (int)samples.size() / (1 + vc2(samples));
 }
 
+std::vector<double> SequentialSoftMCDetector::seqMonteCarloDetectionSIR(
+    const common::Realization& realization, int sample_size) {
+  vector<double> P;
+  P.clear();
+  int population_size = realization.population_size();
+  double sum = 0;
+  for (int v = 0; v < population_size; ++v) {
+    if (realization.realization().bit(v)) {
+      P.push_back(seqPosterior(v, sample_size, realization, false));
+    } else
+      P.push_back(0);
+    sum += P.back();
+  }
+
+  for (int v = 0; v < population_size; ++v) P[v] /= sum;
+  return P;
+}
+
+double SequentialSoftMCDetector::posFromSample(
+    const std::vector<SeqSample>& samples,
+    const common::Realization& target_realization) {
+  double a = pow(2, -5);
+  double pos_P = 0;
+  for (const SeqSample& sample : samples) {
+      pos_P += sample.w() * w_(JaccardSimilarity(
+            target_realization.realization(), sample.realization()), a);
+  }
+  printf("\nPost: %.10lf\n", pos_P);
+  return pos_P;
+}
+
 SeqSample ConfigurationalBiasMCDetector::drawFullSample(
     int v, const common::Realization& target_realization) {
   SeqSample sample(v, target_realization);
@@ -350,7 +388,7 @@ SeqSample ConfigurationalBiasMCDetector::drawFullSample(
 
 double ConfigurationalBiasMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization,
-    bool resampling) {
+    bool maximize_hits, bool resampling) {
   std::vector<SeqSample> samples(sample_size,
                                  drawFullSample(v, target_realization));
   for (int it = 0; it < 10; ++it) {
@@ -364,16 +402,8 @@ double ConfigurationalBiasMCDetector::seqPosterior(
     }
     printvc2(samples);
   }
-  double pos_P = 0;
-  double sum = 0;
-  for (const SeqSample& sample : samples) {
-    if (sample.match(target_realization)) {
-      pos_P += sample.w();
-    }
-    sum += sample.w();
-  }
-  printf("\nPost: %.10lf\n", pos_P);
-  return pos_P;
+
+  return posFromSample(samples, target_realization);
 }
 
 }  // namespace cmplx
