@@ -62,10 +62,13 @@ int DirectMonteCarloDetector::DMCSingleSourceSimulation(
     int source_id, const Realization& realization, ModelType model_type) {
   SirParams params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
-  if (model_type == ModelType::SIR) {
-    prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
-  } else if (model_type == ModelType::ISS) {
-    prunned = simulator_.NaiveISS(params0, true, (realization.realization()));
+  switch (model_type) {
+    case ModelType::SIR:
+      prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
+      break;
+    case ModelType::ISS:
+      prunned = simulator_.NaiveISS(params0, true, (realization.realization()));
+      break;
   }
   if (prunned) return 0;
   return realization.realization().bitCount() ==
