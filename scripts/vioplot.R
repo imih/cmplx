@@ -107,7 +107,9 @@ barabasiData <- function(type = "_") {
     SM_entropy = round(Entropy(rbind(dataP), bc), 2)
     dataPs = paste(strsplit(line$V3, split = " ")[[1]][3:102], collapse = " ")
     library(stringr)
-    dataInfo = read.table(file = str_c(cbind("~/dipl/graphs/barabasi1_100_", toString(g),  ".info"), collapse = ""), header = TRUE, sep = ",")
+    #~/dipl/graphs/barabasi1_100_
+    #~/dipl/graphs/erdos_renyi_100_0.01_
+    dataInfo = read.table(file = str_c(cbind("~/dipl/graphs/erdos_renyi_100_0.01_", toString(g),  ".info"), collapse = ""), header = TRUE, sep = ",")
     return(merge(x = data.frame(g = g, id = source_id, p = p, q = q, bitCount = bc, SM_MAP = SM_MAP,
                                 SM_MAP_P = SM_MAP_P, Entropy = SM_entropy, dataP = dataPs, 
                                 stringsAsFactors = FALSE), 
@@ -120,25 +122,25 @@ barabasiData <- function(type = "_") {
   barabasi_dataC <- NULL
   barabasi_dataD <- NULL
   
-  dataA = read.table(file = "~/dipl/res/bara/barabasi100_0.300000_0.300000_100", header = FALSE, 
+  dataA = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.300000_0.300000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataA)) {
     rbind(barabasi_data, make_line(dataA[i,], 0.3, 0.3)) -> barabasi_data
     rbind(barabasi_dataA, make_line(dataA[i,], 0.3, 0.3)) -> barabasi_dataA
   } 
-  dataB = read.table(file = "~/dipl/res/bara/barabasi100_0.300000_0.700000_100", header = FALSE, 
+  dataB = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.300000_0.700000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataB)) {
     rbind(barabasi_data, make_line(dataB[i,], 0.3, 0.7)) -> barabasi_data
     rbind(barabasi_dataB, make_line(dataB[i,], 0.3, 0.7)) -> barabasi_dataB
   }
-  dataC = read.table(file = "~/dipl/res/bara/barabasi100_0.700000_0.300000_100", header = FALSE, 
+  dataC = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.700000_0.300000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataC)) {
     rbind(barabasi_data, make_line(dataC[i,], 0.7, 0.3)) -> barabasi_data
     rbind(barabasi_dataC, make_line(dataC[i,], 0.7, 0.3)) -> barabasi_dataC
   }
-  dataD = read.table(file = "~/dipl/res/bara/barabasi100_0.700000_0.700000_100", header = FALSE, 
+  dataD = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.700000_0.700000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataD)) {
     rbind(barabasi_data, make_line(dataD[i,], 0.7, 0.7)) -> barabasi_data
@@ -368,51 +370,277 @@ barabasi100Accuracy <- function() {
   grid(nx = NULL, ny = 10)
 }
 
-doBarabasi100 <- function(type = "_") {
-  barabasiAnalysis <- function(data) {
+erdos100Accuracy <- function() {
+  accuracy <- function(line) {
+    return (sum(line$SM_MAP == line$id) / nrow(line))
+  }
+  
+  data <- barabasiData()
+  dataA <- barabasiData("A")
+  dataB <- barabasiData("B")
+  dataC <- barabasiData("C")
+  dataD <- barabasiData("D")
+  
+  Deg0 <- function(calc, data) {
+    return(calc(data[data$deg <= 2,]))
+  }
+  Deg5 <- function(calc, data) {
+    return(calc(data[(data$deg > 2) & (data$deg <= 4),]))
+  }
+  Deg10 <- function(calc, data) {
+    return(calc(data[(data$deg > 4) & (data$deg <= 6),]))
+  }
+  Deg15 <- function(calc, data) {
+    return(calc(data[(data$deg > 6) & (data$deg <= 8),]))
+  }
+  Deg20 <- function(calc, data) {
+    return(calc(data[(data$deg > 8) & (data$deg <= 10),]))
+  }
+  Deg25 <- function(calc, data) {
+    return(calc(data[(data$deg > 10) & (data$deg <= 12),]))
+  }
+  #Deg30 <- function(calc, data) {
+  #  return(calc(data[(data$deg > 30) & (data$deg <= 35),]))
+  #}
+  
+  dataDeg = cbind(mergeToData(Deg0, accuracy), mergeToData(Deg5, accuracy), mergeToData(Deg10, accuracy),
+                  mergeToData(Deg15, accuracy), mergeToData(Deg20, accuracy),
+                   mergeToData(Deg25, accuracy))
+                  #mergeToData(Deg30, accuracy))
+  labelDeg = c(expression(group("(", list(0, 2), "]")),
+               expression(group("(", list(2, 4), "]")),
+               expression(group("(", list(4, 6), "]")),
+               expression(group("(", list(6, 8), "]")),
+               expression(group("(", list(8, 10), "]")),
+               expression(group("(", list(10, 12), "]")))
+               #expression(group("(", list(25, 30), "]")),
+               #expression(group("(", list(30, 35), "]")))
+  
+  plotBarPlotDataAgg(dataAgg = dataDeg, ylabTitle = "Probability", 
+                     mainTitle = "Source detection accuracy grouped by degree of the true source node",
+                     namesArg =  labelDeg)
+  
+  epidemicCoverage <- function(data) {
+    return(data$bitCount / 100)
+  }
+  
+  library(vioplot)
+  plot(0:1, 0:1, xlim=c(0.5, 6.5), axes = FALSE, ann = FALSE)
+  vioplot(Deg0(epidemicCoverage, data), Deg5(epidemicCoverage, data), 
+          Deg10(epidemicCoverage, data), Deg15(epidemicCoverage, data),
+          Deg20(epidemicCoverage, data), Deg25(epidemicCoverage, data),
+          #Deg30(epidemicCoverage, data),
+          ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+  axis(side = 1, at = 1:6, labels = labelDeg)
+  axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+  title("Epidemic coverage \ngrouped by true source nodes degree.", outer = FALSE,
+        ylab = "Probability")
+  grid(nx = NULL, ny = 10)
+  
+  
+  Clos0 <- function(calc, data) {
+    return(calc(data[data$clos <= 0.15,]))
+  }
+  Clos15 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.15) & (data$clos <= 0.2),]))
+  }
+  Clos20 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.2) & (data$clos <= 0.25),]))
+  }
+  Clos25 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.25) & (data$clos <= 0.3),]))
+  }
+  Clos30 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.3) & (data$clos <= 0.35),]))
+  }
+  Clos35 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.35) & (data$clos <= 0.4),]))
+  }
+  Clos40 <- function(calc, data) {
+    return(calc(data[(data$clos > 0.4) & (data$clos <= 0.45),]))
+  }
+  Clos45 <- function(calc, data) {
+    return(calc(data[data$clos > 0.45,]))
+  }
+  
+  dataClos = cbind(#mergeToData(Clos0, accuracy), mergeToData(Clos15, accuracy), 
+                   mergeToData(Clos20, accuracy),
+                   mergeToData(Clos25, accuracy), mergeToData(Clos30, accuracy), mergeToData(Clos35, accuracy),
+                   mergeToData(Clos40, accuracy),
+                   mergeToData(Clos45, accuracy))
+  labelClos= c(#expression(group("(", list(0, 0.15), "]")),
+               #expression(group("(", list(0.15, 0.2), "]")),
+               expression(group("[", list(0.2, 0.25), "]")),
+               expression(group("(", list(0.25, 0.30), "]")),
+               expression(group("(", list(0.30, 0.35), "]")),
+               expression(group("(", list(0.35, 0.40), "]")),
+               expression(group("(", list(0.40, 0.45), "]")),
+               expression(group("(", list(0.45, 0.50), "]")))
+  plotBarPlotDataAgg(dataAgg = dataClos, ylabTitle = "Probability", 
+                     mainTitle = "Source detection accuracy grouped by closeness of the true source node",
+                     namesArg =  labelClos)
+  
+  plot(0:1, 0:1, xlim=c(0.5, 6.5), axes = FALSE, ann = FALSE)
+  #library(vioplot)
+  vioplot(#Clos0(epidemicCoverage, data), Clos15(epidemicCoverage, data), 
+          Clos20(epidemicCoverage, data), Clos25(epidemicCoverage, data),
+          Clos30(epidemicCoverage, data), Clos35(epidemicCoverage, data),
+          Clos40(epidemicCoverage, data), 0, #Clos45(epidemicCoverage,data),
+          ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+  axis(side = 1, at = 1:6, labels = labelClos)
+  axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+  title("Epidemic coverage \ngrouped by true source nodes closeness", outer = FALSE,
+        ylab = "Probability")
+  grid(nx = NULL, ny = 10)
+  
+  Betw0 <- function(calc, data) {
+    return(calc(data[data$betw <= 100,])) 
+  }
+  Betw1k <- function(calc, data) {
+    return(calc(data[(data$betw > 100) & (data$betw <= 200),]))
+  }
+  Betw2k <- function(calc, data) {
+    return(calc(data[(data$betw > 200) & (data$betw <= 300),]))
+  }
+  Betw3k <- function(calc, data) {
+    return(calc(data[(data$betw > 300) & (data$betw <= 400),]))
+  }
+  Betw4k <- function(calc, data) {
+    return(calc(data[(data$betw > 400),]))
+  }
+  labelsBetw = c(expression(group("(", list(0, 100), "]")),
+                 expression(group("(", list(100, 200), "]")),
+                 expression(group("(", list(200, 300), "]")),
+                 expression(group("(", list(300, 400), "]")),
+                 expression(group("(", list(400, 500), "]")))
+  dataBetw = cbind(mergeToData(Betw0, accuracy), mergeToData(Betw1k, accuracy),
+                   mergeToData(Betw2k, accuracy), mergeToData(Betw3k, accuracy), mergeToData(Betw4k, accuracy))
+  plotBarPlotDataAgg(dataAgg = dataBetw, ylabTitle = "Probability", 
+                     mainTitle = "Source detection accuracy grouped by betweenness of the true source node",
+                     namesArg =  labelsBetw)
+  
+  plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+  #library(vioplot)
+  vioplot(Betw0(epidemicCoverage, data), Betw1k(epidemicCoverage, data), 
+          Betw2k(epidemicCoverage, data), Betw3k(epidemicCoverage, data),
+          Betw4k(epidemicCoverage, data),
+          ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+  axis(side = 1, at = 1:5, labels = labelsBetw)
+  axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+  title("Epidemic coverage \ngrouped by true source nodes betweenness", outer = FALSE,
+        ylab = "Probability")
+  grid(nx = NULL, ny = 10)
+  
+  Eig0 <- function(calc, data) {
+    return(calc(data[data$eigcentr <= 0.2,]))
+  }
+  Eig2 <- function(calc, data) {
+    return(calc(data[(data$eigcentr > 0.2) & (data$eigcentr <= 0.4),]))
+  }
+  Eig4 <- function(calc, data) {
+    return(calc(data[(data$eigcentr > 0.4) & (data$eigcentr <= 0.6),]))
+  }
+  Eig6 <- function(calc, data) {
+    return(calc(data[(data$eigcentr > 0.6) & (data$eigcentr <= 0.8),]))
+  }
+  Eig8 <- function(calc, data) {
+    return(calc(data[(data$eigcentr > 0.8),]))
+  }
+  EigLabels = c(expression(group("(", list(0, 0.2), "]")),
+                expression(group("(", list(0.2, 0.4), "]")),
+                expression(group("(", list(0.4, 0.6), "]")),
+                expression(group("(", list(0.6, 0.8), "]")),
+                expression(group("(", list(0.8, 1), "]")))
+  
+  dataEig = cbind(mergeToData(Eig0, accuracy), mergeToData(Eig2, accuracy),
+                  mergeToData(Eig4, accuracy), mergeToData(Eig6, accuracy),
+                  mergeToData(Eig8, accuracy))
+  plotBarPlotDataAgg(dataAgg = dataEig, ylabTitle = "Probability", 
+                     mainTitle = "Source detection accuracy grouped by eigenvector centrality of the true source node",
+                     namesArg =  EigLabels)
+  
+  plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+ # library(vioplot)
+  vioplot(Eig0(epidemicCoverage, data), Eig2(epidemicCoverage, data), 
+          Eig4(epidemicCoverage, data), Eig6(epidemicCoverage, data),
+          Eig8(epidemicCoverage, data),
+          ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+  axis(side = 1, at = 1:5, labels = EigLabels)
+  axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+  title("Epidemic coverage \ngrouped by true source nodes eigenvector centrality", outer = FALSE,
+        ylab = "Probability")
+  grid(nx = NULL, ny = 10)
+  
+  kCore1 <- function(calc, data) {
+  return(calc(data[data$kcore == 1,]))
+  }
+  kCore2 <- function(calc, data) {
+    return(calc(data[data$kcore == 2,]))
+  }
+  kCore3 <- function(calc, data) {
+  return(calc(data[data$kcore == 3,]))
+  }
+  kCore4 <- function(calc, data) {
+  return(calc(data[data$kcore == 4,]))
+  }
+  
+  CoreLabels = c("1", "2", "3", "4")
+  dataCore = cbind(mergeToData(kCore1, accuracy), mergeToData(kCore2, accuracy),
+                   mergeToData(kCore3, accuracy), mergeToData(kCore4, accuracy))
+  plotBarPlotDataAgg(dataAgg = dataCore, ylabTitle = "Probability", 
+                     mainTitle = "Source detection accuracy grouped by coreness of the true source node",
+                     namesArg =  CoreLabels)
+  
+  plot(0:1, 0:1, xlim=c(0.5, 4.5), axes = FALSE, ann = FALSE)
+  # library(vioplot)
+  vioplot(kCore1(epidemicCoverage, data), kCore2(epidemicCoverage, data), 
+          kCore3(epidemicCoverage, data), kCore4(epidemicCoverage, data),
+          ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+  axis(side = 1, at = 1:4, labels = EigLabels)
+  axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+  title("Epidemic coverage \ngrouped by true source nodes coreness", outer = FALSE,
+        ylab = "Probability")
+  grid(nx = NULL, ny = 10)
+}
+
+doErdos100 <- function(type = "_") {
+  erdosAnalysis <- function(data) {
     library(vioplot)
     
-    par(mfrow = c(4, 1), mai = c(0.3732, 0.5412, 0.3712, 0.2772))
-    hist(data$deg, breaks = 6);
-    plot(0:1, 0:1, xlim=c(0.5, 7.5), axes = FALSE, ann = FALSE)
-    vioplot(data[data$deg <= 5,]$Entropy,
-            data[(data$deg > 5) & (data$deg <= 10),]$Entropy,
-            data[(data$deg > 10) & (data$deg <= 15),]$Entropy,
-            data[(data$deg > 15) & (data$deg <= 20),]$Entropy,
-            data[(data$deg > 20) & (data$deg <= 25),]$Entropy,
-            data[(data$deg > 25) & (data$deg <= 30),]$Entropy,
-            data[(data$deg > 30) & (data$deg <= 35),]$Entropy,
+    #par(mfrow = c(4, 1), mai = c(0.3732, 0.5412, 0.3712, 0.2772))
+    hist(data$deg, breaks = 5)
+    plot(0:1, 0:1, xlim=c(0.5, 6.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$deg <= 2,]$Entropy,
+            data[(data$deg > 2) & (data$deg <= 4),]$Entropy,
+            data[(data$deg > 4) & (data$deg <= 6),]$Entropy,
+            data[(data$deg > 6) & (data$deg <= 8),]$Entropy,
+            data[(data$deg > 8) & (data$deg <= 10),]$Entropy,
+            data[(data$deg > 10) & (data$deg <= 12),]$Entropy,
             ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
-    axis(side = 1, at = 1:7, 
-         labels = c(expression(group("(", list(0, 5), "]")),
-                    expression(group("(", list(5, 10), "]")),
-                    expression(group("(", list(10, 15), "]")),
-                    expression(group("(", list(15, 20), "]")),
-                    expression(group("(", list(20, 25), "]")),
-                    expression(group("(", list(25, 30), "]")),
-                    expression(group("(", list(30, 35), "]")))
+    axis(side = 1, at = 1:6, 
+         labels = c(expression(group("(", list(0, 2), "]")),
+                    expression(group("(", list(2, 4), "]")),
+                    expression(group("(", list(4, 6), "]")),
+                    expression(group("(", list(6, 8), "]")),
+                    expression(group("(", list(8, 10), "]")),
+                    expression(group("(", list(10, 12), "]")))
     )
     axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
     title("Entropy of source node probability distribution\ngrouped by true source nodes degree.", outer = FALSE,
           ylab = "Entropy")
     grid(nx = NULL, ny = 10)
     
-    #TODO generate more samples for degrees > 5 (at least 50 per degree group)
-    hist(data$clos, breaks = 8)
-    plot(0:1, 0:1, xlim=c(0.5, 8.5), axes = FALSE, ann = FALSE)
-    vioplot(data[data$clos <= 0.15,]$Entropy, 
-            data[(data$clos > 0.15) & (data$clos <= 0.2),]$Entropy,
-            data[(data$clos > 0.2) & (data$clos <= 0.25),]$Entropy,
-            data[(data$clos > 0.25) & (data$clos <= 0.3),]$Entropy,
-            data[(data$clos > 0.3) & (data$clos <= 0.35),]$Entropy,
-            data[(data$clos > 0.35) & (data$clos <= 0.4),]$Entropy,
-            data[(data$clos > 0.4) & (data$clos <= 0.45),]$Entropy,
-            data[data$clos > 0.45,]$Entropy,
+    hist(data$clos, breaks = 6)
+    plot(0:1, 0:1, xlim=c(0.5, 6.5), axes = FALSE, ann = FALSE)
+    vioplot(data[(data$clos >= 0.20) & (data$clos <= 0.25),]$Entropy,
+            data[(data$clos > 0.25) & (data$clos <= 0.30),]$Entropy,
+            data[(data$clos > 0.30) & (data$clos <= 0.35),]$Entropy,
+            data[(data$clos > 0.35) & (data$clos <= 0.40),]$Entropy,
+            data[(data$clos > 0.40) & (data$clos <= 0.45),]$Entropy,
+            0,#data[(data$clos > 0.45),]$Entropy,
             ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
-    axis(side = 1, at = 1:8, 
-         labels = c(expression(group("(", list(0, 0.15), "]")),
-                    expression(group("(", list(0.15, 0.2), "]")),
-                    expression(group("(", list(0.2, 0.25), "]")),
+    axis(side = 1, at = 1:6, 
+         labels = c(expression(group("[", list(0.20, 0.25), "]")),
                     expression(group("(", list(0.25, 0.30), "]")),
                     expression(group("(", list(0.30, 0.35), "]")),
                     expression(group("(", list(0.35, 0.40), "]")),
@@ -426,18 +654,18 @@ doBarabasi100 <- function(type = "_") {
     #par(mfrow = c(2, 1))
     hist(data$betw, breaks = 5)
     plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
-    vioplot(data[data$betw <= 1000,]$Entropy, 
-            data[(data$betw > 1000) & (data$betw <= 2000),]$Entropy,
-            data[(data$betw > 2000) & (data$betw <= 3000),]$Entropy,
-            data[(data$betw > 3000) & (data$betw <= 4000),]$Entropy,
-            data[(data$betw > 4000),]$Entropy,
+    vioplot(data[data$betw <= 100,]$Entropy, 
+            data[(data$betw > 100) & (data$betw <= 200),]$Entropy,
+            data[(data$betw > 200) & (data$betw <= 300),]$Entropy,
+            data[(data$betw > 300) & (data$betw <= 400),]$Entropy,
+            data[(data$betw > 400),]$Entropy, 
             ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
-    axis(side = 1, at = 1:5, 
-         labels = c(expression(group("(", list(0, 1000), "]")),
-                    expression(group("(", list(1000, 2000), "]")),
-                    expression(group("(", list(2000, 3000), "]")),
-                    expression(group("(", list(3000, 4000), "]")),
-                    expression(group("(", list(4000, 5000), "]"))))
+    axis(side = 1, at = 1:5,
+         labels = c(expression(group("(", list(0, 100), "]")),
+                    expression(group("(", list(100, 200), "]")),
+                    expression(group("(", list(200, 300), "]")),
+                    expression(group("(", list(300, 400), "]")),
+                    expression(group("(", list(400, 500), "]"))))
     axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
     title("Entropy of source node probability distribution\ngrouped by true source nodes betweenness.", outer = FALSE,
           ylab = "Entropy")
@@ -462,8 +690,22 @@ doBarabasi100 <- function(type = "_") {
     title("Entropy of source node probability distribution\ngrouped by true source nodes eigenvector centrality.", outer = FALSE,
           ylab = "Entropy")
     grid(nx = NULL, ny = 10)
+    
+    hist(data$kcore)
+    plot(0:1, 0:1, xlim=c(0.5, 4.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$kcore == 1,]$Entropy, 
+            data[data$kcore == 2,]$Entropy,
+            data[data$kcore == 3,]$Entropy,
+            data[data$kcore == 4,]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:4, 
+         labels = c("1", "2", "3", "4"))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes coreness.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
   }
-  barabasiAnalysis(barabasiData(type))
+  erdosAnalysis(barabasiData(type))
 }
 
 createSeqBenchmarkDF <- function() {
@@ -487,10 +729,16 @@ createSeqBenchmarkDF <- function() {
     MC_MAP_P = max(as.numeric(data_sol[3:902,]))
     P_dMC = paste(paste(data_sol[3:902,]), sep="", collapse="")
     MC_true_rank = rank(-as.numeric(strsplit(P_dMC, split = " ")[[1]]), ties.method = "first")[true_source + 1]
+    
     # SEQ vulgaris: SEQ_RCbenchmark2_*.info: need more trials
     # SEQ simple random sampling: SEQ_RCbenchmark_
     # SM vulagris: SM_benchmark
-    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQ_RCbenchmark_", row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
+    # Configurational bias MC: CBMCBenchmark_*
+    # SEQ soft: SEQSoftBenchmark(1k5)_* (a = pow(2, -5))
+    # SEQ sfot: SEQSoftBenchmark1k5_a-10* 
+    # DM vulgaris: DMBenchmarkConv_
+    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQ_RCbenchmark2_", 
+                                row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
                           stringsAsFactors = FALSE)
     SEQ_simul = as.numeric(strsplit(data_seq[2,], split = " ")[[1]][2])
     SEQ_MAP = which(as.numeric(unlist(strsplit(data_seq[3,], split = " "))) == max(
@@ -501,6 +749,11 @@ createSeqBenchmarkDF <- function() {
                                 as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]),
                           abs(SEQ_MAP_P - 
                                 as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1]) / as.numeric(strsplit(P_dMC, split = " ")[[1]])[SEQ_MAP + 1])
+    if(SEQ_MAP_P == 0) {
+      SEQ_MAP = 0
+      SEQ_rel_err = 1
+    }
+    
     P_SEQ = data_seq[3,]
     SEQ_true_rank = rank(-as.numeric(strsplit(P_SEQ, split = " ")[[1]]), ties.method = "first")[true_source + 1]
     SEQ_MAP_rank = rank(-as.numeric(strsplit(P_SEQ, split = " ")[[1]]), ties.method = "first")[MC_MAP + 1]
@@ -512,22 +765,11 @@ createSeqBenchmarkDF <- function() {
   }
   
   seq_bench_df <- NULL
-  for(id in 1:52) {
+  for(id in 1:160) {
     rbind(seq_bench_df, 
           addSeqBenchmarkRow(id)) -> seq_bench_df
   }
-  for(id in 54:71) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 74:146) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
-  for(id in 148:160) {
-    rbind(seq_bench_df, 
-          addSeqBenchmarkRow(id)) -> seq_bench_df
-  }
+  
   return(seq_bench_df)
 }
 
@@ -556,7 +798,7 @@ SeqBenchmarkAccuracyTrue <- function() {
                  main=" Accuracy based on realizations true source node", 
                  names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.1), axis.lty = 1, col = c("orange", "cyan4"), ylab = "Accuracy")
   text(x = bp1, y = data, label =  round(data, 2), pos = 3, cex = 0.8)
-  legend(0.6, 1, legend = c("Direct Monte Carlo", "SIS with Simple Random Sampling"), fill =c("orange", "cyan4"))
+  legend(0.6, 1, legend = c("Benchmark detector", "SIS detector"), fill =c("orange", "cyan4"), cex=0.8)
 }
 
 MAPMAPAccuracy <- function() {
@@ -574,10 +816,10 @@ MAPMAPAccuracy <- function() {
   dataD = c(1.0,  nrow(dataD[dataD$SEQ_MAP == dataD$MC_MAP,]) / nrow(dataD))
   data = cbind(dataAll, dataA, dataB, dataC, dataD)
   bp1 <- barplot(data, beside = T,
-                 main=" MAP Accuracy based on Direct Monte Carlo MAP estimation", 
+                 main=" MAP Accuracy based on benchmark\nMAP estimation", 
                  names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.1), axis.lty = 1, col = c("orange", "cyan4"), ylab = "Accuracy")
   text(x = bp1, y = data, label =  round(data, 2), pos = 3, cex = 0.8)
-  legend(1.6, 0.25, legend = c("Soft Margin", "Sequential Importance Sampling"), fill =c("orange", "cyan4"))
+  legend(1.1, 0.26, legend = c("Soft Margin detector", "SIS detector"), fill =c("orange", "cyan4"), cex = 0.8)
 }
 
 BenchSimNo <- function() {
@@ -1057,9 +1299,9 @@ BenchRelMAP <- function() {
           SEQ_relative_MAPD, col = "orange", add = TRUE)
   axis(side = 1, at = 1:5, 
        labels =c("All", "A", "B", "C", "D"))
-  axis(side = 2, at = seq(0, 0.3, 0.01), labels =seq(0, 0.3,0.01))
-  grid(nx = NULL, ny = 30)
-  title("MAP relative error")
+  axis(side = 2, at = seq(0, 0.3, 0.075), labels =seq(0, 0.3,0.075))
+  grid(nx = NULL, ny = 12)
+  title("MAP relative error of SIS detector\nbased on benchmark MAP estimation")
 }
 
 scatterPlotSimulations <-function(data) {
@@ -1079,4 +1321,18 @@ SeqBenchmarkAnalysis <- function() {
   benchSimAcc()
   benchAccSim()
   scatterPlotSimulations()
+}
+
+plotFit <- function() {
+fi <- function(a, x) {
+  return(exp(- (x - 1) * (x - 1) / (2^a * 2^a)))
+}
+mat <- outer(seq(-8,0, length = 1000),  seq(0.01, 1.0, length = 10000),
+             Vectorize(function(x, y) fi(x, y)))
+#image(mat, col = topo.colors(10, alpha = 1), axes = F)
+library("fields")
+image.plot(mat, col = topo.colors(10, alpha = 1), horizontal = FALSE, axes = FALSE)
+title(main = expression(e^{-(x - 1)^2 / a^2}), xlab = expression(log[2](a)), ylab = "x")
+axis(1, at = seq(0, 1, 1/8), labels = seq(-8, 0, 1))
+axis(2, at = seq(0, 1, 1/15), labels = seq(0, 1.0, length = 16))
 }
