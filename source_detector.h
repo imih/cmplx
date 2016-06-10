@@ -81,10 +81,10 @@ class SequentialMCDetector : public SourceDetector {
   virtual std::vector<double> seqMonteCarloDetectionSIR(
       const common::Realization& realization, int sample_size);
 
-  virtual double seqPosterior(int v, int sample_size,
-                              const common::Realization& target_realization,
-                              bool maximize_hits = true,
-                              bool resampling = false);
+  virtual double seqPosterior(
+      int v, int sample_size, const common::Realization& target_realization,
+      ResamplingType resampling_type = ResamplingType::NONE,
+      bool maximize_hits = true);
 
  protected:
   virtual double posFromSample(const std::vector<SeqSample>& samples,
@@ -104,9 +104,15 @@ class SequentialMCDetector : public SourceDetector {
                        const common::BitArray& prev_rec,
                        bool maximize_hits = true);
 
+  void printvc2(const std::vector<cmplx::SeqSample>& samples);
+
+ private:
+  std::vector<SeqSample> resampling(int t,
+                                    const ResamplingType& resampling_type,
+                                    const std::vector<SeqSample>& samplesOrg);
+
   double vc2(const std::vector<cmplx::SeqSample>& samples);
   double ESS(const std::vector<cmplx::SeqSample>& samples);
-  void printvc2(const std::vector<cmplx::SeqSample>& samples);
 };
 
 class SequentialSoftMCDetector : public SequentialMCDetector {
@@ -136,7 +142,8 @@ class ConfigurationalBiasMCDetector : public SequentialMCDetector {
 
   double seqPosterior(int v, int sample_size,
                       const common::Realization& target_realization,
-                      bool maximize_hits = true, bool resampling = false);
+                      ResamplingType resampling_type = ResamplingType::NONE,
+                      bool maximize_hits = true);
 };
 
 }  // namespace cmplx
