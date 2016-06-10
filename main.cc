@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
   }
 
   std::string file_name =
-      "/home/imiholic/graphs/barabasi1_100_" + std::to_string(g) + ".gml";
+      "/home/imiholic/graphs/barabasi2_100_" + std::to_string(g) + ".gml";
   if (erdos) {
     file_name = "/home/imiholic/graphs/erdos_renyi_100_0.01_" +
                 std::to_string(g) + ".gml";
@@ -61,7 +61,7 @@ int main(int argc, char** argv) {
 */
   int rank = MPI::COMM_WORLD.Get_rank();
   if (rank == 0) {
-    std::string filename = "erdos_renyi_100_0.01_" + params->summary();
+    std::string filename = "barabasi2_100_" + params->summary();
     FILE* f = fopen(filename.c_str(), "a");
     fprintf(f, "g: %d, bc: %d, ", g, params.get()->realization().realization().bitCount());
     fclose(f);
