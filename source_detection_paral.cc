@@ -140,6 +140,41 @@ void DirectMCBenchmark(SourceDetectionParams *params, int benchmark_no) {
   exit(0);
 }
 
+
+void DirectMCBenchmarkStepByStep(
+    cmplx::SourceDetectionParams *params, int benchmark_no) {
+  using namespace DMC;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  if(rank == 0) {
+
+  std::string filename = "DMCbench_SBS_" + std::to_string(benchmark_no) + ".info";
+  FILE* f = fopen(filename.c_str(), "a+");
+  std::vector<int> sims = {
+   (int) 1e4, (int) 1e5, (int) 1e6, (int) 1e7, (int) 1e8, (int) 1e9};
+  for(int sim : sims) {
+    fprintf(f, "s: %d\n",  sim);
+    params->setSimulations(sim);
+    vector<double> p = DirectMCSimulParalMaster(params, false, true);
+    for(int i = 0; i < (int) p.size(); ++i) 
+      fprintf(f, "%.10lf%c", p[i], i + 1 == (int) p.size() ? '\n' : ' ');
+    fflush(f);
+  }
+  fclose(f);
+
+  int processes = MPI::COMM_WORLD.Get_size();
+  for (int v = 1; v < processes; ++v) {
+    Message end_message;
+    MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                              MessageType::SIMUL_END);
+    }
+  } else {
+    DirectMCSimulParalWorker(params, ModelType::SIR);
+ }
+   exit(0);
+ }
+
 std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
                                                  ModelType model_type,
                                                  int benchmark_no) {
@@ -151,7 +186,8 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
       100 * SIMUL_PER_REQ,  200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,
       800 * SIMUL_PER_REQ,  1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ,
       4000 * SIMUL_PER_REQ, 8000 * SIMUL_PER_REQ, 10000 * SIMUL_PER_REQ,
-      20000 * SIMUL_PER_REQ, 40000 * SIMUL_PER_REQ, 80000 * SIMUL_PER_REQ};
+      20000 * SIMUL_PER_REQ, 40000 * SIMUL_PER_REQ, 80000 * SIMUL_PER_REQ,
+      100000 * SIMUL_PER_REQ};
 
   std::string filename =
       "DMbenchmark_" + std::to_string(benchmark_no) + ".info";
@@ -170,10 +206,9 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
 
   int MAP0 = std::max_element(p0.begin(), p0.end()) - p0.begin();
   double pml0 = *std::max_element(p0.begin(), p0.end());
-  int s_id = 1;
   int bits = params->realization().realization().bitCount();
-  while (true) {
-    int s1 = sims[s_id++];
+  for(int s_id = 1; s_id < (int) sims.size(); ++s_id) {
+    int s1 = sims[s_id];
     printf("s: %d\n", s1);
     params->setSimulations(s1);
     vector<double> p1 = DirectMCSimulParalMaster(params, false, false);
@@ -294,7 +329,7 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
   vector<int> events_resp(vertices, 0);
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
-  //int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
+  int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
   assert(simulations % SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
@@ -464,7 +499,7 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
 */
 
   double c = 0.05;
-  const int MAXA = 15;
+  const int MAXA = 9;
   int s0 = sims[0];
   printf("s0: %d\n", s0);
   vector<double> a(MAXA + 1, 0);
@@ -726,14 +761,13 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
   int convergeG = 0;
   if (rank == 0) {
     std::vector<int> sims = {
-        //SIMUL_PER_REQ,   2 * SIMUL_PER_REQ,
-        //4 * SIMUL_PER_REQ,     
+        SIMUL_PER_REQ,   2 * SIMUL_PER_REQ, 4 * SIMUL_PER_REQ,     
         10 * SIMUL_PER_REQ, 20 * SIMUL_PER_REQ,
         40 * SIMUL_PER_REQ, 100 * SIMUL_PER_REQ,
         200 * SIMUL_PER_REQ, 400 * SIMUL_PER_REQ,  1000 * SIMUL_PER_REQ};
 
     double c = 0.05;
-    double a = pow(2, -5);
+    double a = pow(2, -3);
     int s0 = sims[0];
     printf("s0: %d\n", s0);
     params->setSimulations(s0);
@@ -818,7 +852,7 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
     if (rank == 0) {
       std::vector<double> P = SoftMarginParalConvMaster(params, true);
 
-      std::string filename = "erdos_renyi_100_0.01_" + params->summary();
+      std::string filename = "barabasi2_100_" + params->summary();
       if (model_type == ModelType::ISS) {
         filename = "iss_distr_" + params->summary();
       }
@@ -918,11 +952,12 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank == 0) {
-    std::vector<double> P = SeqMonteCarloParalConvMaster(params, true);
+    std::vector<double> P = SeqMonteCarloSimulParalMaster(
+      params, false);
     std::string filename =
-        "CBMCBenchmark_" + params->summary();
+        "SEQBenchmarkPRC_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "a+");
-    fprintf(f, "source: %d\n", params->sourceID());
+    //fprintf(f, "source: %d\n", params->sourceID());
     fprintf(f, "%s\n", params->summary().c_str());
     fprintf(f, "s: %lld\n", params->simulations());
 
@@ -1108,8 +1143,9 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
   Realization snapshot = params->realization();
 
   // Performs simulation on request.
-  //SequentialMCDetector sd(graph);
-  ConfigurationalBiasMCDetector sd(graph);
+  SequentialMCDetector sd(graph);
+  //ConfigurationalBiasMCDetector sd(graph);
+  //SequentialSoftMCDetector sd(graph);
 
   while (true) {
     Message message;
@@ -1123,7 +1159,10 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
       /***/
       int sample_size = message_recv.sample_size;
       double Pos =
-          sd.seqPosterior(message_recv.source_id, sample_size, snapshot);
+          sd.seqPosterior(
+            message_recv.source_id, sample_size, snapshot, 
+            cmplx::ResamplingType::PARTIAL_REJECTION_CONTROL,
+            true /* p = 1 @ T = 5*/);
       message_recv.event_outcome = Pos;
       /****/
 

@@ -124,7 +124,8 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node, double p, double q) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
-  //if (graph->adj_list(source_node).size() <= 5) exit(1);
+  int deg = graph->adj_list(source_node).size();
+  //if(deg <= 10) exit(1);
   int TMax = 5;
   cmplx::simul::Simulator simulator(graph);
   while (true) {
@@ -191,7 +192,7 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
 
   Realization realization(p, q, T, r, BitArray::zeros(graph->vertices()));
   return std::unique_ptr<SourceDetectionParams>(
-      new SourceDetectionParams(graph, realization, 10000));
+      new SourceDetectionParams(graph, realization, 100000));
 }
 
 std::string SourceDetectionParams::summary() const {
