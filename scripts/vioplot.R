@@ -9,12 +9,16 @@ Entropy <- function(L, bitCnt) {
 
 PrepareEntropy <- function(data) {
   entropies = vector(length = nrow(data))
-  bc <- as.numeric(gsub('bc:([0-9]+),', '\\1', data$V1))
-  data <- data[,-1]
+  #if(ncol(data) == 9) {
+  #  for(i in 1:nrow(data)) {
+  #    entropies[i] = Entropy(data[i,], sum(data[i,] > 0))
+  #  }
   
-  for(i in 1:nrow(data)){
-    entropies[i] = Entropy(data[i,], bc[i])
-  }
+    bc <- as.numeric(gsub('bc:([0-9]+),', '\\1', data$V1))
+    data <- data[,-1]
+    for(i in 1:nrow(data)){
+      entropies[i] = Entropy(data[i,], bc[i])
+    }
   return(entropies)
 }
 
@@ -44,7 +48,7 @@ PrintVioplot <- function(q, n2, add = FALSE, color,  prefix = "~/dipl/res/supfig
   entropies8 = GetEntropy(8, q, n2, prefix = prefix)
   entropies9 = GetEntropy(9, q, n2, prefix = prefix)
   
-  title_tokens <- cbind("Entropy for recovery probability of ISS model b = ",
+  title_tokens <- cbind("Entropy for recovery probability of ISS model q = ",
                         toString(q / 10), ", SoftMargin, Regular lattice ",
                         toString(sqrt(n2)), "x", toString(sqrt(n2)))
   plot(0:1, 0:1, xlim=c(0.5, 9.5), axes = FALSE, ann = FALSE)
@@ -109,7 +113,7 @@ barabasiData <- function(type = "_") {
     library(stringr)
     #~/dipl/graphs/barabasi1_100_
     #~/dipl/graphs/erdos_renyi_100_0.01_
-    dataInfo = read.table(file = str_c(cbind("~/dipl/graphs/erdos_renyi_100_0.01_", toString(g),  ".info"), collapse = ""), header = TRUE, sep = ",")
+    dataInfo = read.table(file = str_c(cbind("~/dipl/graphs/barabasi2_100_", toString(g),  ".info"), collapse = ""), header = TRUE, sep = ",")
     return(merge(x = data.frame(g = g, id = source_id, p = p, q = q, bitCount = bc, SM_MAP = SM_MAP,
                                 SM_MAP_P = SM_MAP_P, Entropy = SM_entropy, dataP = dataPs, 
                                 stringsAsFactors = FALSE), 
@@ -122,25 +126,25 @@ barabasiData <- function(type = "_") {
   barabasi_dataC <- NULL
   barabasi_dataD <- NULL
   
-  dataA = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.300000_0.300000_100", header = FALSE, 
+  dataA = read.table(file = "~/dipl/res/bara/barabasi2_100_0.300000_0.300000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataA)) {
     rbind(barabasi_data, make_line(dataA[i,], 0.3, 0.3)) -> barabasi_data
     rbind(barabasi_dataA, make_line(dataA[i,], 0.3, 0.3)) -> barabasi_dataA
   } 
-  dataB = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.300000_0.700000_100", header = FALSE, 
+  dataB = read.table(file = "~/dipl/res/bara/barabasi2_100_0.300000_0.700000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataB)) {
     rbind(barabasi_data, make_line(dataB[i,], 0.3, 0.7)) -> barabasi_data
     rbind(barabasi_dataB, make_line(dataB[i,], 0.3, 0.7)) -> barabasi_dataB
   }
-  dataC = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.700000_0.300000_100", header = FALSE, 
+  dataC = read.table(file = "~/dipl/res/bara/barabasi2_100_0.700000_0.300000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataC)) {
     rbind(barabasi_data, make_line(dataC[i,], 0.7, 0.3)) -> barabasi_data
     rbind(barabasi_dataC, make_line(dataC[i,], 0.7, 0.3)) -> barabasi_dataC
   }
-  dataD = read.table(file = "~/dipl/res/erdos/erdos_renyi_100_0.01_0.700000_0.700000_100", header = FALSE, 
+  dataD = read.table(file = "~/dipl/res/bara/barabasi2_100_0.700000_0.700000_100", header = FALSE, 
                      sep = ",", stringsAsFactors = FALSE)
   for(i in 1:nrow(dataD)) {
     rbind(barabasi_data, make_line(dataD[i,], 0.7, 0.7)) -> barabasi_data
@@ -369,6 +373,203 @@ barabasi100Accuracy <- function() {
         ylab = "Probability")
   grid(nx = NULL, ny = 10)
 }
+
+doBarabasi1 <- function(type = "_") {
+  barabasiAnalysis <- function(data) {
+    library(vioplot)
+    
+    par(mfrow = c(4, 1), mai = c(0.3732, 0.5412, 0.3712, 0.2772))
+    hist(data$deg, breaks = 6);
+    plot(0:1, 0:1, xlim=c(0.5, 7.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$deg <= 5,]$Entropy,
+            data[(data$deg > 5) & (data$deg <= 10),]$Entropy,
+            data[(data$deg > 10) & (data$deg <= 15),]$Entropy,
+            data[(data$deg > 15) & (data$deg <= 20),]$Entropy,
+            data[(data$deg > 20) & (data$deg <= 25),]$Entropy,
+            data[(data$deg > 25) & (data$deg <= 30),]$Entropy,
+            data[(data$deg > 30) & (data$deg <= 35),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:7, 
+         labels = c(expression(group("(", list(0, 5), "]")),
+                    expression(group("(", list(5, 10), "]")),
+                    expression(group("(", list(10, 15), "]")),
+                    expression(group("(", list(15, 20), "]")),
+                    expression(group("(", list(20, 25), "]")),
+                    expression(group("(", list(25, 30), "]")),
+                    expression(group("(", list(30, 35), "]")))
+    )
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes degree.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #TODO generate more samples for degrees > 5 (at least 50 per degree group)
+    hist(data$clos, breaks = 8)
+    plot(0:1, 0:1, xlim=c(0.5, 8.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$clos <= 0.15,]$Entropy, 
+            data[(data$clos > 0.15) & (data$clos <= 0.2),]$Entropy,
+            data[(data$clos > 0.2) & (data$clos <= 0.25),]$Entropy,
+            data[(data$clos > 0.25) & (data$clos <= 0.3),]$Entropy,
+            data[(data$clos > 0.3) & (data$clos <= 0.35),]$Entropy,
+            data[(data$clos > 0.35) & (data$clos <= 0.4),]$Entropy,
+            data[(data$clos > 0.4) & (data$clos <= 0.45),]$Entropy,
+            data[data$clos > 0.45,]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:8, 
+         labels = c(expression(group("(", list(0, 0.15), "]")),
+                    expression(group("(", list(0.15, 0.2), "]")),
+                    expression(group("(", list(0.2, 0.25), "]")),
+                    expression(group("(", list(0.25, 0.30), "]")),
+                    expression(group("(", list(0.30, 0.35), "]")),
+                    expression(group("(", list(0.35, 0.40), "]")),
+                    expression(group("(", list(0.40, 0.45), "]")),
+                    expression(group("(", list(0.45, 0.50), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes closeness.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #par(mfrow = c(2, 1))
+    hist(data$betw, breaks = 5)
+    plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$betw <= 1000,]$Entropy, 
+            data[(data$betw > 1000) & (data$betw <= 2000),]$Entropy,
+            data[(data$betw > 2000) & (data$betw <= 3000),]$Entropy,
+            data[(data$betw > 3000) & (data$betw <= 4000),]$Entropy,
+            data[(data$betw > 4000),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:5, 
+         labels = c(expression(group("(", list(0, 1000), "]")),
+                    expression(group("(", list(1000, 2000), "]")),
+                    expression(group("(", list(2000, 3000), "]")),
+                    expression(group("(", list(3000, 4000), "]")),
+                    expression(group("(", list(4000, 5000), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes betweenness.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #par(mfrow = c(2, 1))
+    hist(data$eigcentr, breaks = 5)
+    plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$eigcentr <= 0.2,]$Entropy, 
+            data[(data$eigcentr > 0.2) & (data$eigcentr <= 0.4),]$Entropy,
+            data[(data$eigcentr > 0.4) & (data$eigcentr <= 0.6),]$Entropy,
+            data[(data$eigcentr > 0.6) & (data$eigcentr <= 0.8),]$Entropy,
+            data[(data$eigcentr > 0.8),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:5, 
+         labels = c(expression(group("(", list(0, 0.2), "]")),
+                    expression(group("(", list(0.2, 0.4), "]")),
+                    expression(group("(", list(0.4, 0.6), "]")),
+                    expression(group("(", list(0.6, 0.8), "]")),
+                    expression(group("(", list(0.8, 1), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes eigenvector centrality.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+  }
+  barabasiAnalysis(barabasiData(type))
+}
+
+doBarabasi2 <- function(type = "_") {
+  barabasiAnalysis <- function(data) {
+    library(vioplot)
+    
+    par(mfrow = c(4, 1), mai = c(0.3732, 0.5412, 0.3712, 0.2772))
+    hist(data$deg, breaks = 6);
+    plot(0:1, 0:1, xlim=c(0.5, 7.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$deg <= 5,]$Entropy,
+            data[(data$deg > 5) & (data$deg <= 10),]$Entropy,
+            data[(data$deg > 10) & (data$deg <= 15),]$Entropy,
+            data[(data$deg > 15) & (data$deg <= 20),]$Entropy,
+            data[(data$deg > 20) & (data$deg <= 25),]$Entropy,
+            data[(data$deg > 25) & (data$deg <= 30),]$Entropy,
+            data[(data$deg > 30) & (data$deg <= 35),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:7, 
+         labels = c(expression(group("(", list(0, 5), "]")),
+                    expression(group("(", list(5, 10), "]")),
+                    expression(group("(", list(10, 15), "]")),
+                    expression(group("(", list(15, 20), "]")),
+                    expression(group("(", list(20, 25), "]")),
+                    expression(group("(", list(25, 30), "]")),
+                    expression(group("(", list(30, 35), "]")))
+    )
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes degree.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #TODO generate more samples for degrees > 5 (at least 50 per degree group)
+    hist(data$clos, breaks = 8)
+    plot(0:1, 0:1, xlim=c(0.5, 8.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$clos <= 0.15,]$Entropy, 
+            data[(data$clos > 0.15) & (data$clos <= 0.2),]$Entropy,
+            data[(data$clos > 0.2) & (data$clos <= 0.25),]$Entropy,
+            data[(data$clos > 0.25) & (data$clos <= 0.3),]$Entropy,
+            data[(data$clos > 0.3) & (data$clos <= 0.35),]$Entropy,
+            data[(data$clos > 0.35) & (data$clos <= 0.4),]$Entropy,
+            data[(data$clos > 0.4) & (data$clos <= 0.45),]$Entropy,
+            data[data$clos > 0.45,]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:8, 
+         labels = c(expression(group("(", list(0, 0.15), "]")),
+                    expression(group("(", list(0.15, 0.2), "]")),
+                    expression(group("(", list(0.2, 0.25), "]")),
+                    expression(group("(", list(0.25, 0.30), "]")),
+                    expression(group("(", list(0.30, 0.35), "]")),
+                    expression(group("(", list(0.35, 0.40), "]")),
+                    expression(group("(", list(0.40, 0.45), "]")),
+                    expression(group("(", list(0.45, 0.50), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes closeness.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #par(mfrow = c(2, 1))
+    hist(data$betw, breaks = 5)
+    plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$betw <= 1000,]$Entropy, 
+            data[(data$betw > 1000) & (data$betw <= 2000),]$Entropy,
+            data[(data$betw > 2000) & (data$betw <= 3000),]$Entropy,
+            data[(data$betw > 3000) & (data$betw <= 4000),]$Entropy,
+            data[(data$betw > 4000),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:5, 
+         labels = c(expression(group("(", list(0, 1000), "]")),
+                    expression(group("(", list(1000, 2000), "]")),
+                    expression(group("(", list(2000, 3000), "]")),
+                    expression(group("(", list(3000, 4000), "]")),
+                    expression(group("(", list(4000, 5000), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes betweenness.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+    
+    #par(mfrow = c(2, 1))
+    hist(data$eigcentr, breaks = 5)
+    plot(0:1, 0:1, xlim=c(0.5, 5.5), axes = FALSE, ann = FALSE)
+    vioplot(data[data$eigcentr <= 0.2,]$Entropy, 
+            data[(data$eigcentr > 0.2) & (data$eigcentr <= 0.4),]$Entropy,
+            data[(data$eigcentr > 0.4) & (data$eigcentr <= 0.6),]$Entropy,
+            data[(data$eigcentr > 0.6) & (data$eigcentr <= 0.8),]$Entropy,
+            data[(data$eigcentr > 0.8),]$Entropy,
+            ylim = c(0, 1.0), col = "orange", na.rm = TRUE, add = TRUE)
+    axis(side = 1, at = 1:5, 
+         labels = c(expression(group("(", list(0, 0.2), "]")),
+                    expression(group("(", list(0.2, 0.4), "]")),
+                    expression(group("(", list(0.4, 0.6), "]")),
+                    expression(group("(", list(0.6, 0.8), "]")),
+                    expression(group("(", list(0.8, 1), "]"))))
+    axis(side = 2, at = seq(0, 1.0, 0.1), labels =seq(0, 1.0,0.1))
+    title("Entropy of source node probability distribution\ngrouped by true source nodes eigenvector centrality.", outer = FALSE,
+          ylab = "Entropy")
+    grid(nx = NULL, ny = 10)
+  }
+  barabasiAnalysis(barabasiData(type))
+}
+
 
 erdos100Accuracy <- function() {
   accuracy <- function(line) {
@@ -708,7 +909,7 @@ doErdos100 <- function(type = "_") {
   erdosAnalysis(barabasiData(type))
 }
 
-createSeqBenchmarkDF <- function() {
+createSeqBenchmarkDF <- function(result_prefix) {
   addSeqBenchmarkRow <- function(row_id) {
     ben_id = row_id
     while(ben_id > 160) {
@@ -732,12 +933,13 @@ createSeqBenchmarkDF <- function() {
     
     # SEQ vulgaris: SEQ_RCbenchmark2_*.info: need more trials
     # SEQ simple random sampling: SEQ_RCbenchmark_
+    # SEQ partial random sampling: SEQBenchmarkPRC_*
     # SM vulagris: SM_benchmark
     # Configurational bias MC: CBMCBenchmark_*
     # SEQ soft: SEQSoftBenchmark(1k5)_* (a = pow(2, -5))
     # SEQ sfot: SEQSoftBenchmark1k5_a-10* 
     # DM vulgaris: DMBenchmarkConv_
-    data_seq = read.table(paste("~/dipl/res/seq_benchmark/SEQ_RCbenchmark2_", 
+    data_seq = read.table(paste(result_prefix, 
                                 row_id, ".info", sep = ""), header = FALSE, sep = "\n", 
                           stringsAsFactors = FALSE)
     SEQ_simul = as.numeric(strsplit(data_seq[2,], split = " ")[[1]][2])
@@ -773,8 +975,8 @@ createSeqBenchmarkDF <- function() {
   return(seq_bench_df)
 }
 
-SeqBenchmarkAccuracyTrue <- function() {
-  data <- createSeqBenchmarkDF() 
+SeqBenchmarkAccuracyTrue <- function(data) {
+  #data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
   dataC <- data[(data$p == 0.7) & (data$q == 0.3),]
@@ -801,8 +1003,58 @@ SeqBenchmarkAccuracyTrue <- function() {
   legend(0.6, 1, legend = c("Benchmark detector", "SIS detector"), fill =c("orange", "cyan4"), cex=0.8)
 }
 
-MAPMAPAccuracy <- function() {
-  data <- createSeqBenchmarkDF() 
+getClass <- function(data, p, q) { return(data[(data$p == p) & (data$q == q),])}
+getA <- function(data) {  return(getClass(data, 0.3, 0.3))}
+getB <- function(data) {  return(getClass(data, 0.3, 0.7))}
+getC <- function(data) {  return(getClass(data, 0.7, 0.3))}
+getD <- function(data) {  return(getClass(data, 0.7, 0.7))}
+
+SeqBenchmarkAccuracyTrueZaVise <- function() {
+  data <- createSeqBenchmarkDF("~/dipl/res/seq_benchmark/SEQ_RCbenchmark2_")
+  dataA <- getA(data)
+  dataB <- getB(data)
+  dataC <- getC(data)
+  dataD <- getD(data)
+  dataSISSRS <- createSeqBenchmarkDF("~/dipl/res/seq_benchmark/SEQ_RCbenchmark_")
+  dataASISSRS <- getA(dataSISSRS)
+  dataBSISSRS <- getB(dataSISSRS)
+  dataCSISSRS <- getC(dataSISSRS)
+  dataDSISSRS <- getD(dataSISSRS)
+  
+  dataSISRC <- createSeqBenchmarkDF("~/dipl/res/seq_benchmark/SEQBenchmarkPRC_")
+  dataASISRC <- getA(dataSISRC)
+  dataBSISRC <- getB(dataSISRC)
+  dataCSISRC <- getC(dataSISRC)
+  dataDSISRC <- getD(dataSISRC)
+  
+  getAcc <- function(data) {
+    return(nrow(data[data$true_source == data$SEQ_MAP,]) / nrow(data))
+  }
+  
+  bp1_data = c(nrow(data[data$true_source == data$MC_MAP,]) / nrow(data), 
+               getAcc(data), getAcc(dataSISSRS), getAcc(dataSISRC))
+  bp1A_data = c(nrow(dataA[dataA$true_source == dataA$MC_MAP,]) / nrow(dataA), 
+               getAcc(dataA), getAcc(dataASISSRS), getAcc(dataASISRC))
+  bp1B_data = c(nrow(dataB[dataB$true_source == dataB$MC_MAP,]) / nrow(dataB), 
+                getAcc(dataB), getAcc(dataBSISSRS), getAcc(dataBSISRC))
+  bp1C_data = c(nrow(dataC[dataC$true_source == dataC$MC_MAP,]) / nrow(dataC), 
+                getAcc(dataC), getAcc(dataCSISSRS), getAcc(dataCSISRC))
+  bp1D_data = c(nrow(dataD[dataD$true_source == dataD$MC_MAP,]) / nrow(dataD), 
+                getAcc(dataD), getAcc(dataDSISSRS), getAcc(dataDSISRC))
+  data = cbind(bp1_data, bp1A_data, bp1B_data, bp1C_data, bp1D_data)
+  
+  #par(mar = c(5.1, 4.1, 5, 2.1))
+  par(xpd = TRUE)
+  bp1 <- barplot(data, beside = T,
+                 main=" Accuracy based on realizations true source node", 
+                 names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.1), axis.lty = 1, col = c("orange", "cyan4", "chartreuse", "coral"), ylab = "Accuracy")
+  text(x = bp1, y = data, label =  round(data, 2), pos = 3, cex = 0.8)
+  legend(0.6, 1, 
+         legend = c("Benchmark detector", "SIS detector", "SIS with simple random sampling", "SIS with residual sampling"), fill =c("orange", "cyan4",  "chartreuse", "coral"), cex=0.8)
+}
+
+MAPMAPAccuracy <- function(data) {
+ # data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
   dataC <- data[(data$p == 0.7) & (data$q == 0.3),]
@@ -822,14 +1074,14 @@ MAPMAPAccuracy <- function() {
   legend(1.1, 0.26, legend = c("Soft Margin detector", "SIS detector"), fill =c("orange", "cyan4"), cex = 0.8)
 }
 
-BenchSimNo <- function() {
-  data <- createSeqBenchmarkDF() 
+BenchSimNo <- function(data) {
+  #data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
   dataC <- data[(data$p == 0.7) & (data$q == 0.3),]
   dataD <- data[(data$p == 0.7) & (data$q == 0.7),]
   
-  par(mfrow = c(2, 1), xpd = TRUE)
+  #par(mfrow = c(2, 1), xpd = TRUE)
   dataMC4 = c(sum(data$MC_simul <= 10000),sum(dataA$MC_simul <= 10000),  sum(dataB$MC_simul <= 10000),
               sum(dataC$MC_simul <= 10000), sum(dataD$MC_simul <= 10000))
   dataMC5 = c(sum((data$MC_simul  >10000) & (data$MC_simul  <= 100000)),
@@ -859,16 +1111,17 @@ BenchSimNo <- function() {
               sum((dataD$MC_simul >100000000) & (dataD$MC_simul <= 1000000000))/nrow(dataD))
   
   MC_simuls = cbind(dataMC4, dataMC5, dataMC6, dataMC7, dataMC8, dataMC9)
-  bp7 <- barplot(MC_simuls, beside = T, main = "Distribution of simulations for Direct Monte Carlo",
+  bp7 <- barplot(MC_simuls, beside = T, main = "Distribution of simulations for Direct Monte Carlo benchmark detector",
                  ylab = "Probability", names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                                      expression(group("(",list(10^4, 10^5),"]")),
                                                      expression(group("(",list(10^5, 10^6),"]")),
                                                      expression(group("(",list(10^6, 10^7),"]")),
                                                      expression(group("(",list(10^7, 10^8),"]")),
                                                      expression(group("(",list(10^8, 10^9),"]"))), axis.lty = 1,
+                 ylim = c(0, 1.0),
                  col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
   text(x = bp7, y = MC_simuls, round(MC_simuls, 2), pos = 3, cex = 0.70)
-  legend(0.6, 0.6, legend = c("All", "A", "B", "C", "D"), fill =c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  legend(0.6, 0.99, legend = c("All", "A", "B", "C", "D"), fill =c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"), cex =0.8)
   
   dataSeq4 = c(sum(data$SEQ_simul <= 10000) / nrow(data), 
                sum(dataA$SEQ_simul <= 10000) / nrow(dataA),
@@ -902,20 +1155,22 @@ BenchSimNo <- function() {
                sum((dataD$SEQ_simul >100000000) & (dataD$SEQ_simul <= 1000000000)))
   
   seq_simuls = cbind(dataSeq4, dataSeq5, dataSeq6, dataSeq7, dataSeq8, dataSeq9)
-  bp8 <- barplot(seq_simuls, beside = T, main = "Distribution of simulations for Sequential Importance Sampling",
+  bp8 <- barplot(seq_simuls, beside = T, main = "Distribution of simulations for SIS detector with residual sampling",
                  ylab = "Probability", names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                                      expression(group("(",list(10^4, 10^5),"]")),
                                                      expression(group("(",list(10^5, 10^6),"]")),
                                                      expression(group("(",list(10^6, 10^7),"]")),
                                                      expression(group("(",list(10^7, 10^8),"]")),
                                                      expression(group("(",list(10^8, 10^9),"]"))), axis.lty = 1,
+                 ylim = c(0, 1),
                  col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
-  legend(0.6, 1.0, legend = c("All", "A", "B", "C", "D"), fill =c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  legend(0.6, 0.99, legend = c("All", "A", "B", "C", "D"), fill =c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"),
+         cex=0.8)
   text(x = bp8, y = seq_simuls, round(seq_simuls, 2), pos = 3, cex = 0.70)
 }
 
-benchAccSim <- function() {
-  data <- createSeqBenchmarkDF() 
+benchAccSim <- function(data) {
+  #data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
   dataC <- data[(data$p == 0.7) & (data$q == 0.3),]
@@ -956,7 +1211,7 @@ benchAccSim <- function() {
   bp1MC_data9 = c(true_MCMAP(MC_SIMUL9(data)), true_MCMAP(MC_SIMUL9(dataA)), true_MCMAP(MC_SIMUL9(dataB)), 
                   true_MCMAP(MC_SIMUL9(dataC)), true_MCMAP(MC_SIMUL9(dataD)))
   bp1MC_data <- rbind(bp1MC_data4, bp1MC_data5, bp1MC_data6, bp1MC_data7, bp1MC_data8, bp1MC_data9)
-  par(mfrow = c(2, 1), xpd = TRUE)
+  par(xpd = TRUE)
   bp1MC <- barplot(bp1MC_data, beside = T,
                    main=" Accuracy of Direct Monte Carlo w.r.t. true source node", 
                    names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
@@ -968,7 +1223,8 @@ benchAccSim <- function() {
                               expression(group("(",list(10^6, 10^7),"]")),
                               expression(group("(",list(10^7, 10^8),"]")),
                               expression(group("(",list(10^8, 10^9),"]"))), 
-         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"),
+         cex=0.8)
   
   
   
@@ -990,6 +1246,7 @@ benchAccSim <- function() {
                   true_SEQMAP(MC_SIMUL9(dataC)), true_SEQMAP(MC_SIMUL9(dataD)))
   bp2MC_data <- rbind(bp2MC_data4, bp2MC_data5, bp2MC_data6, bp2MC_data7, bp2MC_data8, bp2MC_data9)
   #par(mfrow = c(2, 1), xpd = TRUE)
+  par(xpd = TRUE)
   bp2MC <- barplot(bp2MC_data, beside = T,
                    main=" Accuracy of Sequential Importance w.r.t. true source node", 
                    names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
@@ -1001,7 +1258,8 @@ benchAccSim <- function() {
                               expression(group("(",list(10^6, 10^7),"]")),
                               expression(group("(",list(10^7, 10^8),"]")),
                               expression(group("(",list(10^8, 10^9),"]"))), 
-         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"),
+         cex=0.8)
   
   
   SEQ_SIMUL4 <- function(data) {
@@ -1036,6 +1294,7 @@ benchAccSim <- function() {
                     true_SEQMAP(SEQ_SIMUL9(dataC)), true_SEQMAP(SEQ_SIMUL9(dataD)))
   
   bp1SEQ_data = rbind(bp1SEQ_data4, bp1SEQ_data5, bp1SEQ_data6, bp1SEQ_data7, bp1SEQ_data8, bp1SEQ_data9)
+  par(xpd = TRUE)
   bp1SEQ <- barplot(bp1SEQ_data, beside = T,
                     main=" Accuracy of Sequential Importance Sampling w.r.t. true source node", 
                     names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
@@ -1047,7 +1306,8 @@ benchAccSim <- function() {
                                expression(group("(",list(10^6, 10^7),"]")),
                                expression(group("(",list(10^7, 10^8),"]")),
                                expression(group("(",list(10^8, 10^9),"]"))), 
-         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"),
+         cex=0.8)
   
   MAP_MAP <- function(data) {
     return(nrow(data[data$SEQ_MAP == data$MC_MAP,]) / nrow(data))
@@ -1066,6 +1326,7 @@ benchAccSim <- function() {
                     MAP_MAP(SEQ_SIMUL9(dataC)), MAP_MAP(SEQ_SIMUL9(dataD)))
   
   bp2SEQ_data = rbind(bp2SEQ_data4, bp2SEQ_data5, bp2SEQ_data6, bp2SEQ_data7, bp2SEQ_data8, bp2SEQ_data9)
+  par(xpd = TRUE)
   bp2SEQ <- barplot(bp2SEQ_data, beside = T,
                     main=" Accuracy of Sequential Monte Carlo w.r.t. DirectMC MAP estimation", 
                     names.arg = c("All", "A", "B", "C", "D"), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
@@ -1077,11 +1338,13 @@ benchAccSim <- function() {
                              expression(group("(",list(10^5, 10^6),"]")),
                              expression(group("(",list(10^6, 10^7),"]")),
                              expression(group("(",list(10^7, 10^8),"]")),
-                             expression(group("(",list(10^8, 10^9),"]"))), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"))
+                             expression(group("(",list(10^8, 10^9),"]"))), 
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "chocolate1", "darkgoldenrod1"),
+         cex=0.8)
 }
 
-benchSimAcc <- function() {
-  data <- createSeqBenchmarkDF() 
+benchSimAcc <- function(data) {
+ # data <- createSeqBenchmarkDF() 
   dataA <- data[(data$p == 0.3) & (data$q == 0.3),]
   dataB <- data[(data$p == 0.3) & (data$q == 0.7),]
   dataC <- data[(data$p == 0.7) & (data$q == 0.3),]
@@ -1122,9 +1385,9 @@ benchSimAcc <- function() {
   bp1MC_data9 = c(true_MCMAP(MC_SIMUL9(data)), true_MCMAP(MC_SIMUL9(dataA)), true_MCMAP(MC_SIMUL9(dataB)), 
                   true_MCMAP(MC_SIMUL9(dataC)), true_MCMAP(MC_SIMUL9(dataD)))
   bp1MC_data <- cbind(bp1MC_data4, bp1MC_data5, bp1MC_data6, bp1MC_data7, bp1MC_data8, bp1MC_data9)
-  par(mfrow = c(2, 1), xpd = TRUE)
+  par(xpd = TRUE)
   bp1MC <- barplot(bp1MC_data, beside = T,
-                   main=" Accuracy of Direct Monte Carlo w.r.t. true source node\ngrouped by number of simulations for Direct Monte Carlo", 
+                   main=" Accuracy of Direct Monte Carlo benchmark detector\ngrouped by number of simulations", 
                    names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                  expression(group("(",list(10^4, 10^5),"]")),
                                  expression(group("(",list(10^5, 10^6),"]")),
@@ -1133,47 +1396,16 @@ benchSimAcc <- function() {
                                  expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
                    col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
   text(x = bp1MC, y = bp1MC_data, label =  round(bp1MC_data, 2), pos = 3, cex = 0.7)
-  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  legend(0.6, 1.0, legend = c("All", "A", "B", "C", "D"), 
+         fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", 
+                  "darkgoldenrod1"),
+         cex=0.8)
   
   true_SEQMAP <- function(data_) {
     return(nrow(data_[data_$true_source == data_$SEQ_MAP,])/nrow(data_))
   }
   
-  bp2MC_data4 = c(true_SEQMAP(MC_SIMUL4(data)),  true_SEQMAP(MC_SIMUL4(dataA)), 
-                  true_SEQMAP(MC_SIMUL4(dataB)), 
-                  true_SEQMAP(MC_SIMUL4(dataC)), true_SEQMAP(MC_SIMUL4(dataD)))
-  bp2MC_data5 = c(true_SEQMAP(MC_SIMUL5(data)),  true_SEQMAP(MC_SIMUL5(dataA)), 
-                  true_SEQMAP(MC_SIMUL5(dataB)), 
-                  true_SEQMAP(MC_SIMUL5(dataC)), true_SEQMAP(MC_SIMUL5(dataD)))
-  bp2MC_data6 = c(true_SEQMAP(MC_SIMUL6(data)),  true_SEQMAP(MC_SIMUL6(dataA)), 
-                  true_SEQMAP(MC_SIMUL6(dataB)), 
-                  true_SEQMAP(MC_SIMUL6(dataC)), true_SEQMAP(MC_SIMUL6(dataD)))
-  bp2MC_data7 = c(true_SEQMAP(MC_SIMUL7(data)),  true_SEQMAP(MC_SIMUL7(dataA)), 
-                  true_SEQMAP(MC_SIMUL7(dataB)), 
-                  true_SEQMAP(MC_SIMUL7(dataC)), true_SEQMAP(MC_SIMUL7(dataD)))
-  bp2MC_data8 = c(true_SEQMAP(MC_SIMUL8(data)),  true_SEQMAP(MC_SIMUL8(dataA)), 
-                  true_SEQMAP(MC_SIMUL8(dataB)), 
-                  true_SEQMAP(MC_SIMUL8(dataC)), true_SEQMAP(MC_SIMUL8(dataD)))
-  bp2MC_data9 = c(true_SEQMAP(MC_SIMUL9(data)),  true_SEQMAP(MC_SIMUL9(dataA)), 
-                  true_SEQMAP(MC_SIMUL9(dataB)), 
-                  true_SEQMAP(MC_SIMUL9(dataC)), true_SEQMAP(MC_SIMUL9(dataD)))
-  bp2MC_data <- cbind(bp2MC_data4, bp2MC_data5, bp2MC_data6, bp2MC_data7, 
-                      bp2MC_data8, bp2MC_data9)
-  
-  bp2MC <- barplot(bp2MC_data, beside = T,
-                   main=" Accuracy of Sequential Monte Carlo w.r.t. true source node\ngrouped by number of simulations for Direct Monte Carlo", 
-                   names.arg = c(expression(group("(",list(0, 10^4),"]")),
-                                 expression(group("(",list(10^4, 10^5),"]")),
-                                 expression(group("(",list(10^5, 10^6),"]")),
-                                 expression(group("(",list(10^6, 10^7),"]")),
-                                 expression(group("(",list(10^7, 10^8),"]")),
-                                 expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
-                   col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
-  text(x = bp2MC, y = bp2MC_data, label =  round(bp2MC_data, 2), pos = 3, cex = 0.7)
-  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
-  
-  par(mfrow = c(2, 1), xpd = TRUE)
-  
+  par(xpd = TRUE)
   SEQ_SIMUL4 <- function(data) {
     return(data[data$SEQ_simul <= 10000,])
   }
@@ -1192,34 +1424,7 @@ benchSimAcc <- function() {
   SEQ_SIMUL9 <- function(data) {
     return(data[(data$SEQ_simul >100000000) & (data$SEQ_simul <= 1000000000),])
   }
-  
-  bp0SEQ_data4 <- c(true_MCMAP(SEQ_SIMUL4(data)),  true_MCMAP(SEQ_SIMUL4(dataA)), true_MCMAP(SEQ_SIMUL4(dataB)),
-                    true_MCMAP(SEQ_SIMUL4(dataC)), true_MCMAP(SEQ_SIMUL4(dataD)))
-  bp0SEQ_data5 <- c(true_MCMAP(SEQ_SIMUL5(data)),  true_MCMAP(SEQ_SIMUL5(dataA)), true_MCMAP(SEQ_SIMUL5(dataB)),
-                    true_MCMAP(SEQ_SIMUL5(dataC)), true_MCMAP(SEQ_SIMUL5(dataD)))
-  bp0SEQ_data6 <- c(true_MCMAP(SEQ_SIMUL6(data)),  true_MCMAP(SEQ_SIMUL6(dataA)), true_MCMAP(SEQ_SIMUL6(dataB)),
-                    true_MCMAP(SEQ_SIMUL6(dataC)), true_MCMAP(SEQ_SIMUL6(dataD)))
-  bp0SEQ_data7 <- c(true_MCMAP(SEQ_SIMUL7(data)),  true_MCMAP(SEQ_SIMUL7(dataA)), true_MCMAP(SEQ_SIMUL7(dataB)),
-                    true_MCMAP(SEQ_SIMUL7(dataC)), true_MCMAP(SEQ_SIMUL7(dataD)))
-  bp0SEQ_data8 <- c(true_MCMAP(SEQ_SIMUL8(data)),  true_MCMAP(SEQ_SIMUL8(dataA)), true_MCMAP(SEQ_SIMUL8(dataB)),
-                    true_MCMAP(SEQ_SIMUL8(dataC)), true_MCMAP(SEQ_SIMUL8(dataD)))
-  bp0SEQ_data9 <- c(true_MCMAP(SEQ_SIMUL9(data)),  true_MCMAP(SEQ_SIMUL9(dataA)), true_MCMAP(SEQ_SIMUL9(dataB)),
-                    true_MCMAP(SEQ_SIMUL9(dataC)), true_MCMAP(SEQ_SIMUL9(dataD)))
-  
-  bp0SEQ_data = cbind(bp0SEQ_data4, bp0SEQ_data5, bp0SEQ_data6, bp0SEQ_data7, bp0SEQ_data8, bp0SEQ_data9)
-  bp0SEQ <- barplot(bp0SEQ_data, beside = T,
-                    main=" Accuracy of Direct Monte Carlo w.r.t. true source node\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
-                    names.arg = c(expression(group("(",list(0, 10^4),"]")),
-                                  expression(group("(",list(10^4, 10^5),"]")),
-                                  expression(group("(",list(10^5, 10^6),"]")),
-                                  expression(group("(",list(10^6, 10^7),"]")),
-                                  expression(group("(",list(10^7, 10^8),"]")),
-                                  expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
-                    col =  c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
-  text(x = bp0SEQ, y = bp0SEQ_data, label =  round(bp0SEQ_data, 2), pos = 3, cex = 0.7)
-  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
-  
-  
+
   bp1SEQ_data4 <- c(true_SEQMAP(SEQ_SIMUL4(data)), true_SEQMAP(SEQ_SIMUL4(dataA)), true_SEQMAP(SEQ_SIMUL4(dataB)),
                     true_SEQMAP(SEQ_SIMUL4(dataC)), true_SEQMAP(SEQ_SIMUL4(dataD)))
   bp1SEQ_data5 <- c(true_SEQMAP(SEQ_SIMUL5(data)), true_SEQMAP(SEQ_SIMUL5(dataA)), true_SEQMAP(SEQ_SIMUL5(dataB)),
@@ -1234,8 +1439,9 @@ benchSimAcc <- function() {
                     true_SEQMAP(SEQ_SIMUL9(dataC)), true_SEQMAP(SEQ_SIMUL9(dataD)))
   
   bp1SEQ_data = cbind(bp1SEQ_data4, bp1SEQ_data5, bp1SEQ_data6, bp1SEQ_data7, bp1SEQ_data8, bp1SEQ_data9)
+  par(xpd = TRUE)
   bp1SEQ <- barplot(bp1SEQ_data, beside = T,
-                    main=" Accuracy of Sequential Importance Sampling w.r.t. true source node\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
+                    main=" Accuracy of Sequential Importance Sampling detector\ngrouped by number of simulations", 
                     names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                   expression(group("(",list(10^4, 10^5),"]")),
                                   expression(group("(",list(10^5, 10^6),"]")),
@@ -1244,7 +1450,8 @@ benchSimAcc <- function() {
                                   expression(group("(",list(10^8, 10^9),"]"))), ylim = c(0,1.0), ylab = "Accuracy", axis.lty = 1,
                     col =  c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
   text(x = bp1SEQ, y = bp1SEQ_data, label =  round(bp1SEQ_data, 2), pos = 3, cex = 0.7)
-  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  legend(30, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"),
+         cex=0.8)
   
   MAP_MAP <- function(data) {
     return(nrow(data[data$SEQ_MAP == data$MC_MAP,]) / nrow(data))
@@ -1263,8 +1470,9 @@ benchSimAcc <- function() {
                     MAP_MAP(SEQ_SIMUL9(dataC)), MAP_MAP(SEQ_SIMUL9(dataD)))
   
   bp2SEQ_data = cbind(bp2SEQ_data4, bp2SEQ_data5, bp2SEQ_data6, bp2SEQ_data7, bp2SEQ_data8, bp2SEQ_data9)
+  par(xpd = TRUE)
   bp2SEQ <- barplot(bp2SEQ_data, beside = T,
-                    main=" Accuracy of Sequential Importance Sampling w.r.t. DirectMC MAP estimation\ngrouped by number of simulations estimated by Sequential Importance Sampling", 
+                    main="MAP accuracy of Sequential Importance Sampling detector\ngrouped by number of simulations", 
                     names.arg = c(expression(group("(",list(0, 10^4),"]")),
                                   expression(group("(",list(10^4, 10^5),"]")),
                                   expression(group("(",list(10^5, 10^6),"]")),
@@ -1274,7 +1482,8 @@ benchSimAcc <- function() {
                     col = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1")
   )
   text(x = bp2SEQ, y = bp2SEQ_data, label =  round(bp2SEQ_data, 2), pos = 3, cex = 0.7)
-  legend(2, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"))
+  legend(30, 1.0, legend = c("All", "A", "B", "C", "D"), fill = c("coral4", "brown4", "cadetblue4", "chartreuse4", "darkgoldenrod1"),
+ cex=0.8)
 }
 
 BenchRelMAP <- function() {
@@ -1301,7 +1510,7 @@ BenchRelMAP <- function() {
        labels =c("All", "A", "B", "C", "D"))
   axis(side = 2, at = seq(0, 0.3, 0.075), labels =seq(0, 0.3,0.075))
   grid(nx = NULL, ny = 12)
-  title("MAP relative error of SIS detector\nbased on benchmark MAP estimation")
+  title("Relative error of SIS detector MAP probability estimation\nw.r.t. benchmark MAP probability estimation")
 }
 
 scatterPlotSimulations <-function(data) {
