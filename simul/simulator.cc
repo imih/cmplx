@@ -8,6 +8,8 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <set>
+#include <map>
 
 using cmplx::common::IDqueue;
 using cmplx::common::IGraph;
@@ -19,6 +21,82 @@ typedef std::numeric_limits<double> dbl;
 
 namespace cmplx {
 namespace simul {
+
+bool Simulator::NaiveSIRProbabilistic(SirParams &sir_params, bool prunning,
+                                      const BitArray &allowed_nodes) {
+  BitArray I = sir_params.infected();
+  BitArray S = sir_params.susceptible();
+  BitArray R = sir_params.recovered();
+  assert(I.bitCount() == 1);
+  assert(S.bitCount() == S.bits_num() - 1);
+
+  std::set<int> susceptible;
+  susceptible.clear();
+  susceptible.insert(I.positions()[0]);
+
+  std::set<int> infected;
+  infected.clear();
+  infected.insert(I.positions()[0]);
+
+  std::map<int, int> infected_neighs;
+  infected_neighs.clear();
+  infected_neighs[I.positions()[0]] = 1;
+
+  std::map<int, int> infected_neighs2;
+  infected_neighs2.clear();
+
+  bool prunned = false;
+
+  for (int t = 1; t <= sir_params.maxT(); ++t) {
+    if (prunned) break;
+    infected_neighs2 = infected_neighs;
+    std::vector<int> Sus(susceptible.begin(), susceptible.end());
+    for (int s : Sus) {
+      double P = 1 - pow(1 - sir_params.p(), infected_neighs[s]);
+      if (eventDraw(P)) {
+        susceptible.erase(s);
+        if (prunning && !allowed_nodes.bit(s)) {
+          prunned = true;
+          break;
+        }
+        // becomes infected
+        I.set(s, true);
+        infected.insert(s);
+        S.set(s, false);
+        IVector<int> adjS = graph_->adj_list(s);
+        for (int v = 0; v < adjS.size(); ++v) {
+          if (S.bit(adjS[v])) susceptible.insert(adjS[v]);
+          if (infected_neighs2.count(adjS[v])) {
+            infected_neighs2[adjS[v]]++;
+          } else {
+            infected_neighs2[adjS[v]] = 1;
+          }
+        }
+      }
+    }
+
+    std::vector<int> Inf(infected.begin(), infected.end());
+    for (int i : Inf) {
+      if (eventDraw(sir_params.q())) {
+        I.set(i, false);
+        R.set(i, true);
+        infected.erase(i);
+        IVector<int> adjI = graph_->adj_list(i);
+        for (int v = 0; v < adjI.size(); ++v) {
+          infected_neighs2[adjI[v]]--;
+        }
+      }
+    }
+
+    infected_neighs = infected_neighs2;
+    infected_neighs2.clear();
+  }
+
+  sir_params.set_infected(I);
+  sir_params.set_susceptible(S);
+  sir_params.set_recovered(R);
+  return prunned;
+}
 
 bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
                          const BitArray &allowed_nodes) {
@@ -46,7 +124,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
       long int current_node;
       current_node = q.pop();
       delta_nodes_pop--;
-      if(!I.bit(current_node)) {
+      if (!I.bit(current_node)) {
         puts("DOGODILO SE");
         continue;
       }
@@ -88,7 +166,7 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
 
 void Simulator::NaiveSIROneStep(common::SirParams &sir_params) {
   puts("DEPRECATED");
-  exit(1); 
+  exit(1);
   BitArray I = sir_params.infected();
   BitArray R = sir_params.recovered();
   BitArray S = sir_params.susceptible();
@@ -193,7 +271,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
             became_stifler = true;
             I.set(current_node, false);
             R.set(current_node, true);
-            //break;
+            // break;
           }
         }
       }

@@ -64,7 +64,8 @@ int DirectMonteCarloDetector::DMCSingleSourceSimulation(
   bool prunned = false;
   switch (model_type) {
     case ModelType::SIR:
-      prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
+      //prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
+      prunned = simulator_.NaiveSIRProbabilistic(params0, true, (realization.realization()));
       break;
     case ModelType::ISS:
       prunned = simulator_.NaiveISS(params0, true, (realization.realization()));

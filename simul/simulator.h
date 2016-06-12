@@ -25,6 +25,11 @@ class Simulator {
     generator_.seed(tv.tv_usec * getpid());
   }
 
+  bool NaiveSIRProbabilistic(common::SirParams &sir_params,
+                             bool prunning = false,
+                             const common::BitArray &allowed_nodes =
+                                 common::BitArray::zeros(1));
+
   bool NaiveSIR(common::SirParams &sir_params, bool prunning = false,
                 const common::BitArray &allowed_nodes =
                     common::BitArray::zeros(1));
