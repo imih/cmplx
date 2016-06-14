@@ -26,7 +26,7 @@ SirParams SourceDetector::paramsForSingleSource(
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
   BitArray infected = BitArray::zeros(population_size);
-  BitArray susceptible = realization.realization();
+  BitArray susceptible = BitArray::ones(population_size);
   infected.set(source_vertex, true);
   susceptible.set(source_vertex, false);
   return SirParams(realization.p(), realization.q(), realization.maxT(),
@@ -65,7 +65,7 @@ int DirectMonteCarloDetector::DMCSingleSourceSimulation(
   switch (model_type) {
     case ModelType::SIR:
       //prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
-      prunned = simulator_.NaiveSIRProbabilistic(params0, true, (realization.realization()));
+      prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
       break;
     case ModelType::ISS:
       prunned = simulator_.NaiveISS(params0, true, (realization.realization()));
