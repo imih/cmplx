@@ -181,15 +181,10 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
   message_type.Commit();
 
   std::vector<int> sims = {
-      100 * SIMUL_PER_REQ,   200 * SIMUL_PER_REQ,   400 * SIMUL_PER_REQ,
-      800 * SIMUL_PER_REQ,   1000 * SIMUL_PER_REQ,  2000 * SIMUL_PER_REQ,
-      4000 * SIMUL_PER_REQ,  8000 * SIMUL_PER_REQ,  10000 * SIMUL_PER_REQ,
-      20000 * SIMUL_PER_REQ, 40000 * SIMUL_PER_REQ, 80000 * SIMUL_PER_REQ,
+      100 * SIMUL_PER_REQ,   200 * SIMUL_PER_REQ, 
+      1000 * SIMUL_PER_REQ,  2000 * SIMUL_PER_REQ,
+      10000 * SIMUL_PER_REQ, 20000 * SIMUL_PER_REQ, 
       100000 * SIMUL_PER_REQ};
-
-  std::string filename =
-      "DMbenchmark_" + std::to_string(benchmark_no) + ".info";
-  FILE *f = fopen(filename.c_str(), "a+");
 
   /***************  */
   double c = 0.05;  //
@@ -197,10 +192,6 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
   int s0 = sims[0];
   params->setSimulations(s0);
   vector<double> p0 = DirectMCSimulParalMaster(params, false, false);
-  fprintf(f, "%d, ", s0);
-  for (int i = 0; i < (int)p0.size(); ++i)
-    fprintf(f, "%.10lf%c", p0[i], (i + 1 == (int)p0.size()) ? '\n' : ' ');
-  fflush(f);
 
   int MAP0 = std::max_element(p0.begin(), p0.end()) - p0.begin();
   double pml0 = *std::max_element(p0.begin(), p0.end());
@@ -210,10 +201,6 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
     printf("s: %d\n", s1);
     params->setSimulations(s1);
     vector<double> p1 = DirectMCSimulParalMaster(params, false, false);
-    fprintf(f, "%d, ", s1);
-    for (int i = 0; i < (int)p1.size(); ++i)
-      fprintf(f, "%.10lf%c", p1[i], (i + 1 == (int)p1.size()) ? '\n' : ' ');
-    fflush(f);
 
     int MAP1 = std::max_element(p1.begin(), p1.end()) - p1.begin();
     double pml1 = *std::max_element(p1.begin(), p1.end());
@@ -248,7 +235,6 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
     MAP0 = MAP1;
   }
   params->setSimulations(s0);
-  fclose(f);
   return p0;
 }
 
@@ -709,7 +695,7 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
                              400 * SIMUL_PER_REQ, 1000 * SIMUL_PER_REQ};
 
     double c = 0.05;
-    double a = pow(2, -3);
+    double a = pow(2, -5);
     int s0 = sims[0];
     printf("s0: %d\n", s0);
     params->setSimulations(s0);
@@ -806,23 +792,50 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
       }
       fclose(f);
 
-      /*
-     using namespace SMP;
-     MPI::Datatype message_type = datatypeOfMessage();
-     message_type.Commit();
-
-     for (int v = 1; v < processes; ++v) {
-       Message end_message;
-       MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
-                             MessageType::SIMUL_END);
-     }
-    */
     } else {
       SoftMarginSimulParalWorker(params, model_type);
     }
   }
   exit(0);
 }
+
+void SoftMarginBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                      int benchmark_no) {
+  using namespace SMP;
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  int rank = MPI::COMM_WORLD.Get_rank();
+  if (rank == 0) {
+    std::string filename =
+        "SMbench_SBS_" + std::to_string(benchmark_no) + ".info";
+    std::vector<int> sims = { (int)1e2, (int)1e3, (int)1e4,
+                             (int)1e5, (int)1e6};
+    FILE *f = fopen(filename.c_str(), "w+");
+
+    double a = pow(2, -5);
+    params -> setA(a);
+    for(int sim : sims) {
+      params->setSimulations(sim);
+      fprintf(f, "s: %d\n", sim);
+      vector<double> p = SoftMarginSimulParalMaster(params, false, false);
+      for (int i = 0; i < (int)p.size(); ++i)
+        fprintf(f, "%.10lf%c", p[i], i + 1 == (int)p.size() ? '\n' : ' ');
+      fflush(f);
+    }
+    fclose(f);
+
+    int processes = MPI::COMM_WORLD.Get_size();
+    for (int v = 1; v < processes; ++v) {
+      Message end_message;
+      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                            MessageType::SIMUL_END);
+    }
+  } else {
+      SoftMarginSimulParalWorker(params, ModelType::SIR);
+  }
+  exit(0);
+}
+
 
 /******* SMC *******/
 namespace SMC {
@@ -857,8 +870,6 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
                                         int distributions) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
-  std::string filename = "sir_seq_distr_" + params->summary();
-  FILE *f = fopen(filename.c_str(), "a");
 
   for (int d = 0; d < distributions; ++d) {
     MPI::COMM_WORLD.Barrier();
@@ -866,13 +877,15 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
     MPI::COMM_WORLD.Barrier();
 
     if (rank == 0) {
+  std::string filename = "barabasi2_100_seq_" + params->summary();
+  FILE *f = fopen(filename.c_str(), "a");
       std::vector<double> P = SeqMonteCarloParalConvMaster(params, false);
+  fprintf(f, "s:%lld -%d ", params->simulations(), params->sourceID());
 
       for (int j = 0; j < (int)P.size(); ++j) {
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
-        // printf("%.10lf\n", P[j]);
       }
-      fflush(f);
+  fclose(f);
 
       using namespace SMC;
       MPI::Datatype message_type = datatypeOfMessage();
@@ -886,7 +899,6 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
       SeqMonteCarloSimulParalWorker(params);
     }
   }
-  fclose(f);
   exit(0);
 }
 
@@ -894,9 +906,9 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank == 0) {
-    std::vector<double> P = SeqMonteCarloSimulParalMaster(params, false);
+    std::vector<double> P = SeqMonteCarloParalConvMaster(params, false);
     std::string filename =
-        "SEQBenchmarkPRC_" + std::to_string(benchmark_no) + ".info";
+        "SEQSoftBenchmark_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "a+");
     // fprintf(f, "source: %d\n", params->sourceID());
     fprintf(f, "%s\n", params->summary().c_str());
@@ -930,13 +942,13 @@ vector<double> SeqMonteCarloParalConvMaster(
   assert(rank == 0);
 
   std::vector<int> sims = {
-      SIMUL_PER_REQ / 100,  2 * SIMUL_PER_REQ / 100, 4 * SIMUL_PER_REQ / 100,
-      SIMUL_PER_REQ / 10,   2 * SIMUL_PER_REQ / 10,  4 * SIMUL_PER_REQ / 10,
+      //SIMUL_PER_REQ / 100,  2 * SIMUL_PER_REQ / 100, 4 * SIMUL_PER_REQ / 100,
+      //SIMUL_PER_REQ / 10,   2 * SIMUL_PER_REQ / 10,  4 * SIMUL_PER_REQ / 10,
       SIMUL_PER_REQ,        2 * SIMUL_PER_REQ,       4 * SIMUL_PER_REQ,
       8 * SIMUL_PER_REQ,    10 * SIMUL_PER_REQ,      20 * SIMUL_PER_REQ,
-      40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,      100 * SIMUL_PER_REQ,
-      200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,     800 * SIMUL_PER_REQ,
-      1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ};
+      40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,      100 * SIMUL_PER_REQ};
+      //200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,     800 * SIMUL_PER_REQ,
+      //1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ};
   int s0 = sims[0];
   printf("s0: %d\n", s0);
 
@@ -950,8 +962,8 @@ vector<double> SeqMonteCarloParalConvMaster(
   int bits = params->realization().realization().bitCount();
   int convergeG = 0;
   int s_id = 1;
-  while (true) {
-    int s1 = sims[s_id++];
+  for(int s = 1; s < (int) sims.size(); ++s) {
+    int s1 = sims[s];
     printf("s2: %d\n", s1);
     params->setSimulations(s1);
 
@@ -993,6 +1005,7 @@ vector<double> SeqMonteCarloParalConvMaster(
 
     s0 = s1;
     p0.clear();
+    res = p1;
     p0.assign(p1.begin(), p1.end());
     pMAP0 = pMAP1;
   }
@@ -1084,9 +1097,9 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
   Realization snapshot = params->realization();
 
   // Performs simulation on request.
-  SequentialMCDetector sd(graph);
+  //SequentialMCDetector sd(graph);
   // ConfigurationalBiasMCDetector sd(graph);
-  // SequentialSoftMCDetector sd(graph);
+  SequentialSoftMCDetector sd(graph);
 
   while (true) {
     Message message;
@@ -1101,8 +1114,8 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
       int sample_size = message_recv.sample_size;
       double Pos =
           sd.seqPosterior(message_recv.source_id, sample_size, snapshot,
-                          cmplx::ResamplingType::PARTIAL_REJECTION_CONTROL,
-                          true /* p = 1 @ T = 5*/);
+                          cmplx::ResamplingType::NONE,
+                          false /* p = 1 @ T = 5*/);
       message_recv.event_outcome = Pos;
       /****/
 
@@ -1129,10 +1142,10 @@ void SeqMonteCarloBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
   if (rank == 0) {
 
     std::string filename =
-        "SEQbench_SBS_" + std::to_string(benchmark_no) + ".info";
+        "SEQSoftbench_SBS_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "w+");
-    std::vector<int> sims = {(int)10,  (int)1e2, (int)1e3, (int)1e4,
-                             (int)1e5, (int)1e6, (int)1e7, (int)1e8};
+    std::vector<int> sims = { (int)1e2, (int)1e3, (int)1e4,
+                             (int)1e5, (int)1e6};
     for (int sim : sims) {
       fprintf(f, "s: %d\n", sim);
       params->setSimulations(sim);

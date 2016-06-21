@@ -29,6 +29,8 @@ void GenerateSoftMarginDistributions(SourceDetectionParams* params,
                                      ModelType modelType = ModelType::SIR);
 void SoftMarginBenchmarkConv(SourceDetectionParams* params, int benchmark_no,
                              ModelType model_type = ModelType::SIR);
+void SoftMarginBenchmarkStepByStep(SourceDetectionParams *params,
+                                      int benchmark_no);
 
 void GenerateSeqMonteCarloDistributions(SourceDetectionParams* params,
                                         int distributions);
