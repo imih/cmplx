@@ -13,7 +13,7 @@ To download and compile igraph locally, run the script [```install_igraph.sh```]
 
 To enable linking, edit [```common/IgraphConfig.cmake```](common/IgraphConfig.cmake) and add local ```igraph/include``` dir path to ```IGRAPH_INCLUDE_DIR``` variable and local ```igraph/lib``` dir path to ```IGRAPH_LIBRARY``` variable.
 
-Make sure the path to ```IgraphConfig.cmake``` is set properly in [```CMakeLists.txt```](CMakeLists.txt), [```common/CMakeLists.txt```](common/CMakelists.txt) and [```CMakeLists.txt```](CMakeLists.txt).
+Make sure the path to ```IgraphConfig.cmake``` is set properly in [```CMakeLists.txt```](CMakeLists.txt), [```common/CMakeLists.txt```](common/CMakeLists.txt) and [```simul/CMakeLists.txt```](simul/CMakeLists.txt).
 Finally, create dir ```build``` and run 
 
 ```bash
@@ -22,6 +22,9 @@ make
 ```
 
 ###Compiling the tests
+Test are compiled by default and require [GTest](https://github.com/google/googletest) library. 
 
+###Running
+Run executables with ```mpiexec -n [#processes] executable [local flags]```.
 
 
