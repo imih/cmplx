@@ -16,22 +16,15 @@ enum ModelType {
   ISS
 };
 
-enum ResamplingType {
-  NONE,
-  REJECTION_CONTROL,
-  SIMPLE_RANDOM_SAMPLING,
-  RESIDUAL_SAMPLING,
-  PARTIAL_REJECTION_CONTROL
-};
-
 class SourceDetector {
  public:
   SourceDetector(const common::IGraph* g) : simulator_(g) {}
 
-  // Return starting parameters for the epidemic that starts with a single
-  // source defined by source_vertex and is capable of producing a snapshot
-  // defined by
-  // ending_params.
+  /** Return starting parameters for the epidemic that starts with a single
+   source defined by source_vertex and is capable of producing a snapshot
+   defined by
+   ending_params.
+   */
   common::SirParams paramsForSingleSource(
       int source_vertex, const common::Realization& realization);
 
@@ -43,8 +36,8 @@ class DirectMonteCarloDetector : public SourceDetector {
  public:
   DirectMonteCarloDetector(const common::IGraph* g) : SourceDetector(g) {}
 
-  // Return distribution of nodes being the source of SIR epidemic simulation
-  // based on epidemic snapshot defined by sir_params.
+  /** Return distribution of nodes being the source of SIR epidemic simulation
+   based on epidemic snapshot defined by sir_params. */
   std::vector<double> directMonteCarloDetection(
       const common::Realization& realization, int no_simulations,
       ModelType model_type = ModelType::SIR);
@@ -72,6 +65,12 @@ class SoftMarginDetector : public SourceDetector {
   double w_(double x, double a) {
     return exp(-1.0l * (x - 1) * (x - 1) / (a * a));
   }
+};
+
+enum ResamplingType {
+  NONE,
+  SIMPLE_RANDOM_SAMPLING,
+  RESIDUAL_SAMPLING,
 };
 
 class SequentialMCDetector : public SourceDetector {

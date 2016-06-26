@@ -6,26 +6,39 @@
 
 namespace cmplx {
 namespace common {
+
 template <class T>
 IVector<T>::IVector() {
-  vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
+  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
   !igraph_vector_init(vector_, 0);
 }
 
 template <class T>
+IVector<T>::IVector(const IVector<T> &iv) {
+  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
+  igraph_vector_copy(vector_, iv.vector());
+}
+
+template <class T>
+IVector<T>::~IVector() {
+  igraph_vector_destroy(vector_);
+  if (vector_) igraph_free(vector_);
+}
+
+template <class T>
 IVector<T>::IVector(const std::vector<T> &v) {
-  vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
+  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
   igraph_vector_init(vector_, (int long)v.size());
-  //printf("%ld\n", size());
-  for(int i = 0; i < (int) v.size(); ++i) {
-    //igraph_vector_set(vector_, i, v[i]);
+  // printf("%ld\n", size());
+  for (int i = 0; i < (int)v.size(); ++i) {
+    // igraph_vector_set(vector_, i, v[i]);
     VECTOR(*vector_)[i] = v[i];
   }
 }
 
 template <class T>
 IVector<T>::IVector(std::initializer_list<T> il) {
-  vector_ = (igraph_vector_t*) malloc(sizeof(igraph_vector_t));
+  vector_ = (igraph_vector_t *)malloc(sizeof(igraph_vector_t));
   igraph_vector_init(vector_, (int long)il.size());
   int idx = 0;
   for (T v : il) {

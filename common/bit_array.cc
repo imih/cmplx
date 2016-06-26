@@ -25,7 +25,7 @@ BitArray::BitArray(int bits_num) : bits_num_(bits_num) {
 BitArray::BitArray(const BitArray &bit_array) {
   bits_in_int_ = 8 * (int)sizeof(uint64_t);
   bits_num_ = bit_array.bits_num();
-  const std::vector<uint64_t> &data = bit_array.data();
+  const std::vector<uint64_t> &data = bit_array.bits_;
   bits_.assign(data.begin(), data.end());
 }
 
@@ -59,12 +59,11 @@ int BitArray::bitCount() const {
 
 std::vector<int> BitArray::positions() const {
   std::vector<int> ret;
-  for(int i = 0; i < bits_num_; ++i) {
-    if(bit(i)) ret.push_back(i);
+  for (int i = 0; i < bits_num_; ++i) {
+    if (bit(i)) ret.push_back(i);
   }
   return ret;
 }
-
 
 void BitArray::setWord(int idx, uint64_t value) { bits_[idx] = value; }
 
@@ -74,7 +73,6 @@ std::string BitArray::to_string() const {
   return oss.str();
 }
 
-/* TODO  Optimize! */
 BitArray BitArray::operator~() const {
   int n = bits_num_;
   BitArray ba(n);
@@ -97,7 +95,7 @@ bool operator==(const BitArray &a, const BitArray &b) {
     return false;
   }
 
-  int data_size = (int)a.data().size();
+  int data_size = (int)a.bits_.size();
   for (int i = 0; i < (int)data_size; ++i) {
     if (a.getWord(i) ^ b.getWord(i)) return false;
   }
@@ -107,7 +105,7 @@ bool operator==(const BitArray &a, const BitArray &b) {
 BitArray operator|(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
-  int words = (int)a.data().size();
+  int words = (int)a.bits_.size();
   for (int i = 0; i < words; ++i) {
     ret.setWord(i, a.getWord(i) | b.getWord(i));
   }
@@ -117,7 +115,7 @@ BitArray operator|(const BitArray &a, const BitArray &b) {
 BitArray operator&(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
-  int words = (int)a.data().size();
+  int words = (int)a.bits_.size();
   for (int i = 0; i < words; ++i) {
     ret.setWord(i, a.getWord(i) & b.getWord(i));
   }
@@ -127,7 +125,7 @@ BitArray operator&(const BitArray &a, const BitArray &b) {
 BitArray operator%(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
   BitArray ret(a.bits_num());
-  int words = (int)a.data().size();
+  int words = (int)a.bits_.size();
   for (int i = 0; i < words - 1; ++i) {
     ret.setWord(i, ~(a.getWord(i) ^ b.getWord(i)));
   }

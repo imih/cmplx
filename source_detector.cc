@@ -64,7 +64,6 @@ int DirectMonteCarloDetector::DMCSingleSourceSimulation(
   bool prunned = false;
   switch (model_type) {
     case ModelType::SIR:
-      //prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
       prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
       break;
     case ModelType::ISS:
@@ -147,7 +146,7 @@ std::vector<SeqSample> SequentialMCDetector::resampling(
     int t, const ResamplingType& resampling_type,
     const vector<SeqSample>& samplesOrg) {
   int sample_size = (int)samplesOrg.size();
-  if ((vc2(samplesOrg) >= (1LL << t)) ||
+  if ((vc2(samplesOrg) <= (1LL << t)) ||
       resampling_type == ResamplingType::NONE) {
     return samplesOrg;
   }
@@ -157,10 +156,6 @@ std::vector<SeqSample> SequentialMCDetector::resampling(
   std::vector<SeqSample> samples;
   samples.clear();
   switch (resampling_type) {
-    case(ResamplingType::REJECTION_CONTROL) : {
-      puts("REJECTION_CONTROL not implemented");
-      exit(1);
-    }
     case(ResamplingType::SIMPLE_RANDOM_SAMPLING) : {
       double sum = 0;
       vector<double> P;
@@ -227,21 +222,14 @@ std::vector<SeqSample> SequentialMCDetector::resampling(
       }
       break;
     }
-    case(ResamplingType::PARTIAL_REJECTION_CONTROL) :
-      puts("PARTIAL REJECTION CONTROL not implemented!");
-      exit(1);
-      break;
   }
 
-  printvc2(samples);
   return samples;
 }
 
 double SequentialMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization,
     cmplx::ResamplingType resampling_type, bool maximize_hits) {
-  printf("v: %d sample_size: %d bc: %d\n", v, sample_size,
-         target_realization.realization().bitCount());
   std::vector<SeqSample> samples(sample_size, SeqSample(v, target_realization));
 
   std::vector<int> target_infected_idx_ =
@@ -260,10 +248,7 @@ double SequentialMCDetector::seqPosterior(
                      prev_inf, prev_rec, maximize_hits);
       sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
     }
-
-    printvc2(samples);
   }
-
   return posFromSample(samples, target_realization);
 }
 
@@ -311,10 +296,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
       }
 
       double p2 = 1 - pow((1 - p), D);
-      // p2 *= 0.95;
-      // f(p2 < 0.5) p2 = 0.5;
-      // p2 += t * (1 - p2) / (tMAX - 1);
-      if (maximize_hits && t == tMAX - 1) p2 = 1;
+      if (maximize_hits && T == tMAX - 1) p2 = 1;
       if (simulator_.eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
@@ -336,12 +318,8 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
     double P = 1;
     for (int b : reachable) {
       if (prev_inf.bit(b) && !next_inf.bit(b)) {
-        // printf("b: %d ", b);
-        // puts("I -> R");
         P *= q;
       } else if (prev_inf.bit(b) && next_inf.bit(b)) {
-        // printf("b: %d ", b);
-        // puts("I -> I");
         P *= (1 - q);
       } else if (!prev_inf.bit(b) && !prev_rec.bit(b)) {
         // S ->
@@ -382,7 +360,6 @@ std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
 
 void SequentialMCDetector::printvc2(const std::vector<SeqSample>& samples) {
   printf("vc2 %.10lf\n", vc2(samples));
-  // printf("ESS %.10lf\n", ESS(samples));
 }
 
 double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
@@ -471,7 +448,6 @@ double ConfigurationalBiasMCDetector::seqPosterior(
         sample = y;
       }
     }
-    printvc2(samples);
   }
 
   return posFromSample(samples, target_realization);

@@ -180,11 +180,9 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
-  std::vector<int> sims = {
-      100 * SIMUL_PER_REQ,   200 * SIMUL_PER_REQ, 
-      1000 * SIMUL_PER_REQ,  2000 * SIMUL_PER_REQ,
-      10000 * SIMUL_PER_REQ, 20000 * SIMUL_PER_REQ, 
-      100000 * SIMUL_PER_REQ};
+  std::vector<int> sims = {100 * (int)1e4,   200 * (int)1e4,   1000 * (int)1e4,
+                           2000 * (int)1e4,  10000 * (int)1e4, 20000 * (int)1e4,
+                           100000 * (int)1e4};
 
   /***************  */
   double c = 0.05;  //
@@ -314,7 +312,7 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
   int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
-  assert(simulations % SIMUL_PER_REQ == 0);
+  assert(simulations % (int)SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
@@ -322,9 +320,9 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
         MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
                              MessageType::SIMUL_PREREQUEST);
         if (cur_simul_count < simulations) {
-          cur_simul_count += SIMUL_PER_REQ;
+          cur_simul_count += (int)SIMUL_PER_REQ;
         } else {
-          cur_simul_count = SIMUL_PER_REQ;
+          cur_simul_count = (int)SIMUL_PER_REQ;
           cur_v = nextV(cur_v + 1, snapshot.realization());
         }
         if (cur_v == -1) {
@@ -349,7 +347,7 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
         Message received;
         MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
                              MessageType::SIMUL_RESPONSE);
-        jobs_remaining -= SIMUL_PER_REQ;
+        jobs_remaining -= (int)SIMUL_PER_REQ;
         events_resp[received.source_id] += received.event_outcome;
         if (!i) {
           printf("\r%.5f",
@@ -419,11 +417,10 @@ vector<double> SoftMarginParalConvMaster(cmplx::SourceDetectionParams *params,
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
   int convergeG = 0;
-  std::vector<int> sims = {SIMUL_PER_REQ,       2 * SIMUL_PER_REQ,
-                           4 * SIMUL_PER_REQ,   10 * SIMUL_PER_REQ,
-                           20 * SIMUL_PER_REQ,  40 * SIMUL_PER_REQ,
-                           100 * SIMUL_PER_REQ, 200 * SIMUL_PER_REQ,
-                           400 * SIMUL_PER_REQ, 800 * SIMUL_PER_REQ};
+  std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
+                           10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
+                           100 * (int)1e4, 200 * (int)1e4, 400 * (int)1e4,
+                           800 * (int)1e4};
 
   double c = 0.05;
   const int MAXA = 9;
@@ -542,7 +539,7 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
   vector<long long> events_resp_size(vertices, 0);
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
-  assert(jobs_remaining % SIMUL_PER_REQ == 0);
+  assert(jobs_remaining % (int)SIMUL_PER_REQ == 0);
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
@@ -550,9 +547,9 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
         MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
                              MessageType::SIMUL_PREREQUEST);
         if (cur_simul_count < simulations) {
-          cur_simul_count += SIMUL_PER_REQ;
+          cur_simul_count += (int)SIMUL_PER_REQ;
         } else {
-          cur_simul_count = SIMUL_PER_REQ;
+          cur_simul_count = (int)SIMUL_PER_REQ;
           cur_v++;
           while ((cur_v < vertices) &&
                  (snapshot.realization().bit(cur_v) == false)) {
@@ -582,7 +579,7 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
         Message received;
         MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
                              MessageType::SIMUL_RESPONSE);
-        jobs_remaining -= SIMUL_PER_REQ;
+        jobs_remaining -= (int)SIMUL_PER_REQ;
         events_resp_sum[received.source_id] += received.event_outcome;
         events_resp_size[received.source_id]++;
         if (!i) {
@@ -657,7 +654,7 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams *params,
       /***/
       vector<double> fi;
       fi.clear();
-      for (int t = 0; t < SIMUL_PER_REQ; ++t) {
+      for (int t = 0; t < (int)SIMUL_PER_REQ; ++t) {
         Realization sp0 = snapshot;
         fi.push_back(sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
                                                  model_type));
@@ -688,11 +685,10 @@ void SoftMarginBenchmarkConv(SourceDetectionParams *params, int benchmark_no,
   int processes = MPI::COMM_WORLD.Get_size();
   int convergeG = 0;
   if (rank == 0) {
-    std::vector<int> sims = {SIMUL_PER_REQ,       2 * SIMUL_PER_REQ,
-                             4 * SIMUL_PER_REQ,   10 * SIMUL_PER_REQ,
-                             20 * SIMUL_PER_REQ,  40 * SIMUL_PER_REQ,
-                             100 * SIMUL_PER_REQ, 200 * SIMUL_PER_REQ,
-                             400 * SIMUL_PER_REQ, 1000 * SIMUL_PER_REQ};
+    std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
+                             10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
+                             100 * (int)1e4, 200 * (int)1e4, 400 * (int)1e4,
+                             1000 * (int)1e4};
 
     double c = 0.05;
     double a = pow(2, -5);
@@ -800,7 +796,7 @@ void GenerateSoftMarginDistributions(SourceDetectionParams *params,
 }
 
 void SoftMarginBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                      int benchmark_no) {
+                                   int benchmark_no) {
   using namespace SMP;
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
@@ -808,14 +804,14 @@ void SoftMarginBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
   if (rank == 0) {
     std::string filename =
         "SMbench_SBS_" + std::to_string(benchmark_no) + ".info";
-    std::vector<int> sims = { (int)1e2, (int)1e3, (int)1e4,
-                             (int)1e5, (int)1e6};
-    FILE *f = fopen(filename.c_str(), "w+");
+    std::vector<int> sims = {(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6};
+    FILE *f = fopen(filename.c_str(), "a+");
 
     double a = pow(2, -5);
-    params -> setA(a);
-    for(int sim : sims) {
+    params->setA(a);
+    for (int sim : sims) {
       params->setSimulations(sim);
+      printf("s: %d\n", sim);
       fprintf(f, "s: %d\n", sim);
       vector<double> p = SoftMarginSimulParalMaster(params, false, false);
       for (int i = 0; i < (int)p.size(); ++i)
@@ -831,11 +827,10 @@ void SoftMarginBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
                             MessageType::SIMUL_END);
     }
   } else {
-      SoftMarginSimulParalWorker(params, ModelType::SIR);
+    SoftMarginSimulParalWorker(params, ModelType::SIR);
   }
   exit(0);
 }
-
 
 /******* SMC *******/
 namespace SMC {
@@ -877,15 +872,15 @@ void GenerateSeqMonteCarloDistributions(SourceDetectionParams *params,
     MPI::COMM_WORLD.Barrier();
 
     if (rank == 0) {
-  std::string filename = "barabasi2_100_seq_" + params->summary();
-  FILE *f = fopen(filename.c_str(), "a");
+      std::string filename = "barabasi2_100_seq_" + params->summary();
+      FILE *f = fopen(filename.c_str(), "a");
       std::vector<double> P = SeqMonteCarloParalConvMaster(params, false);
-  fprintf(f, "s:%lld -%d ", params->simulations(), params->sourceID());
+      fprintf(f, "s:%lld -%d ", params->simulations(), params->sourceID());
 
       for (int j = 0; j < (int)P.size(); ++j) {
         fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
       }
-  fclose(f);
+      fclose(f);
 
       using namespace SMC;
       MPI::Datatype message_type = datatypeOfMessage();
@@ -906,9 +901,10 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank == 0) {
-    std::vector<double> P = SeqMonteCarloParalConvMaster(params, false);
-    std::string filename =
-        "SEQSoftBenchmark_" + std::to_string(benchmark_no) + ".info";
+    std::vector<double> P = SeqMonteCarloSimulParalMaster(params, false);
+    // std::string filename =
+    //    "SEQSoftBenchmark_" + std::to_string(benchmark_no) + ".info";
+    /*
     FILE *f = fopen(filename.c_str(), "a+");
     // fprintf(f, "source: %d\n", params->sourceID());
     fprintf(f, "%s\n", params->summary().c_str());
@@ -918,6 +914,7 @@ void SeqMonteCarloBenchmark(SourceDetectionParams *params, int benchmark_no) {
       fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
     }
     fclose(f);
+    */
 
     using namespace SMC;
     MPI::Datatype message_type = datatypeOfMessage();
@@ -941,14 +938,9 @@ vector<double> SeqMonteCarloParalConvMaster(
   int rank = MPI::COMM_WORLD.Get_rank();
   assert(rank == 0);
 
-  std::vector<int> sims = {
-      //SIMUL_PER_REQ / 100,  2 * SIMUL_PER_REQ / 100, 4 * SIMUL_PER_REQ / 100,
-      //SIMUL_PER_REQ / 10,   2 * SIMUL_PER_REQ / 10,  4 * SIMUL_PER_REQ / 10,
-      SIMUL_PER_REQ,        2 * SIMUL_PER_REQ,       4 * SIMUL_PER_REQ,
-      8 * SIMUL_PER_REQ,    10 * SIMUL_PER_REQ,      20 * SIMUL_PER_REQ,
-      40 * SIMUL_PER_REQ,   80 * SIMUL_PER_REQ,      100 * SIMUL_PER_REQ};
-      //200 * SIMUL_PER_REQ,  400 * SIMUL_PER_REQ,     800 * SIMUL_PER_REQ,
-      //1000 * SIMUL_PER_REQ, 2000 * SIMUL_PER_REQ};
+  std::vector<int> sims = {(int)1e4,      2 * (int)1e4,  4 * (int)1e4,
+                           8 * (int)1e4,  10 * (int)1e4, 20 * (int)1e4,
+                           40 * (int)1e4, 80 * (int)1e4, 100 * (int)1e4};
   int s0 = sims[0];
   printf("s0: %d\n", s0);
 
@@ -962,7 +954,7 @@ vector<double> SeqMonteCarloParalConvMaster(
   int bits = params->realization().realization().bitCount();
   int convergeG = 0;
   int s_id = 1;
-  for(int s = 1; s < (int) sims.size(); ++s) {
+  for (int s = 1; s < (int)sims.size(); ++s) {
     int s1 = sims[s];
     printf("s2: %d\n", s1);
     params->setSimulations(s1);
@@ -1097,9 +1089,9 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
   Realization snapshot = params->realization();
 
   // Performs simulation on request.
-  //SequentialMCDetector sd(graph);
+  SequentialMCDetector sd(graph);
   // ConfigurationalBiasMCDetector sd(graph);
-  SequentialSoftMCDetector sd(graph);
+  // SequentialSoftMCDetector sd(graph);
 
   while (true) {
     Message message;
@@ -1114,8 +1106,8 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
       int sample_size = message_recv.sample_size;
       double Pos =
           sd.seqPosterior(message_recv.source_id, sample_size, snapshot,
-                          cmplx::ResamplingType::NONE,
-                          false /* p = 1 @ T = 5*/);
+                          cmplx::ResamplingType::SIMPLE_RANDOM_SAMPLING,
+                          true /* p = 1 @ T = 5*/);
       message_recv.event_outcome = Pos;
       /****/
 
@@ -1144,8 +1136,7 @@ void SeqMonteCarloBenchmarkStepByStep(cmplx::SourceDetectionParams *params,
     std::string filename =
         "SEQSoftbench_SBS_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "w+");
-    std::vector<int> sims = { (int)1e2, (int)1e3, (int)1e4,
-                             (int)1e5, (int)1e6};
+    std::vector<int> sims = {(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6};
     for (int sim : sims) {
       fprintf(f, "s: %d\n", sim);
       params->setSimulations(sim);

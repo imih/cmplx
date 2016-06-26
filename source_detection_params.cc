@@ -32,7 +32,7 @@ const int Q_LINE = 2;
 const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
-std::string BENCHMARK_PATH = "/home/imiholic";
+std::string BENCHMARK_PATH = "/home/iva/dipl";
 }
 
 namespace cmplx {
@@ -125,7 +125,7 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node, double p, double q) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
   int deg = graph->adj_list(source_node).size();
-  //if(deg <= 10) exit(1);
+  // if(deg <= 10) exit(1);
   int TMax = 5;
   cmplx::simul::Simulator simulator(graph);
   while (true) {
@@ -145,10 +145,9 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
   }
 }
 
-// TODO determine number of simulations yourself!
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
     int realization_no) {
-  while(realization_no > 160) realization_no -= 160;
+  while (realization_no > 160) realization_no -= 160;
 
   IGraph* graph =
       IGraph::GraphFromGML(BENCHMARK_PATH + "/network/lattice30.gml");

@@ -9,7 +9,7 @@ using cmplx::SourceDetectionParams;
 
 // -type {-P 10p -Q 10q}
 int main(int argc, char **argv) {
-  // clock_t begin = std::clock();
+
   // Paralelized
   MPI::Init(argc, argv);
   bool seq = false;
@@ -35,20 +35,11 @@ int main(int argc, char **argv) {
     }
   }
 
-  // SourceDetectionParams params = SourceDetectionParams::SupFig2Params();
-  // SourceDetectionParams params = SourceDetectionParams::BenchmarkParams(1);
-  // cmplx::DirectMCSimulParalConv(params, cmplx::ModelType::SIR);
-  // cmplx::DirectMCSimulParal(params);
-  // cmplx::SoftMarginParal(params);
-  // cmplx::SoftMarginParalConv(params);
-
   std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGridISS(P / 10.0, Q / 10.0, n);
   cmplx::GenerateSoftMarginDistributions(params.get(), 1,
                                          cmplx::ModelType::ISS);
 
   MPI::Finalize();
-  // clock_t end = clock();
-  // printf("%lf sec\n", double(end - begin) / CLOCKS_PER_SEC);
   return 0;
 }

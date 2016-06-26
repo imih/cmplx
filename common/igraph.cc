@@ -33,19 +33,41 @@ IGraph *IGraph::ErdosRenyi(int nodes, double p) {
   return new IGraph(graph);
 }
 
-/*
+IGraph::IGraph(igraph_t *graph_, bool fill_attributes) : graph_(graph_) {
+  adj_list_cache_ = new std::unordered_map<int, IVector<int> >();
+  adj_list_cache_->clear();
+  if (fill_attributes) {
+    cores_ = std::unique_ptr<IVector<int> >(new IVector<int>());
+    closeness_ = std::unique_ptr<IVector<double> >(new IVector<double>());
+    betweenness_ = std::unique_ptr<IVector<double> >(new IVector<double>());
+    eigenvector_centrality_ =
+        std::unique_ptr<IVector<double> >(new IVector<double>());
+  }
+}
+
+IGraph::IGraph(const IGraph &i_graph) {
+  graph_ = (igraph_t *)malloc(sizeof(igraph_t));
+  igraph_copy(graph_, &i_graph.graph());
+  adj_list_cache_ = new std::unordered_map<int, IVector<int> >();
+  adj_list_cache_->clear();
+}
+
+IGraph::~IGraph() {
+  delete adj_list_cache_;
+  if (graph_) igraph_destroy(graph_);
+  if (graph_) igraph_free(graph_);
+}
+
 bool IGraph::is_connected() const {
   igraph_bool_t bool_t;
   igraph_is_connected(graph_, &bool_t, IGRAPH_WEAK);
-  return (bool) bool_t;
+  return (bool)bool_t;
 }
 
 int IGraph::kCore(int node_id) const {
   if (cores_.get()->empty()) {
     igraph_coreness(graph_, cores_.get()->vector(),
-*/
-//                    IGRAPH_ALL /* undirected */);
-/*
+                    IGRAPH_ALL /* undirected */);
   }
   return (*cores_.get())[node_id];
 }
@@ -55,9 +77,7 @@ double IGraph::closeness(int node_id) const {
     igraph_vs_t *vs_t = (igraph_vs_t *)malloc(sizeof(igraph_vs_t));
     igraph_vs_all(vs_t);
     igraph_closeness(graph_, closeness_.get()->vector(), *vs_t, IGRAPH_ALL,
-*/
- //                    NULL, true /* normalize*/);
-/*
+                     NULL, true /* normalize*/);
     delete vs_t;
   }
   return (*closeness_.get())[node_id];
@@ -74,7 +94,7 @@ double IGraph::betweenness(int node_id) const {
 }
 
 void IGraph::writeGML(std::string file_name) {
-  FILE* f = fopen(file_name.c_str(), "w");
+  FILE *f = fopen(file_name.c_str(), "w");
   igraph_write_graph_gml(graph_, f, NULL, "Iva");
   fclose(f);
 }
@@ -85,15 +105,13 @@ double IGraph::eigenvector_centrality(int node_id) const {
         (igraph_arpack_options_t *)malloc(sizeof(igraph_arpack_options_t));
     igraph_arpack_options_init(options);
     igraph_eigenvector_centrality(
-*/
- //       graph_, eigenvector_centrality_.get()->vector(), NULL, 0 /* directed */,
-  //      1 /* scale */, NULL, options);
-/*
+        graph_, eigenvector_centrality_.get()->vector(), NULL, 0 /* directed*/,
+        1 /* scale */, NULL, options);
+
     delete options;
   }
   return (*eigenvector_centrality_.get())[node_id];
 }
-*/
 
 IGraph *IGraph::GraphFromGML(const std::string &file_name) {
   igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
@@ -153,7 +171,7 @@ const IVector<int> &IGraph::adj_list(int node_id) const {
   if (!adj_list_cache_->count(node_id)) {
     igraph_neighbors(graph_, (*adj_list_cache_)[node_id].vector(), node_id,
                      IGRAPH_OUT);
-  igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
+    igraph_vector_shuffle((*adj_list_cache_)[node_id].vector());
   }
   return adj_list_cache_->at(node_id);
 }

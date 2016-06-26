@@ -9,7 +9,7 @@
 namespace cmplx {
 namespace common {
 class BitArray {
-public:
+ public:
   static BitArray ones(int bits_num);
   static BitArray zeros(int bits_num);
 
@@ -21,42 +21,49 @@ public:
   void set(int bit_idx, bool value);
 
   bool bit(int bit_idx) const;
+
+  /** Returns number of bits represented by the bitset.
+   */
   int bits_num() const { return bits_num_; }
+
+  /** Returns number of bits set to 1.
+   */
   int bitCount() const;
 
-  const std::vector<uint64_t> &data() const { return bits_; }
-  void setWord(int idx, uint64_t value);
-  uint64_t getWord(int idx) const { return bits_[idx]; }
+  /** Returns array of indices corresponding to bits set to 1.
+   */
+  std::vector<int> positions() const;
 
   std::string to_string() const;
 
+  friend std::ostream &operator<<(std::ostream &oc, const BitArray &bit_array);
+
+  friend bool operator==(const BitArray &a, const BitArray &b);
+
+  // OR
+  friend BitArray operator|(const BitArray &a, const BitArray &b);
+  // AND
+  friend BitArray operator&(const BitArray &a, const BitArray &b);
+  // XNOR
+  friend BitArray operator%(const BitArray &a, const BitArray &b);
+
+  friend int XNORSimilarity(const BitArray &a, const BitArray &b);
+
+  friend double JaccardSimilarity(const BitArray &a, const BitArray &b);
+
+ private:
+  void setWord(int idx, uint64_t value);
+  uint64_t getWord(int idx) const { return bits_[idx]; }
+
   BitArray operator~() const;
 
-  std::vector<int> positions() const;
-
-private:
   int bits_num_;
   int bits_in_int_;
 
   std::vector<uint64_t> bits_;
 };
 
-std::ostream &operator<<(std::ostream &oc, const BitArray &bit_array);
+}  // namespace common
+}  // namespace cmplx
 
-bool operator==(const BitArray &a, const BitArray &b);
-
-// OR
-BitArray operator|(const BitArray &a, const BitArray &b);
-// AND
-BitArray operator&(const BitArray &a, const BitArray &b);
-// XNOR
-BitArray operator%(const BitArray &a, const BitArray &b);
-
-int XNORSimilarity(const BitArray &a, const BitArray &b);
-
-double JaccardSimilarity(const BitArray &a, const BitArray &b);
-
-} // namespace common
-} // namespace cmplx
-
-#endif // CMPLX_COMMON_BIT_ARRAY_H
+#endif  // CMPLX_COMMON_BIT_ARRAY_H

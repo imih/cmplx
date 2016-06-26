@@ -22,9 +22,7 @@ class SourceDetectionParams {
                                                                   int n);
 
   static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
-    const std::string& file_name, int source_node, double p, double q);
-  //static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
-  //    const std::string &file_name, int source_node);
+      const std::string &file_name, int source_node, double p, double q);
 
   ~SourceDetectionParams() = default;
 
@@ -46,7 +44,7 @@ class SourceDetectionParams {
 
  private:
   SourceDetectionParams(common::IGraph *graph, const common::Realization &r,
-                        long long  simulations, double a = 0.05)
+                        long long simulations, double a = pow(2, -5))
       : graph_(graph), realization_(r), a_(a), simulations_(simulations) {}
 
   std::unique_ptr<common::IGraph> graph_;
