@@ -3,6 +3,8 @@ set(CMAKE_BUILD_TYPE Release)
 
 project (cmplx)
 
+option(test "Build all tests." OFF)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/")
 
 find_package(MPI REQUIRED)
@@ -31,4 +33,34 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 include_directories(${MPI_INCLUDE_PATH})
 target_link_libraries(main common simulator source_detection mpi ${IGRAPH_LIBRARY})
 target_link_libraries(main_iss common simulator source_detection mpi ${IGRAPH_LIBRARY})
+
+if(test)
+  enable_testing()
+  find_package(GTest REQUIRED)
+  include_directories(${GTEST_BOTH_LIBRARIES} )
+  set(EXECUTABLE_OUTPUT_PATH "test")
+
+  #BitArray tests and comp
+  add_executable(bitarraytest common/bit_array_test.cc common/bit_array.cc)
+  target_link_libraries(bitarraytest ${GTEST_BOTH_LIBRARIES})
+  add_test(AllTestsInBitarraytest test/bitarraytest)
+
+  #IVector test
+  add_executable(ivectortest common/ivector.cc common/ivector_test.cc)
+  target_link_libraries(ivectortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+  add_test(AllTestInIvectortest test/ivectortest)
+
+  #IGraph test
+  add_executable(igraphtest common/igraph.cc common/igraph_test.cc common/ivector.cc)
+  target_link_libraries(igraphtest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+  add_test(AllTestInIgraphtest test/igraphtest)
+
+  #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
+
+  #Simulator test
+  add_executable(simulatortest simul/simulator_test.cc
+   simul/simulator.cc common/bit_array.cc common/igraph.cc common/realization.cc common/idqueue.cc)
+  target_link_libraries(simulatortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
+  add_test(AllTestInSimulatortest test/simulatortest)
+endif()
 

@@ -26,7 +26,9 @@ make
 ```
 
 ###Compiling the tests
-Test are compiled by default and require [GTest](https://github.com/google/googletest) library. 
+Tests are configured with ```cmake cmplx -Dtest=ON```.
+Run them all with ```make test```.
+Tests require [GTest](https://github.com/google/googletest) library. 
 
 ###Running
 Run executables with ```mpiexec -n [#processes] executable [local flags]```.
