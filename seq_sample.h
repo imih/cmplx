@@ -4,7 +4,6 @@
 #include "common/igraph.h"
 #include "common/realization.h"
 #include "common/bit_array.h"
-#include "common/sir_params.h"
 #include "simul/simulator.h"
 
 #include <vector>

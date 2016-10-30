@@ -2,24 +2,26 @@
 #define CMPLX_COMMON_REALIZATION_H
 
 #include "bit_array.h"
-#include "sir_params.h"
 
 namespace cmplx {
 namespace common {
 class Realization {
  public:
-  Realization(const SirParams& snapshot)
-      : Realization(snapshot.p(), snapshot.q(), snapshot.maxT(),
-                    snapshot.infected(), snapshot.recovered()) {}
+  Realization(double p, double q, int maxT, const BitArray& susceptible,
+              const BitArray& infected, const BitArray& recovered);
 
-  Realization(double p, double q, int maxT, const BitArray& infected,
-              const BitArray& recovered)
-      : p_(p),
-        q_(q),
-        T_(maxT),
-        infected_(infected),
-        recovered_(recovered),
-        realization_(infected | recovered) {}
+  Realization(double p, double q, int maxT, const BitArray& susceptible)
+      : Realization(p, q, maxT, susceptible,
+                    BitArray::zeros(susceptible.bits_num()),
+                    BitArray::zeros(susceptible.bits_num())) {}
+
+  Realization()
+      : Realization(0, 0, 0, BitArray::zeros(0), BitArray::zeros(0),
+                    BitArray::zeros(0)) {}
+
+  Realization(const Realization& other)
+      : Realization(other.p(), other.q(), other.maxT(), other.susceptible(),
+                    other.infected(), other.recovered()) {}
 
   ~Realization() = default;
 
@@ -30,23 +32,36 @@ class Realization {
 
   int population_size() const { return realization_.bits_num(); }
 
+  const BitArray& susceptible() const { return susceptible_; }
   const BitArray& infected() const { return infected_; }
   const BitArray& recovered() const { return recovered_; }
   const BitArray& realization() const { return realization_; }
 
+  void set_infected(const BitArray& infected);
+  void set_recovered(const BitArray& recovered);
+
+  void update(const BitArray& infected, const BitArray& recovered);
+
+  /* shouldn't be here!
   void setRealization(const BitArray& r) {
     realization_ = BitArray(r);
   };
+  */
 
   void print() const { std::cout << "R: " << realization_ << std::endl; }
+  void printForLattice(int n) const;
 
  private:
   const double p_;
   const double q_;
   const int T_;
-  const BitArray infected_;
-  const BitArray recovered_;
+
+  const BitArray susceptible_;
+  BitArray infected_;
+  BitArray recovered_;
   BitArray realization_;
+
+  void calcRealization() { realization_ = infected_ | recovered_; }
 };
 }  // namespace common
 }  // namespace cmplx

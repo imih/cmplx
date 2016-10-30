@@ -3,7 +3,7 @@
 
 #include "../common/bit_array.h"
 #include "../common/igraph.h"
-#include "../common/sir_params.h"
+#include "../common/realization.h"
 #include <sys/time.h>
 #include <random>
 #include <unistd.h>
@@ -17,11 +17,11 @@ class Simulator {
  public:
   Simulator(const common::IGraph *graph);
 
-  bool NaiveSIR(common::SirParams &sir_params, bool prunning = false,
+  bool NaiveSIR(common::Realization &sir_params, bool prunning = false,
                 const common::BitArray &allowed_nodes =
                     common::BitArray::zeros(1));
 
-  bool NaiveISS(common::SirParams &sir_params, bool prunning = false,
+  bool NaiveISS(common::Realization &sir_params, bool prunning = false,
                 const common::BitArray &allowed_nodes =
                     common::BitArray::zeros(1));
 

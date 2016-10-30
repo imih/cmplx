@@ -34,8 +34,10 @@ class SourceDetectionParams {
 
   void setSimulations(long long simulations) { simulations_ = simulations; }
   void setA(double a) { a_ = a; }
+
   void setRealization(const common::BitArray &r) {
-    realization_.setRealization(r);
+    // Hack!
+    realization_.update(r, common::BitArray::zeros(r.bits_num()));
   }
 
   std::string summary() const;

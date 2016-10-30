@@ -18,7 +18,6 @@ include_directories(${GTEST_BOTH_LIBRARIES})
 
 #Simulator test
 add_executable(simulatortest simulator_test.cc
-   simulator.cc ../common/bit_array.cc ../common/igraph.cc ../common/idqueue.cc
-   ../common/ivector.cc ../common/sir_params.cc)
+   simulator.cc ../common/bit_array.cc ../common/igraph.cc ../common/realization.cc ../common/idqueue.cc)
 target_link_libraries(simulatortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
 add_test(AllTestInSimulatortest simulatortest)

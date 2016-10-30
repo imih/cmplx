@@ -3,7 +3,6 @@
 
 #include "common/igraph.h"
 #include "common/realization.h"
-#include "common/sir_params.h"
 #include "simul/simulator.h"
 #include "seq_sample.h"
 
@@ -25,7 +24,7 @@ class SourceDetector {
    defined by
    ending_params.
    */
-  common::SirParams paramsForSingleSource(
+  common::Realization paramsForSingleSource(
       int source_vertex, const common::Realization& realization);
 
  protected:

@@ -15,7 +15,7 @@ using cmplx::common::IDqueue;
 using cmplx::common::IGraph;
 using cmplx::common::IVector;
 using cmplx::common::BitArray;
-using cmplx::common::SirParams;
+using cmplx::common::Realization;
 
 typedef std::numeric_limits<double> dbl;
 
@@ -30,7 +30,7 @@ Simulator::Simulator(const common::IGraph *graph)
   generator_.seed(tv.tv_usec * getpid());
 }
 
-bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
+bool Simulator::NaiveSIR(Realization &sir_params, bool prunning,
                          const BitArray &allowed_nodes) {
   BitArray I = sir_params.infected();
   BitArray S = sir_params.susceptible();
@@ -60,11 +60,11 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
       const IVector<int> &neis = graph_->adj_list(current_node);
       for (int i = 0; i < neis.size(); ++i) {
         int current_neigh = neis[i];
-        if (S.bit(current_neigh)) {
+        if (S.bit(current_neigh) && !I.bit(current_neigh) &&
+            !R.bit(current_neigh)) {  // if susceptible
           if (eventDraw(sir_params.p())) {
             q.push(current_neigh);
             I.set(current_neigh, true);
-            S.set(current_neigh, false);
             num_inf_nodes++;
             // indentity prunning
             if (prunning && allowed_nodes.bit(current_neigh) == 0) {
@@ -86,13 +86,11 @@ bool Simulator::NaiveSIR(SirParams &sir_params, bool prunning,
     }
   }
 
-  sir_params.set_infected(I);
-  sir_params.set_susceptible(S);
-  sir_params.set_recovered(R);
+  sir_params.update(I, R);
   return prunned;
 }
 
-bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
+bool Simulator::NaiveISS(common::Realization &sir_params, bool prunning,
                          const common::BitArray &allowed_nodes) {
   // p . lambda
   // q . alfa
@@ -131,10 +129,10 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
       bool became_stifler = false;
       for (int i = 0; i < neis.size(); ++i) {
         int current_neigh = neis[i];
-        if (S.bit(current_neigh)) {
+        if (S.bit(current_neigh) && !I.bit(current_neigh) &&
+            !R.bit(current_neigh)) {
           // spreader meets ignorant
           if (eventDraw(sir_params.p())) {
-            S.set(current_neigh, false);
             I.set(current_neigh, true);
             q.push(current_neigh);
             if (prunning && allowed_nodes.bit(current_neigh) == 0) {
@@ -158,9 +156,7 @@ bool Simulator::NaiveISS(common::SirParams &sir_params, bool prunning,
     }
   }
 
-  sir_params.set_infected(I);
-  sir_params.set_susceptible(S);
-  sir_params.set_recovered(R);
+  sir_params.update(I, R);
   return prunned;
 }
 

@@ -15,11 +15,10 @@
 #include "common/bit_array.h"
 #include "common/igraph.h"
 #include "common/realization.h"
-#include "common/sir_params.h"
+
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
-using cmplx::common::SirParams;
 using cmplx::common::Realization;
 using cmplx::SourceDetectionParams;
 using std::vector;

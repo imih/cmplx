@@ -1,36 +1,34 @@
 #include "source_detector.h"
 
+#include <set>
+
 #include <cstring>
 #include <mpi.h>
 #include <map>
 #include <thread>
 
 #include "common/bit_array.h"
-#include "common/realization.h"
 #include "common/ivector.h"
 #include "common/ivector.cc"
 
 using cmplx::common::IGraph;
-using cmplx::common::SirParams;
 using cmplx::common::Realization;
 using cmplx::common::BitArray;
 using cmplx::simul::Simulator;
 
-#include <set>
-
 using std::vector;
 
 namespace cmplx {
-SirParams SourceDetector::paramsForSingleSource(
+Realization SourceDetector::paramsForSingleSource(
     int source_vertex, const Realization& realization) {
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
   BitArray infected = BitArray::zeros(population_size);
   BitArray susceptible = BitArray::ones(population_size);
+  BitArray recovered = BitArray::zeros(population_size);
   infected.set(source_vertex, true);
-  susceptible.set(source_vertex, false);
-  return SirParams(realization.p(), realization.q(), realization.maxT(),
-                   infected, susceptible);
+  return Realization(realization.p(), realization.q(), realization.maxT(),
+                     susceptible, infected, recovered);
 }
 
 vector<double> DirectMonteCarloDetector::directMonteCarloDetection(
@@ -60,7 +58,7 @@ vector<double> DirectMonteCarloDetector::directMonteCarloDetection(
 
 int DirectMonteCarloDetector::DMCSingleSourceSimulation(
     int source_id, const Realization& realization, ModelType model_type) {
-  SirParams params0 = paramsForSingleSource(source_id, realization);
+  Realization params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
   switch (model_type) {
     case ModelType::SIR:
@@ -104,7 +102,7 @@ vector<double> SoftMarginDetector::softMarginDetection(
 double SoftMarginDetector::SMSingleSourceSimulation(
     int source_id, const common::Realization& realization,
     ModelType model_type) {
-  SirParams params0 = paramsForSingleSource(source_id, realization);
+  Realization params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
   if (model_type == ModelType::SIR) {
     prunned = simulator_.NaiveSIR(params0);
