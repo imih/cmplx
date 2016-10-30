@@ -1,5 +1,6 @@
 #include "realization.h"
 
+#include <cassert>
 #include <string>
 #include <sstream>
 
@@ -26,7 +27,9 @@ Realization::Realization(double p, double q, int maxT,
       susceptible_(susceptible),
       infected_(infected),
       recovered_(recovered),
-      realization_(infected | recovered) {}
+      realization_(infected | recovered) {
+  sir_sanity_check();
+}
 
 void Realization::set_infected(const BitArray& infected) {
   infected_ = infected;
@@ -50,6 +53,25 @@ void Realization::printForLattice(int n) const {
   string R = recovered_.to_string();
   std::cout << "I\n" << split(I, n) << " S\n" << split(S, n) << " R\n"
             << split(R, n) << std::endl;
+}
+
+void Realization::sir_sanity_check() {
+  if (!((susceptible_ | infected_ | recovered_) == susceptible_)) {
+    fprintf(stderr, "Infected or recovered but not susceptible!\n");
+    assert(false);
+  }
+
+  std::vector<int> positions_I = infected_.positions();
+  for (int p : positions_I)
+    if (infected_.bit(p) && recovered_.bit(p)) {
+      fprintf(stderr, "Both infected and recovered!");
+      assert(false);
+    }
+}
+
+void Realization::calcRealization() {
+  realization_ = infected_ | recovered_;
+  sir_sanity_check();
 }
 
 }  // namespace common

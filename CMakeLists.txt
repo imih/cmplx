@@ -44,7 +44,8 @@ if(test)
   add_executable(bitarraytest common/bit_array_test.cc common/bit_array.cc)
   target_link_libraries(bitarraytest ${GTEST_BOTH_LIBRARIES})
   add_test(AllTestsInBitarraytest test/bitarraytest)
-
+  #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
+  
   #IVector test
   add_executable(ivectortest common/ivector.cc common/ivector_test.cc)
   target_link_libraries(ivectortest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
@@ -54,8 +55,6 @@ if(test)
   add_executable(igraphtest common/igraph.cc common/igraph_test.cc common/ivector.cc)
   target_link_libraries(igraphtest ${GTEST_BOTH_LIBRARIES} ${IGRAPH_LIBRARY})
   add_test(AllTestInIgraphtest test/igraphtest)
-
-  #add_executable(ba_vs_bitset bit_array_bitset.cc bit_array.cc)
 
   #Simulator test
   add_executable(simulatortest simul/simulator_test.cc

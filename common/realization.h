@@ -42,12 +42,6 @@ class Realization {
 
   void update(const BitArray& infected, const BitArray& recovered);
 
-  /* shouldn't be here!
-  void setRealization(const BitArray& r) {
-    realization_ = BitArray(r);
-  };
-  */
-
   void print() const { std::cout << "R: " << realization_ << std::endl; }
   void printForLattice(int n) const;
 
@@ -61,7 +55,8 @@ class Realization {
   BitArray recovered_;
   BitArray realization_;
 
-  void calcRealization() { realization_ = infected_ | recovered_; }
+  void sir_sanity_check();
+  void calcRealization();
 };
 }  // namespace common
 }  // namespace cmplx

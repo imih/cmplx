@@ -17,6 +17,7 @@ TEST_F(IGraphTest, IGraphLatticeSanity) {
   EXPECT_EQ(g->vertices(), 9);
   EXPECT_EQ(g->diameter(), 4);
   EXPECT_EQ(g->adj_list(4).size(), 4);
+  EXPECT_EQ(g->is_connected(), true);
   delete g;
 }
 
