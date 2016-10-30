@@ -122,17 +122,14 @@ BitArray operator&(const BitArray &a, const BitArray &b) {
   return ret;
 }
 
+// XNOR
 BitArray operator%(const BitArray &a, const BitArray &b) {
   assert(a.bits_num() == b.bits_num());
-  BitArray ret(a.bits_num());
-  int words = (int)a.bits_.size();
-  for (int i = 0; i < words - 1; ++i) {
-    ret.setWord(i, ~(a.getWord(i) ^ b.getWord(i)));
+  int bits_num = a.bits_num();
+  BitArray ret = BitArray::zeros(a.bits_num());
+  for (int i = 0; i < bits_num; ++i) {
+    ret.set(i, 1 - (a.bit(i) ^ b.bit(i)));
   }
-
-  int rest = a.bits_num() % (int)sizeof(uint64_t);
-  ret.setWord(words - 1, (~(a.getWord(words - 1) ^ b.getWord(words - 1))) &
-                             ((1 << rest) - 1));
   return ret;
 }
 
