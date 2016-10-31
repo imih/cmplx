@@ -420,44 +420,4 @@ double SequentialSoftMCDetector::posteriorFromSamples(
   return pos_P;
 }
 
-// TODO check!
-SeqSample ConfigurationalBiasMCDetector::drawFullSample(
-    int v, const common::Realization& target_realization) {
-  SeqSample sample(v, target_realization.population_size());
-  int maxT = target_realization.maxT();
-  double p = target_realization.p();
-  double q = target_realization.q();
-  vector<int> target_infected_idx =
-      target_realization.realization().positions();
-
-  for (int t = 0; t < target_realization.maxT(); ++t) {
-    BitArray prev_inf = sample.infected();
-    BitArray prev_rec = sample.recovered();
-    NewSample ns =
-        drawSample(t, maxT, p, q, target_infected_idx, prev_inf, prev_rec);
-    sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
-  }
-  return sample;
-}
-
-// TODO check!
-double ConfigurationalBiasMCDetector::seqPosterior(
-    int v, int sample_size, const common::Realization& target_realization,
-    cmplx::ResamplingType resampling_type, bool maximize_hits) {
-  std::vector<SeqSample> samples(sample_size,
-                                 drawFullSample(v, target_realization));
-  for (int it = 0; it < 10; ++it) {
-    for (SeqSample& sample : samples) {
-      SeqSample y = drawFullSample(v, target_realization);
-      double p = y.w() / sample.w();
-      if (p > 1) p = 1;
-      if (simulator_.eventDraw(p)) {
-        sample = y;
-      }
-    }
-  }
-
-  return posteriorFromSamples(samples, target_realization.realization());
-}
-
 }  // namespace cmplx

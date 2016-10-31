@@ -133,19 +133,5 @@ class SequentialSoftMCDetector : public SequentialMCDetector {
   }
 };
 
-class ConfigurationalBiasMCDetector : public SequentialMCDetector {
- public:
-  ConfigurationalBiasMCDetector(const common::IGraph* g)
-      : SequentialMCDetector(g) {}
-
-  SeqSample drawFullSample(int v,
-                           const common::Realization& target_realization);
-
-  double seqPosterior(int v, int sample_size,
-                      const common::Realization& target_realization,
-                      ResamplingType resampling_type = ResamplingType::NONE,
-                      bool maximize_hits = true);
-};
-
 }  // namespace cmplx
 #endif  // CMPLX_SOURCE_DETECTOR_H
