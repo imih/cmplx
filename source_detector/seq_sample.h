@@ -1,10 +1,10 @@
 #ifndef CMPLX_SEQMC_STAT_H
 #define CMPLX_SEQMC_STAT_H
 
-#include "common/igraph.h"
-#include "common/realization.h"
-#include "common/bit_array.h"
-#include "simul/simulator.h"
+#include "../common/igraph.h"
+#include "../common/realization.h"
+#include "../common/bit_array.h"
+#include "../simul/simulator.h"
 
 #include <vector>
 
@@ -12,12 +12,12 @@ namespace cmplx {
 
 class SeqSample {
  public:
-  SeqSample(int v, const common::Realization& realization);
+  SeqSample(int v, int population_size);
   SeqSample(const SeqSample& seqSample);
 
   ~SeqSample() = default;
 
-  bool match(const common::Realization& realization) const;
+  bool match(const common::BitArray& realization) const;
 
   const common::BitArray& infected() const { return infected_; }
   const common::BitArray& recovered() const { return recovered_; }

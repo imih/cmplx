@@ -1,9 +1,9 @@
 #ifndef CMPLX_SOURCE_DETECTOR_H
 #define CMPLX_SOURCE_DETECTOR_H
 
-#include "common/igraph.h"
-#include "common/realization.h"
-#include "simul/simulator.h"
+#include "../common/igraph.h"
+#include "../common/realization.h"
+#include "../simul/simulator.h"
 #include "seq_sample.h"
 
 #include <vector>
@@ -21,8 +21,7 @@ class SourceDetector {
 
   /** Return starting parameters for the epidemic that starts with a single
    source defined by source_vertex and is capable of producing a snapshot
-   defined by
-   ending_params.
+   defined by ending_params. It is assumed all nodes are susceptible.
    */
   common::Realization paramsForSingleSource(
       int source_vertex, const common::Realization& realization);
@@ -77,16 +76,20 @@ class SequentialMCDetector : public SourceDetector {
   SequentialMCDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   virtual std::vector<double> seqMonteCarloDetectionSIR(
-      const common::Realization& realization, int sample_size);
+      const common::Realization& realization, int sample_size,
+      ResamplingType resampling_type = ResamplingType::NONE);
 
-  virtual double seqPosterior(
-      int v, int sample_size, const common::Realization& target_realization,
-      ResamplingType resampling_type = ResamplingType::NONE,
-      bool maximize_hits = true);
+  virtual double seqPosterior(int v, int sample_size,
+                              const common::Realization& target_realization,
+                              ResamplingType resampling_type,
+                              bool maximize_hits);
+
+  // Calculates unnormalized posterior probability based on the set of samples.
+  virtual double posteriorFromSamples(
+      const std::vector<SeqSample>& samples,
+      const common::BitArray& target_realization);
 
  protected:
-  virtual double posFromSample(const std::vector<SeqSample>& samples,
-                               const common::Realization& target_realization);
   std::set<int> buildReachable(const common::BitArray& infected);
 
   struct NewSample {
@@ -118,11 +121,11 @@ class SequentialSoftMCDetector : public SequentialMCDetector {
   SequentialSoftMCDetector(const common::IGraph* g) : SequentialMCDetector(g) {}
 
   std::vector<double> seqMonteCarloDetectionSIR(
-      const common::Realization& realization, int sample_size);
+      const common::Realization& realization, int sample_size,
+      ResamplingType resampling_type);
 
- protected:
-  double posFromSample(const std::vector<SeqSample>& samples,
-                       const common::Realization& target_realization);
+  double posteriorFromSamples(const std::vector<SeqSample>& samples,
+                              const common::BitArray& target_realization);
 
  private:
   double w_(double x, double a) {

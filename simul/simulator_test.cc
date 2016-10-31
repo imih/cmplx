@@ -62,6 +62,7 @@ TEST_F(SimulatorTest, SIROnLattice) {
         }
       }
     }
+
   delete g;
 }
 

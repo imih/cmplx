@@ -3,13 +3,12 @@
 #include <set>
 
 #include <cstring>
-#include <mpi.h>
 #include <map>
 #include <thread>
 
-#include "common/bit_array.h"
-#include "common/ivector.h"
-#include "common/ivector.cc"
+#include "../common/bit_array.h"
+#include "../common/ivector.h"
+#include "../common/ivector.cc"
 
 using cmplx::common::IGraph;
 using cmplx::common::Realization;
@@ -24,9 +23,9 @@ Realization SourceDetector::paramsForSingleSource(
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
   BitArray infected = BitArray::zeros(population_size);
+  infected.set(source_vertex, true);
   BitArray susceptible = BitArray::ones(population_size);
   BitArray recovered = BitArray::zeros(population_size);
-  infected.set(source_vertex, true);
   return Realization(realization.p(), realization.q(), realization.maxT(),
                      susceptible, infected, recovered);
 }
@@ -123,14 +122,16 @@ double SoftMarginDetector::likelihood(vector<double> fi, double a) {
 }
 
 std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
-    const common::Realization& realization, int sample_size) {
+    const common::Realization& realization, int sample_size,
+    ResamplingType resampling_type) {
   vector<double> P;
   P.clear();
   int population_size = realization.population_size();
   double sum = 0;
   for (int v = 0; v < population_size; ++v) {
     if (realization.realization().bit(v)) {
-      P.push_back(seqPosterior(v, sample_size, realization));
+      P.push_back(seqPosterior(v, sample_size, realization, resampling_type,
+                               true /* maximize hits*/));
     } else
       P.push_back(0);
     sum += P.back();
@@ -140,95 +141,11 @@ std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
   return P;
 }
 
-std::vector<SeqSample> SequentialMCDetector::resampling(
-    int t, const ResamplingType& resampling_type,
-    const vector<SeqSample>& samplesOrg) {
-  int sample_size = (int)samplesOrg.size();
-  if ((vc2(samplesOrg) <= (1LL << t)) ||
-      resampling_type == ResamplingType::NONE) {
-    return samplesOrg;
-  }
-
-  puts("resampling...");
-  std::vector<SeqSample> prev_samples = samplesOrg;
-  std::vector<SeqSample> samples;
-  samples.clear();
-  switch (resampling_type) {
-    case(ResamplingType::SIMPLE_RANDOM_SAMPLING) : {
-      double sum = 0;
-      vector<double> P;
-      P.clear();
-      P.push_back(0);
-      for (const SeqSample& sample : prev_samples) {
-        sum += sample.w();
-        P.push_back(P.back() + sample.w());
-      }
-
-      for (int i = 0; i < sample_size; ++i) {
-        double p = simulator_.P() * sum;
-        int lo = 0;
-        int hi = sample_size - 1;
-        while (lo < hi) {
-          int mid = (lo + hi + 1) / 2;
-          if (P[i] <= p) {
-            lo = mid;
-          } else
-            hi = mid - 1;
-        }
-        samples.push_back(prev_samples[lo]);
-        samples.back().setW(sum / sample_size);
-      }
-      break;
-    }
-    case(ResamplingType::RESIDUAL_SAMPLING) : {
-      vector<double> Wnorm;
-      Wnorm.clear();
-      double sum = 0;
-      for (const SeqSample& sample : prev_samples) {
-        Wnorm.push_back(sample.w());
-        sum += sample.w();
-      }
-      for (int i = 0; i < sample_size; ++i) {
-        Wnorm[i] /= sum;
-        int k = (int)sample_size * Wnorm[i];
-        Wnorm[i] = sample_size * Wnorm[i] - k;
-        for (int j = 0; j < k; ++j) samples.push_back(prev_samples[i]);
-      }
-      int m_r = sample_size - (int)samples.size();
-      vector<double> P;
-      P.clear();
-      P.push_back(0);
-      for (double wn : Wnorm) {
-        P.push_back(P.back() + wn);
-      }
-      double maxP = P.back();
-      for (int i = 0; i < m_r; ++i) {
-        double p = simulator_.P() * maxP;
-        int lo = 0;
-        int hi = sample_size - 1;
-        while (lo < hi) {
-          int mid = (lo + hi + 1) / 2;
-          if (P[i] <= p) {
-            lo = mid;
-          } else
-            hi = mid - 1;
-        }
-        samples.push_back(prev_samples[lo]);
-      }
-      for (SeqSample& sample : samples) {
-        sample.setW(sum / sample_size);
-      }
-      break;
-    }
-  }
-
-  return samples;
-}
-
 double SequentialMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization,
     cmplx::ResamplingType resampling_type, bool maximize_hits) {
-  std::vector<SeqSample> samples(sample_size, SeqSample(v, target_realization));
+  std::vector<SeqSample> samples(
+      sample_size, SeqSample(v, target_realization.population_size()));
 
   std::vector<int> target_infected_idx_ =
       target_realization.realization().positions();
@@ -247,22 +164,36 @@ double SequentialMCDetector::seqPosterior(
       sample.update(ns.new_inf, ns.new_rec, ns.new_g, ns.new_pi);
     }
   }
-  return posFromSample(samples, target_realization);
+  return posteriorFromSamples(samples, target_realization.realization());
 }
 
-double SequentialMCDetector::posFromSample(
+double SequentialMCDetector::posteriorFromSamples(
     const std::vector<SeqSample>& samples,
-    const common::Realization& target_realization) {
+    const common::BitArray& realization) {
   double pos_P = 0;
   double sum = 0;
   for (const SeqSample& sample : samples) {
-    if (sample.match(target_realization)) {
+    if (sample.match(realization)) {
       pos_P += sample.w();
     }
     sum += sample.w();
   }
-  printf("\nPost: %.10lf\n", pos_P);
+  fprintf(stderr, "\nPost: %.10lf\n", pos_P);
   return pos_P;
+}
+
+std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
+  std::set<int> s;
+  s.clear();
+  std::vector<int> infected_positions = infected.positions();
+  for (int pos : infected_positions) {
+    const IGraph* graph = simulator_.graph();
+    const common::IVector<int>& adj_list = graph->adj_list(pos);
+    for (int i = 0; i < (int)adj_list.size(); ++i) {
+      s.insert(adj_list[i]);
+    }
+  }
+  return s;
 }
 
 SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
@@ -344,20 +275,97 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
   return sample;
 }
 
-std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
-  std::set<int> s;
-  for (int pos : infected.positions()) {
-    const IGraph* graph = simulator_.graph();
-    const common::IVector<int>& adj_list = graph->adj_list(pos);
-    for (int i = 0; i < (int)adj_list.size(); ++i) {
-      s.insert(adj_list[i]);
-    }
-  }
-  return s;
-}
-
 void SequentialMCDetector::printvc2(const std::vector<SeqSample>& samples) {
   printf("vc2 %.10lf\n", vc2(samples));
+}
+
+std::vector<SeqSample> SequentialMCDetector::resampling(
+    int t, const ResamplingType& resampling_type,
+    const vector<SeqSample>& samplesOrg) {
+  int sample_size = (int)samplesOrg.size();
+  if ((vc2(samplesOrg) <= (1LL << t)) ||
+      resampling_type == ResamplingType::NONE) {
+    return samplesOrg;
+  }
+
+  puts("resampling...");
+  std::vector<SeqSample> prev_samples = samplesOrg;
+  std::vector<SeqSample> samples;
+  samples.clear();
+  switch (resampling_type) {
+    case(ResamplingType::NONE) : {
+      return samplesOrg;
+      break;
+    }
+    case(ResamplingType::SIMPLE_RANDOM_SAMPLING) : {
+      double sum = 0;
+      vector<double> P;
+      P.clear();
+      P.push_back(0);
+      for (const SeqSample& sample : prev_samples) {
+        sum += sample.w();
+        P.push_back(P.back() + sample.w());
+      }
+
+      for (int i = 0; i < sample_size; ++i) {
+        double p = simulator_.P() * sum;
+        int lo = 0;
+        int hi = sample_size - 1;
+        while (lo < hi) {
+          int mid = (lo + hi + 1) / 2;
+          if (P[i] <= p) {
+            lo = mid;
+          } else
+            hi = mid - 1;
+        }
+        samples.push_back(prev_samples[lo]);
+        samples.back().setW(sum / sample_size);
+      }
+      break;
+    }
+    case(ResamplingType::RESIDUAL_SAMPLING) : {
+      vector<double> Wnorm;
+      Wnorm.clear();
+      double sum = 0;
+      for (const SeqSample& sample : prev_samples) {
+        Wnorm.push_back(sample.w());
+        sum += sample.w();
+      }
+      for (int i = 0; i < sample_size; ++i) {
+        Wnorm[i] /= sum;
+        int k = (int)(Wnorm[i] * sample_size);
+        Wnorm[i] = Wnorm[i] * sample_size - k;
+        for (int j = 0; j < k; ++j) samples.push_back(prev_samples[i]);
+      }
+      int m_r = sample_size - (int)samples.size();
+      vector<double> P;
+      P.clear();
+      P.push_back(0);
+      for (double wn : Wnorm) {
+        P.push_back(P.back() + wn);
+      }
+      double maxP = P.back();
+      for (int i = 0; i < m_r; ++i) {
+        double p = simulator_.P() * maxP;
+        int lo = 0;
+        int hi = sample_size - 1;
+        while (lo < hi) {
+          int mid = (lo + hi + 1) / 2;
+          if (P[i] <= p) {
+            lo = mid;
+          } else
+            hi = mid - 1;
+        }
+        samples.push_back(prev_samples[lo]);
+      }
+      for (SeqSample& sample : samples) {
+        sample.setW(sum / (double)samples.size());
+      }
+      break;
+    }
+  }
+
+  return samples;
 }
 
 double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
@@ -366,13 +374,12 @@ double SequentialMCDetector::vc2(const std::vector<cmplx::SeqSample>& samples) {
   for (const SeqSample& sample : samples) {
     avg_w += sample.w();
   }
-  avg_w /= (int)samples.size();
+  avg_w /= (double)samples.size();
 
   for (const SeqSample& sample : samples) {
     vc2 += (sample.w() - avg_w) * (sample.w() - avg_w);
   }
-  vc2 /= ((int)samples.size() - 1);
-  vc2 /= (avg_w * avg_w);
+  vc2 /= (((double)samples.size() - 1) * (avg_w * avg_w));
   return vc2;
 }
 
@@ -381,15 +388,16 @@ double SequentialMCDetector::ESS(const std::vector<cmplx::SeqSample>& samples) {
 }
 
 std::vector<double> SequentialSoftMCDetector::seqMonteCarloDetectionSIR(
-    const common::Realization& realization, int sample_size) {
+    const common::Realization& realization, int sample_size,
+    ResamplingType resampling_type) {
   vector<double> P;
   P.clear();
   int population_size = realization.population_size();
   double sum = 0;
   for (int v = 0; v < population_size; ++v) {
     if (realization.realization().bit(v)) {
-      P.push_back(seqPosterior(v, sample_size, realization,
-                               ResamplingType::NONE, false));
+      P.push_back(
+          seqPosterior(v, sample_size, realization, resampling_type, false));
     } else
       P.push_back(0);
     sum += P.back();
@@ -399,23 +407,23 @@ std::vector<double> SequentialSoftMCDetector::seqMonteCarloDetectionSIR(
   return P;
 }
 
-double SequentialSoftMCDetector::posFromSample(
+double SequentialSoftMCDetector::posteriorFromSamples(
     const std::vector<SeqSample>& samples,
-    const common::Realization& target_realization) {
+    const common::BitArray& target_realization) {
   double a = pow(2, -5);
   double pos_P = 0;
   for (const SeqSample& sample : samples) {
-    pos_P += sample.w() * w_(JaccardSimilarity(target_realization.realization(),
-                                               sample.realization()),
-                             a);
+    pos_P += sample.w() *
+             w_(JaccardSimilarity(target_realization, sample.realization()), a);
   }
-  printf("\nPost: %.10lf\n", pos_P);
+  fprintf(stderr, "\nPost: %.10lf\n", pos_P);
   return pos_P;
 }
 
+// TODO check!
 SeqSample ConfigurationalBiasMCDetector::drawFullSample(
     int v, const common::Realization& target_realization) {
-  SeqSample sample(v, target_realization);
+  SeqSample sample(v, target_realization.population_size());
   int maxT = target_realization.maxT();
   double p = target_realization.p();
   double q = target_realization.q();
@@ -432,6 +440,7 @@ SeqSample ConfigurationalBiasMCDetector::drawFullSample(
   return sample;
 }
 
+// TODO check!
 double ConfigurationalBiasMCDetector::seqPosterior(
     int v, int sample_size, const common::Realization& target_realization,
     cmplx::ResamplingType resampling_type, bool maximize_hits) {
@@ -448,7 +457,7 @@ double ConfigurationalBiasMCDetector::seqPosterior(
     }
   }
 
-  return posFromSample(samples, target_realization);
+  return posteriorFromSamples(samples, target_realization.realization());
 }
 
 }  // namespace cmplx
