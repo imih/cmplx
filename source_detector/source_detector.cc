@@ -11,6 +11,7 @@
 #include "../common/ivector.cc"
 
 using cmplx::common::IGraph;
+using cmplx::common::RealizationRead;
 using cmplx::common::Realization;
 using cmplx::common::BitArray;
 using cmplx::simul::Simulator;
@@ -19,7 +20,7 @@ using std::vector;
 
 namespace cmplx {
 Realization SourceDetector::paramsForSingleSource(
-    int source_vertex, const Realization& realization) {
+    int source_vertex, const common::RealizationRead& realization) {
   int population_size = realization.population_size();
   // If the vertex was susceptible at some point.
   BitArray infected = BitArray::zeros(population_size);
@@ -31,7 +32,8 @@ Realization SourceDetector::paramsForSingleSource(
 }
 
 vector<double> DirectMonteCarloDetector::directMonteCarloDetection(
-    const Realization& realization, int no_simulations, ModelType model_type) {
+    const RealizationRead& realization, int no_simulations,
+    ModelType model_type) {
   std::vector<double> outcomes_prob;
   outcomes_prob.clear();
   int population_size = realization.population_size();
@@ -56,19 +58,20 @@ vector<double> DirectMonteCarloDetector::directMonteCarloDetection(
 }
 
 int DirectMonteCarloDetector::DMCSingleSourceSimulation(
-    int source_id, const Realization& realization, ModelType model_type) {
+    int source_id, const common::RealizationRead& realization,
+    ModelType model_type) {
   Realization params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
   switch (model_type) {
     case ModelType::SIR:
-      prunned = simulator_.NaiveSIR(params0, true, (realization.realization()));
+      prunned = simulator_.NaiveSIR(params0, true, realization.realization());
       break;
     case ModelType::ISS:
-      prunned = simulator_.NaiveISS(params0, true, (realization.realization()));
+      prunned = simulator_.NaiveISS(params0, true, realization.realization());
       break;
   }
   if (prunned) return 0;
-  return realization.realization().bitCount() ==
+  return realization.bitCount() ==
          (params0.infected() | params0.recovered()).bitCount();
 }
 
@@ -82,7 +85,7 @@ vector<double> normalize(vector<double> P) {
 }  // namespace
 
 vector<double> SoftMarginDetector::softMarginDetection(
-    const Realization& realization, int no_simulations, double a,
+    const RealizationRead& realization, int no_simulations, double a,
     ModelType model_type) {
   vector<double> P;
   P.clear();
@@ -99,7 +102,7 @@ vector<double> SoftMarginDetector::softMarginDetection(
 }
 
 double SoftMarginDetector::SMSingleSourceSimulation(
-    int source_id, const common::Realization& realization,
+    int source_id, const common::RealizationRead& realization,
     ModelType model_type) {
   Realization params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
@@ -122,7 +125,7 @@ double SoftMarginDetector::likelihood(vector<double> fi, double a) {
 }
 
 std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
-    const common::Realization& realization, int sample_size,
+    const common::RealizationRead& realization, int sample_size,
     ResamplingType resampling_type) {
   vector<double> P;
   P.clear();
@@ -142,7 +145,7 @@ std::vector<double> SequentialMCDetector::seqMonteCarloDetectionSIR(
 }
 
 double SequentialMCDetector::seqPosterior(
-    int v, int sample_size, const common::Realization& target_realization,
+    int v, int sample_size, const common::RealizationRead& target_realization,
     cmplx::ResamplingType resampling_type, bool maximize_hits) {
   std::vector<SeqSample> samples(
       sample_size, SeqSample(v, target_realization.population_size()));

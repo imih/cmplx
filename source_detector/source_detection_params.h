@@ -1,16 +1,16 @@
 #ifndef SOURCE_DETECTION_PARAMS_H
 #define SOURCE_DETECTION_PARAMS_H
 
-#include "common/igraph.h"
-#include "common/realization.h"
-#include "common/bit_array.h"
+#include "../common/igraph.h"
+#include "../common/realization.h"
+#include "../common/bit_array.h"
 #include <string>
 #include <memory>
 
 namespace cmplx {
 class SourceDetectionParams {
  public:
-  // DirectMC
+  // TODO FIX!
   static std::unique_ptr<SourceDetectionParams> SupFig2Params();
   static std::unique_ptr<SourceDetectionParams> LatticeCenter();
   static std::unique_ptr<SourceDetectionParams> BenchmarkParams(
@@ -28,29 +28,36 @@ class SourceDetectionParams {
 
   const std::unique_ptr<common::IGraph> &graph() const { return graph_; }
 
-  const common::Realization &realization() const { return realization_; }
+  const common::RealizationRead &realization() const { return realization_; }
+
   long long simulations() const { return simulations_; }
+
   double a() const { return a_; }
 
-  void setSimulations(long long simulations) { simulations_ = simulations; }
-  void setA(double a) { a_ = a; }
+  int sourceID() { return source_id_; }
 
   void setRealization(const common::BitArray &r) {
-    // Hack!
-    realization_.update(r, common::BitArray::zeros(r.bits_num()));
+    realization_.setRealization(r);
   }
+
+  void setSimulations(long long simulations) { simulations_ = simulations; }
+
+  void setA(double a) { a_ = a; }
 
   std::string summary() const;
   void setSourceId(int source_id) { source_id_ = source_id; }
-  int sourceID() { return source_id_; }
 
  private:
-  SourceDetectionParams(common::IGraph *graph, const common::Realization &r,
+  SourceDetectionParams(common::IGraph *graph,
+                        const common::RealizationRead &realization,
                         long long simulations, double a = pow(2, -5))
-      : graph_(graph), realization_(r), a_(a), simulations_(simulations) {}
+      : graph_(graph),
+        realization_(realization),
+        a_(a),
+        simulations_(simulations) {}
 
   std::unique_ptr<common::IGraph> graph_;
-  common::Realization realization_;
+  common::RealizationRead realization_;
   double a_;
   long long simulations_;
   int source_id_;

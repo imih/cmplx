@@ -24,7 +24,7 @@ class SourceDetector {
    defined by ending_params. It is assumed all nodes are susceptible.
    */
   common::Realization paramsForSingleSource(
-      int source_vertex, const common::Realization& realization);
+      int source_vertex, const common::RealizationRead& realization);
 
  protected:
   simul::Simulator simulator_;
@@ -37,11 +37,11 @@ class DirectMonteCarloDetector : public SourceDetector {
   /** Return distribution of nodes being the source of SIR epidemic simulation
    based on epidemic snapshot defined by sir_params. */
   std::vector<double> directMonteCarloDetection(
-      const common::Realization& realization, int no_simulations,
+      const common::RealizationRead& realization, int no_simulations,
       ModelType model_type = ModelType::SIR);
 
   int DMCSingleSourceSimulation(int source_id,
-                                const common::Realization& realization,
+                                const common::RealizationRead& realization,
                                 ModelType model_type = ModelType::SIR);
 };
 
@@ -50,11 +50,11 @@ class SoftMarginDetector : public SourceDetector {
   SoftMarginDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   std::vector<double> softMarginDetection(
-      const common::Realization& realization, int no_simulations, double a,
+      const common::RealizationRead& realization, int no_simulations, double a,
       ModelType model_type = ModelType::SIR);
 
   double SMSingleSourceSimulation(int source_id,
-                                  const common::Realization& realization,
+                                  const common::RealizationRead& realization,
                                   ModelType model_type = ModelType::SIR);
 
   double likelihood(std::vector<double> fi, double a);
@@ -76,11 +76,11 @@ class SequentialMCDetector : public SourceDetector {
   SequentialMCDetector(const common::IGraph* g) : SourceDetector(g) {}
 
   virtual std::vector<double> seqMonteCarloDetectionSIR(
-      const common::Realization& realization, int sample_size,
+      const common::RealizationRead& realization, int sample_size,
       ResamplingType resampling_type = ResamplingType::NONE);
 
   virtual double seqPosterior(int v, int sample_size,
-                              const common::Realization& target_realization,
+                              const common::RealizationRead& target_realization,
                               ResamplingType resampling_type,
                               bool maximize_hits);
 

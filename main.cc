@@ -1,9 +1,10 @@
+#include "source_detector/source_detection_params.h"
+#include "source_detector/source_detector.h"
+#include "mpi/source_detection_paral.h"
+
 #include <mpi.h>
 #include <ctime>
 #include <string>
-#include "source_detection_params.h"
-#include "source_detection_paral.h"
-#include "source_detector.h"
 
 using cmplx::SourceDetectionParams;
 

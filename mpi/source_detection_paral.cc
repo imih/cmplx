@@ -1,5 +1,9 @@
 #include "source_detection_paral.h"
 
+#include "../common/bit_array.h"
+#include "../common/igraph.h"
+#include "../common/realization.h"
+
 #include <mpi.h>
 #include <unistd.h>
 #include <algorithm>
@@ -8,18 +12,12 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <vector>
 #include <cassert>
-
-#include "./source_detector.h"
-#include "common/bit_array.h"
-#include "common/igraph.h"
-#include "common/realization.h"
 
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
-using cmplx::common::Realization;
+using cmplx::common::RealizationRead;
 using cmplx::SourceDetectionParams;
 using std::vector;
 
@@ -50,7 +48,7 @@ void share_params(SourceDetectionParams *params) {
   int rank = MPI::COMM_WORLD.Get_rank();
   int processes = MPI::COMM_WORLD.Get_size();
   if (rank == 0) {
-    vector<int> r_pos = params->realization().realization().positions();
+    vector<int> r_pos = params->realization().positions();
     r_pos.push_back(-1);
     for (int v = 1; v < processes; ++v) {
       MPI::COMM_WORLD.Send(&r_pos[0], (int)r_pos.size(), MPI_INT, v,
@@ -192,7 +190,7 @@ std::vector<double> DirectMCSimulParalConvMaster(SourceDetectionParams *params,
 
   int MAP0 = std::max_element(p0.begin(), p0.end()) - p0.begin();
   double pml0 = *std::max_element(p0.begin(), p0.end());
-  int bits = params->realization().realization().bitCount();
+  int bits = params->realization().bitCount();
   for (int s_id = 1; s_id < (int)sims.size(); ++s_id) {
     int s1 = sims[s_id];
     printf("s: %d\n", s1);
@@ -257,7 +255,7 @@ void DirectMCSimulParalWorker(const SourceDetectionParams *params,
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  const Realization &snapshot = params->realization();
+  const common::RealizationRead &snapshot = params->realization();
 
   // workers
   // Performs simulation on request.
@@ -272,7 +270,7 @@ void DirectMCSimulParalWorker(const SourceDetectionParams *params,
                            MessageType::SIMUL_REQUEST);
       int outcomes = 0;
       for (int t = 0; t < message_recv.batch_size; ++t) {
-        Realization sp0 = snapshot;
+        common::RealizationRead sp0 = snapshot;
         outcomes += sd.DMCSingleSourceSimulation(message_recv.source_id, sp0,
                                                  model_type);
       }
@@ -304,7 +302,8 @@ vector<double> DirectMCSimulParalMaster(const SourceDetectionParams *params,
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  const Realization &snapshot = params->realization();
+  const common::RealizationRead &snapshot = params->realization();
+
   long long cur_simul_count = 0;
   int cur_v = nextV(0, snapshot.realization());
   vector<int> events_resp(vertices, 0);
@@ -527,7 +526,7 @@ vector<double> SoftMarginSimulParalMaster(const SourceDetectionParams *params,
   const int simulations = params->simulations();
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  const Realization &snapshot = params->realization();
+  const common::RealizationRead &snapshot = params->realization();
 
   // master process
   int cur_simul_count = 0;
@@ -635,7 +634,7 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams *params,
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  Realization snapshot = params->realization();
+  common::RealizationRead snapshot = params->realization();
 
   // workers
   // Performs simulation on request.
@@ -654,7 +653,7 @@ void SoftMarginSimulParalWorker(const SourceDetectionParams *params,
       vector<double> fi;
       fi.clear();
       for (int t = 0; t < (int)SIMUL_PER_REQ; ++t) {
-        Realization sp0 = snapshot;
+        RealizationRead sp0 = snapshot;
         fi.push_back(sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
                                                  model_type));
       }
@@ -1018,7 +1017,7 @@ vector<double> SeqMonteCarloSimulParalMaster(
   double q = params->realization().q();
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  const Realization &snapshot = params->realization();
+  const RealizationRead &snapshot = params->realization();
 
   // master process
   int cur_v = nextV(0, snapshot.realization());
@@ -1085,7 +1084,7 @@ void SeqMonteCarloSimulParalWorker(const SourceDetectionParams *params) {
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
-  Realization snapshot = params->realization();
+  RealizationRead snapshot = params->realization();
 
   // Performs simulation on request.
   SequentialMCDetector sd(graph);

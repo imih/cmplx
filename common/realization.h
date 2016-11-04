@@ -5,6 +5,7 @@
 
 namespace cmplx {
 namespace common {
+
 class Realization {
  public:
   Realization(double p, double q, int maxT, const BitArray& susceptible,
@@ -58,6 +59,37 @@ class Realization {
   void sir_sanity_check();
   void calcRealization();
 };
+
+class RealizationRead {
+ public:
+  RealizationRead(const BitArray& realization, double p, double q, int maxT)
+      : realization_(realization), p_(p), q_(q), maxT_(maxT) {}
+
+  RealizationRead(const Realization& realization)
+      : realization_(realization.realization()),
+        p_(realization.p()),
+        q_(realization.q()),
+        maxT_(realization.maxT()) {}
+
+  const BitArray& realization() const { return realization_; }
+  double p() const { return p_; }
+  double q() const { return q_; }
+  double maxT() const { return maxT_; }
+  int population_size() const { return realization_.bits_num(); }
+  std::vector<int> positions() const { return realization_.positions(); }
+  int bitCount() const { return realization_.bitCount(); }
+
+  void setRealization(const BitArray& realization) {
+    realization_ = realization;
+  }
+
+ private:
+  BitArray realization_;
+  double p_;
+  double q_;
+  int maxT_;
+};
+
 }  // namespace common
 }  // namespace cmplx
 

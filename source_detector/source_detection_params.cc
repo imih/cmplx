@@ -8,11 +8,13 @@
 #include <cstring>
 #include <random>
 
-#include "simul/simulator.h"
+#include "../simul/simulator.h"
+#include "../common/realization.h"
 
 using cmplx::common::IGraph;
 using cmplx::common::BitArray;
 using cmplx::common::Realization;
+using cmplx::common::RealizationRead;
 
 namespace {
 std::vector<std::string> split(std::string s) {
@@ -50,11 +52,11 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::SupFig2Params() {
   double p = 0.2;
   double q = 0.3;
   int maxT = 5;
-  Realization realization = Realization(p, q, maxT, r /* susceptible */);
 
-  int simulations = 1000000000; /* supposed to be 10e9 */
+  int simulations = 1e9;
+  common::RealizationRead read(r, p, q, maxT);
   return std::unique_ptr<SourceDetectionParams>(
-      new SourceDetectionParams(graph, realization, simulations));
+      new SourceDetectionParams(graph, read, simulations));
 }
 
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::LatticeCenter() {
@@ -63,9 +65,10 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::LatticeCenter() {
   BitArray r = BitArray::ones(graph->vertices());
   double p = 0.2;
   double q = 0;
-  Realization realization = Realization(p, q, 2, r);
+  int maxT = 2;
+  common::RealizationRead read(r, p, q, maxT);
   return std::unique_ptr<SourceDetectionParams>(
-      new SourceDetectionParams(graph, realization, 1000000));
+      new SourceDetectionParams(graph, read, 1000000));
 }
 
 namespace {
@@ -79,58 +82,64 @@ int chooseSource(int n) {
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGrid(
     double p, double q, int n) {
   IGraph* graph = IGraph::UndirectedLattice({n, n});
-  int TMax = 5;
+  int maxT = 5;
   int source_v = n * n / 2;
+  BitArray zeros = BitArray::zeros(graph->vertices());
 
   cmplx::simul::Simulator simulator(graph);
   while (true) {
-    BitArray infected = BitArray::zeros(graph->vertices());
+    BitArray infected = zeros;
     infected.set(source_v, true);
     BitArray susceptible = BitArray::ones(graph->vertices());
-    Realization sir_params(p, q, TMax, susceptible, infected,
-                           BitArray::zeros(graph->vertices()));
+    Realization sir_params(p, q, maxT, susceptible, infected, zeros);
     simulator.NaiveSIR(sir_params);
-    if (sir_params.realization().bitCount() > 1)
+    if (sir_params.realization().bitCount() > 1) {
+      common::RealizationRead read(sir_params.realization(), p, q, maxT);
       return std::unique_ptr<SourceDetectionParams>(
-          new SourceDetectionParams(graph, sir_params, 1000000));
+          new SourceDetectionParams(graph, read, 1000000));
+    }
   }
 }
 
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGridISS(
     double p, double q, int n) {
   IGraph* graph = IGraph::UndirectedLattice({n, n});
-  int TMax = 5;
+  int maxT = 5;
   int source_v = n * n / 2;
+  BitArray zeros = BitArray::zeros(graph->vertices());
 
   cmplx::simul::Simulator simulator(graph);
   while (true) {
-    BitArray infected = BitArray::zeros(graph->vertices());
+    BitArray infected = zeros;
     infected.set(source_v, true);
     BitArray s = BitArray::ones(graph->vertices());
-    Realization sir_params(p, q, TMax, s, infected,
-                           BitArray::zeros(graph->vertices()));
+    Realization sir_params(p, q, maxT, s, infected, zeros);
     simulator.NaiveISS(sir_params);
-    if (sir_params.realization().bitCount() > 1)
+    if (sir_params.realization().bitCount() > 1) {
+      common::RealizationRead read(sir_params.realization(), p, q, maxT);
       return std::unique_ptr<SourceDetectionParams>(
-          new SourceDetectionParams(graph, sir_params, 1000000));
+          new SourceDetectionParams(graph, read, 1000000));
+    }
   }
 }
 
 std::unique_ptr<SourceDetectionParams> SourceDetectionParams::ParamsFromGML(
     const std::string& file_name, int source_node, double p, double q) {
   IGraph* graph = IGraph::GraphFromGML(file_name);
-  int TMax = 5;
+  int maxT = 5;
+  BitArray zeros = BitArray::zeros(graph->vertices());
+
   cmplx::simul::Simulator simulator(graph);
   while (true) {
-    BitArray infected = BitArray::zeros(graph->vertices());
+    BitArray infected = zeros;
     infected.set(source_node, true);
     BitArray s = BitArray::ones(graph->vertices());
-    Realization sir_params(p, q, TMax, s, infected,
-                           BitArray::zeros(graph->vertices()));
+    Realization sir_params(p, q, maxT, s, infected, zeros);
     simulator.NaiveSIR(sir_params);
     if (sir_params.realization().bitCount() > 1) {
+      common::RealizationRead read(sir_params.realization(), p, q, maxT);
       SourceDetectionParams* params =
-          new SourceDetectionParams(graph, sir_params, 1000000);
+          new SourceDetectionParams(graph, read, 1000000);
       params->setSourceId(source_node);
       return std::unique_ptr<SourceDetectionParams>(params);
     }
@@ -180,11 +189,9 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
   }
 
   f_real.close();
-
-  Realization realization(p, q, T, BitArray::ones(graph->vertices()), r,
-                          BitArray::zeros(graph->vertices()));
+  common::RealizationRead read(r, p, q, T);
   return std::unique_ptr<SourceDetectionParams>(
-      new SourceDetectionParams(graph, realization, 100000));
+      new SourceDetectionParams(graph, read, 100000));
 }
 
 std::string SourceDetectionParams::summary() const {
