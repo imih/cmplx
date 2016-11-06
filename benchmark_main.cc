@@ -12,7 +12,7 @@ using cmplx::SourceDetectionParams;
 // [no flag] - DirectMC
 // -m - SoftMargin
 // -s SoftMargin SIS
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   // Paralelized
   MPI::Init(argc, argv);
   bool seq = false;
@@ -36,16 +36,20 @@ int main(int argc, char **argv) {
   }
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
+  cmplx::MpiParal* mpi_paral;
+  std::string filename_prefix = "";
   if (!seq && !sm) {
-    cmplx::DirectMCBenchmark(params.get(), n);
+    mpi_paral = new cmplx::DirectMCParal();
+    filename_prefix += "DMC_";
   } else if (sm) {
-    cmplx::SoftMarginBenchmarkConv(params.get(), n);
-    // cmplx::SoftMarginBenchmarkStepByStep(params.get(), n);
+    mpi_paral = new cmplx::SoftMCParal();
+    filename_prefix += "SM_";
   } else {
-    // SeqMonteCarloBenchmarkStepByStep(params.get(), n);
-    cmplx::SeqMonteCarloBenchmark(params.get(), n);
+    mpi_paral = new cmplx::SeqISParal();
+    filename_prefix += "Seq_";
   }
 
+  mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
   MPI::Finalize();
   return 0;
 }

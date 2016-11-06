@@ -8,7 +8,7 @@
 using cmplx::SourceDetectionParams;
 
 // -type {-P 10p -Q 10q}
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
   // Paralelized
   MPI::Init(argc, argv);
@@ -37,8 +37,10 @@ int main(int argc, char **argv) {
 
   std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGridISS(P / 10.0, Q / 10.0, n);
-  cmplx::GenerateSoftMarginDistributions(params.get(), 1,
-                                         cmplx::ModelType::ISS);
+  cmplx::MpiParal* mpi_paral = new cmplx::SeqISParal();
+  std::string filename_prefix = "GridISS_";
+  mpi_paral->generateDistribution(params.get(), cmplx::ModelType::ISS,
+                                  filename_prefix);
 
   MPI::Finalize();
   return 0;

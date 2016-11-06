@@ -23,8 +23,8 @@ add_subdirectory(source_detector)
 add_subdirectory(mpi)
 
 set(CMAKE_CXX_COMPILER mpicxx)
-add_executable(main main.cc)
-target_link_libraries(main common simulator source_detector mpi_detection mpi ${IGRAPH_LIBRARY})
+add_executable(benchmark_main benchmark_main.cc)
+target_link_libraries(benchmark_main common simulator source_detector mpi_detection mpi ${IGRAPH_LIBRARY})
 add_executable(main_iss main_iss.cc)
 
 target_link_libraries(main_iss common simulator source_detector mpi_detection mpi ${IGRAPH_LIBRARY})
