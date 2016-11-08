@@ -48,36 +48,10 @@ typedef long long ll;
 
 namespace cmplx {
 
-MPIDirectMC::MPIDirectMC() : MpiParal() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-}
-
-void MPIDirectMC::send_simul_end() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  for (int v = 1; v < processes_; ++v) {
-    Message end_message;
-    MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
-                          MessageType::SIMUL_END);
-  }
-}
-
 void MPIDirectMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
                                       int benchmark_no, ModelType model_type) {
   if (rank_ == 0) {
-    string filename = "DMCbench_SBS_" + std::to_string(benchmark_no) + ".info";
-    FILE *f = fopen(filename.c_str(), "a+");
-    vector<int> sims = {(int)1e4, (int)1e5, (int)1e6,
-                        (int)1e7, (int)1e8, (int)1e9};
-    for (int sim : sims) {
-      fprintf(f, "s: %d\n", sim);
-      params->setSimulations(sim);
-      vector<double> p = master(params, false, false);
-      for (int i = 0; i < (int)p.size(); ++i)
-        fprintf(f, "%.10lf%c", p[i], i + 1 == (int)p.size() ? '\n' : ' ');
-      fflush(f);
-    }
-    fclose(f);
+    ParalDirectMC::benchmarkStepByStep(params, benchmark_no);
     send_simul_end();
   } else {
     worker(params, model_type);
@@ -85,24 +59,38 @@ void MPIDirectMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
   exit(0);
 }
 
+void MPIDirectMC::send_simul_end() {
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  for (int v = 1; v < processes_; ++v) {
+    Message end_message;
+    MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                          MessageType::SIMUL_END);
+  }
+}
+
 vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
                                    bool end, bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
   assert(rank == 0);
 
   const long long simulations = params->simulations();
-
-  int vertices = params->graph()->vertices();
-  const IGraph *graph = params->graph().get();
   const common::RealizationRead &snapshot = params->realization();
 
   long long cur_simul_count = 0;
   int cur_v = nextV(0, snapshot.realization());
+
+  const IGraph *graph = params->graph().get();
+  int vertices = params->graph()->vertices();
   vector<int> events_resp(vertices, 0);
+
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
+
   int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
   assert(simulations % (int)SIMUL_PER_REQ == 0);
+
   while (jobs_remaining > 0) {
     for (int i = 0; i < processes_ - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
@@ -149,80 +137,14 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
     }
   }
 
-  double sum = 0;
-  for (int v = 0; v < vertices; ++v) {
-    sum += events_resp[v];
-  }
-  assert(sum > 0);
-
-  printf("\r\r\n");
-  vector<double> p;
-  p.clear();
-  for (int v = 0; v < vertices; ++v) {
-    p.push_back(events_resp[v] / sum);
-  }
-  return p;
-}
-
-vector<double> MPIDirectMC::convMaster(SourceDetectionParams *params) {
-  MPI::Datatype message_type = datatypeOfMessage();
-
-  vector<int> sims = {100 * (int)1e4,   200 * (int)1e4,   1000 * (int)1e4,
-                      2000 * (int)1e4,  10000 * (int)1e4, 20000 * (int)1e4,
-                      100000 * (int)1e4};
-
-  /***************  */
-  double c = 0.05;  //
-  /**************   */
-  int s0 = sims[0];
-  params->setSimulations(s0);
-  vector<double> p0 = master(params, false, false);
-
-  int MAP0 = std::max_element(p0.begin(), p0.end()) - p0.begin();
-  double pml0 = *std::max_element(p0.begin(), p0.end());
-  int bits = params->realization().bitCount();
-  for (int s_id = 1; s_id < (int)sims.size(); ++s_id) {
-    int s1 = sims[s_id];
-    printf("s: %d\n", s1);
-    params->setSimulations(s1);
-    vector<double> p1 = master(params, false, false);
-
-    int MAP1 = std::max_element(p1.begin(), p1.end()) - p1.begin();
-    double pml1 = *std::max_element(p1.begin(), p1.end());
-    bool converge = true;
-    if (MAP0 != MAP1) converge = false;
-    if (isnan(pml1)) {
-      converge = false;
-      printf("NAN! %d \n", s1);
-    }
-    double delta = dabs(pml1 - pml0) / pml1;
-    printf("c: %lf\n", delta);
-    if (delta > c) converge = false;
-    int pos = 0;
-    for (int i = 0; i < (int)p1.size(); ++i) {
-      if (dabs(p0[i] - p1[i]) > c) converge = false;
-      if (p1[i] > 0) pos++;
-    }
-    if (pos == 0) converge = false;
-    if (converge) {
-      printf("Converged for %d\n", s0);
-      send_simul_end();
-      break;
-    }
-    pml0 = pml1;
-    s0 = s1;
-    p0 = p1;
-    MAP0 = MAP1;
-  }
-  params->setSimulations(s0);
-  return p0;
+  return responseToProb(events_resp, vertices);
 }
 
 void MPIDirectMC::worker(const SourceDetectionParams *params,
                          ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
 
-  int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
   const common::RealizationRead &snapshot = params->realization();
 

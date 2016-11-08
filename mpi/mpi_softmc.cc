@@ -47,11 +47,6 @@ typedef long long ll;
 
 namespace cmplx {
 
-MPISoftMC::MPISoftMC() : MpiParal() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-}
-
 void MPISoftMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
                                     int benchmark_no, ModelType model_type) {
 
@@ -81,6 +76,7 @@ void MPISoftMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
 
 void MPISoftMC::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
@@ -92,6 +88,7 @@ vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
                                  bool print) {
   assert(rank_ == 0);
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
 
   double p = params->realization().p();
   double q = params->realization().q();
@@ -255,6 +252,8 @@ std::vector<double> MPISoftMC::convMaster(SourceDetectionParams *params) {
 vector<double> MPISoftMC::softConvMaster(cmplx::SourceDetectionParams *params,
                                          bool end) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+
   int convergeG = 0;
   std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
                            10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
@@ -340,6 +339,7 @@ vector<double> MPISoftMC::softConvMaster(cmplx::SourceDetectionParams *params,
 void MPISoftMC::worker(const SourceDetectionParams *params,
                        ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
   int rank = MPI::COMM_WORLD.Get_rank();
   assert(rank > 0);
 

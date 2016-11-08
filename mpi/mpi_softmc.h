@@ -4,6 +4,7 @@
 #include "mpi_paral.h"
 #include "../source_detector/source_detection_params.h"
 #include "../source_detector/source_detector.h"
+#include "../source_detector/paral_directmc.h"
 
 #include <vector>
 
@@ -11,7 +12,7 @@ namespace cmplx {
 
 class MPISoftMC : public MpiParal {
  public:
-  MPISoftMC();
+  MPISoftMC() {}
 
   void benchmarkStepByStep(SourceDetectionParams* params, int benchmark_no,
                            ModelType model_type);
