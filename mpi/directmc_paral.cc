@@ -49,12 +49,12 @@ typedef long long ll;
 namespace cmplx {
 
 DirectMCParal::DirectMCParal() : MpiParal() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
 }
 
 void DirectMCParal::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  puts("Commit!");
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
@@ -89,6 +89,7 @@ void DirectMCParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
 vector<double> DirectMCParal::master(const SourceDetectionParams *params,
                                      bool end, bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
+message_type.Commit();
   assert(rank == 0);
 
   const long long simulations = params->simulations();
@@ -167,10 +168,12 @@ vector<double> DirectMCParal::master(const SourceDetectionParams *params,
 
 vector<double> DirectMCParal::convMaster(SourceDetectionParams *params) {
   MPI::Datatype message_type = datatypeOfMessage();
+message_type.Commit();
 
-  vector<int> sims = {100 * (int)1e4,   200 * (int)1e4,   1000 * (int)1e4,
-                      2000 * (int)1e4,  10000 * (int)1e4, 20000 * (int)1e4,
-                      100000 * (int)1e4};
+  vector<int> sims = {(int)1e6,   2* (int)1e6,  4 * (int) 1e6, 
+			(int)1e7, 2* (int)1e7,  4 * (int) 1e7,
+ 			(int)1e8, 2* (int)1e8, 4 * (int) 1e8,
+                      (int)1e9, 2 * (int) 1e9};
 
   /***************  */
   double c = 0.05;  //
@@ -192,7 +195,7 @@ vector<double> DirectMCParal::convMaster(SourceDetectionParams *params) {
     double pml1 = *std::max_element(p1.begin(), p1.end());
     bool converge = true;
     if (MAP0 != MAP1) converge = false;
-    if (isnan(pml1)) {
+    if (std::isnan(pml1)) {
       converge = false;
       printf("NAN! %d \n", s1);
     }
@@ -222,6 +225,7 @@ vector<double> DirectMCParal::convMaster(SourceDetectionParams *params) {
 void DirectMCParal::worker(const SourceDetectionParams *params,
                            ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
+message_type.Commit();
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();
