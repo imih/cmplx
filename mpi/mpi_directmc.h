@@ -4,14 +4,15 @@
 #include "mpi_paral.h"
 #include "../source_detector/source_detection_params.h"
 #include "../source_detector/source_detector.h"
+#include "../source_detector/paral_directmc.h"
 
 #include <vector>
 
 namespace cmplx {
 
-class MPIDirectMC : public MpiParal {
+class MPIDirectMC : public MpiParal, public ParalDirectMC {
  public:
-  MPIDirectMC();
+  MPIDirectMC() {}
 
   void benchmarkStepByStep(cmplx::SourceDetectionParams* params,
                            int benchmark_no, ModelType model_type);
@@ -20,7 +21,14 @@ class MPIDirectMC : public MpiParal {
   std::vector<double> master(const SourceDetectionParams* params, bool end,
                              bool print);
 
-  std::vector<double> convMaster(SourceDetectionParams* params);
+  std::vector<double> master(const SourceDetectionParams* params) {
+    return master(params, false, false);
+  }
+
+  std::vector<double> convMaster(SourceDetectionParams* params) {
+    return ParalDirectMC::convMaster(params);
+  }
+
   void worker(const SourceDetectionParams* params, ModelType model_type);
   void send_simul_end();
 };

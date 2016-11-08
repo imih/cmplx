@@ -47,14 +47,12 @@ MPI::Datatype datatypeOfMessage() {
 
 namespace cmplx {
 
-MPISeqIS::MPISeqIS() : MpiParal() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-}
+MPISeqIS::MPISeqIS() : MpiParal() {}
 
 void MPISeqIS::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
                                    int benchmark_no, ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
 
   if (rank_ == 0) {
     std::string filename =
@@ -84,6 +82,7 @@ void MPISeqIS::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
 
 void MPISeqIS::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
@@ -159,6 +158,7 @@ vector<double> MPISeqIS::convMaster(cmplx::SourceDetectionParams *params) {
 vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
                                 bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
 
   assert(rank_ == 0);
 
@@ -227,6 +227,7 @@ vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
 void MPISeqIS::worker(const SourceDetectionParams *params,
                       ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
   assert(rank_ > 0);
 
   int vertices = params->graph()->vertices();
