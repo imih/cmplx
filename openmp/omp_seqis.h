@@ -1,7 +1,7 @@
 #ifndef SEQIS_PARAL_H
 #define SEQIS_PARAL_H
 
-#include "mpi_paral.h"
+#include "omp_paral.h"
 #include "../source_detector/source_detection_params.h"
 #include "../source_detector/source_detector.h"
 
@@ -9,20 +9,20 @@
 
 namespace cmplx {
 
-class SeqISParal : public MpiParal {
+class OMPSeqIS : public OmpParal {
  public:
-  SeqISParal();
+  OMPSeqIS() {}
 
   void benchmarkStepByStep(cmplx::SourceDetectionParams* params,
-                           int benchmark_no, ModelType model_type);
+                           int benchmark_no);
 
  private:
-  std::vector<double> master(const SourceDetectionParams* params, bool end,
-                             bool print);
+  std::vector<double> master(const SourceDetectionParams* params);
 
   std::vector<double> convMaster(SourceDetectionParams* params);
-  void worker(const SourceDetectionParams* params, ModelType model_type);
-  void send_simul_end();
+
+  double work(const SourceDetectionParams* params, ModelType model_type,
+              int source_id, int sample_size);
 };
 
 }  // namespace cmplx

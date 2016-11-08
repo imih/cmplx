@@ -1,5 +1,5 @@
-#ifndef SOFTMC_PARAL_H
-#define SOFTMC_PARAL_H
+#ifndef MPI_SOFTMC_H
+#define MPI_SOFTMC_H
 
 #include "mpi_paral.h"
 #include "../source_detector/source_detection_params.h"
@@ -9,9 +9,9 @@
 
 namespace cmplx {
 
-class SoftMCParal : public MpiParal {
+class MPISoftMC : public MpiParal {
  public:
-  SoftMCParal();
+  MPISoftMC();
 
   void benchmarkStepByStep(SourceDetectionParams* params, int benchmark_no,
                            ModelType model_type);
@@ -27,4 +27,4 @@ class SoftMCParal : public MpiParal {
 };
 
 }  // namespace cmplx
-#endif  // SOFTMC_PARAL_H
+#endif  // MPI_SOFTMC_H

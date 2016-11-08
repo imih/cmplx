@@ -1,8 +1,8 @@
 #ifndef SOURCE_DETECTION_PARAL_H
 #define SOURCE_DETECTION_PARAL_H
 
-#include "directmc_paral.h"
-#include "softmc_paral.h"
-#include "seqis_paral.h"
+#include "omp_directmc.h"
+#include "omp_softmc.h"
+#include "omp_seqis.h"
 
 #endif  // SOURCE_DETECTION_PARAL_H

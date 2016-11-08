@@ -1,5 +1,5 @@
-#ifndef DIRECTMC_PARAL_H
-#define DIRECTMC_PARAL_H
+#ifndef MPI_SEQIS_H
+#define MPI_SEQIS_H
 
 #include "mpi_paral.h"
 #include "../source_detector/source_detection_params.h"
@@ -9,9 +9,9 @@
 
 namespace cmplx {
 
-class DirectMCParal : public MpiParal {
+class MPISeqIS : public MpiParal {
  public:
-  DirectMCParal();
+  MPISeqIS();
 
   void benchmarkStepByStep(cmplx::SourceDetectionParams* params,
                            int benchmark_no, ModelType model_type);
@@ -26,4 +26,4 @@ class DirectMCParal : public MpiParal {
 };
 
 }  // namespace cmplx
-#endif  // DIRECTMC_PARAL_H
+#endif  // MPI_SEQIS_H

@@ -1,4 +1,4 @@
-#include "softmc_paral.h"
+#include "mpi_softmc.h"
 
 #include "../common/bit_array.h"
 #include "../common/igraph.h"
@@ -47,13 +47,13 @@ typedef long long ll;
 
 namespace cmplx {
 
-SoftMCParal::SoftMCParal() : MpiParal() {
+MPISoftMC::MPISoftMC() : MpiParal() {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 }
 
-void SoftMCParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                      int benchmark_no, ModelType model_type) {
+void MPISoftMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                    int benchmark_no, ModelType model_type) {
 
   if (rank_ == 0) {
     std::string filename =
@@ -79,7 +79,7 @@ void SoftMCParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
   exit(0);
 }
 
-void SoftMCParal::send_simul_end() {
+void MPISoftMC::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
@@ -88,8 +88,8 @@ void SoftMCParal::send_simul_end() {
   }
 }
 
-vector<double> SoftMCParal::master(const SourceDetectionParams *params,
-                                   bool end, bool print) {
+vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
+                                 bool print) {
   assert(rank_ == 0);
   MPI::Datatype message_type = datatypeOfMessage();
 
@@ -197,7 +197,7 @@ vector<double> SoftMCParal::master(const SourceDetectionParams *params,
   return P;
 }
 
-std::vector<double> SoftMCParal::convMaster(SourceDetectionParams *params) {
+std::vector<double> MPISoftMC::convMaster(SourceDetectionParams *params) {
   std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
                            10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
                            100 * (int)1e4, 200 * (int)1e4, 400 * (int)1e4,
@@ -252,8 +252,8 @@ std::vector<double> SoftMCParal::convMaster(SourceDetectionParams *params) {
   return P;
 }
 
-vector<double> SoftMCParal::softConvMaster(cmplx::SourceDetectionParams *params,
-                                           bool end) {
+vector<double> MPISoftMC::softConvMaster(cmplx::SourceDetectionParams *params,
+                                         bool end) {
   MPI::Datatype message_type = datatypeOfMessage();
   int convergeG = 0;
   std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
@@ -337,8 +337,8 @@ vector<double> SoftMCParal::softConvMaster(cmplx::SourceDetectionParams *params,
   return P;
 }
 
-void SoftMCParal::worker(const SourceDetectionParams *params,
-                         ModelType model_type) {
+void MPISoftMC::worker(const SourceDetectionParams *params,
+                       ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
   int rank = MPI::COMM_WORLD.Get_rank();
   assert(rank > 0);

@@ -8,10 +8,6 @@ option(test "Build all tests." OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "/usr/share/cmake/")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
-find_package(MPI REQUIRED)
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS}  ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
-include_directories(${MPI_INCLUDE_PATH})
 
 set(Igraph_DIR "~/dipl/cmplx/common/")
 find_package(Igraph REQUIRED)
@@ -21,10 +17,23 @@ add_subdirectory(common)
 add_subdirectory(simul)
 add_subdirectory(source_detector)
 add_subdirectory(mpi)
+add_subdirectory(openmp)
+
+
+find_package(OpenMP REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+add_executable(openmp_benchmark_main omp_benchmark_main.cc)
+target_link_libraries(openmp_benchmark_main common simulator source_detector openmp_detection ${IGRAPH_LIBRARY})
 
 set(CMAKE_CXX_COMPILER mpicxx)
+find_package(MPI REQUIRED)
+set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS}  ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(${MPI_INCLUDE_PATH})
+
 add_executable(benchmark_main benchmark_main.cc)
 target_link_libraries(benchmark_main common simulator source_detector mpi_detection mpi ${IGRAPH_LIBRARY})
+
 add_executable(main_iss main_iss.cc)
 
 target_link_libraries(main_iss common simulator source_detector mpi_detection mpi ${IGRAPH_LIBRARY})
