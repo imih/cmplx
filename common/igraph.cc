@@ -77,7 +77,7 @@ double IGraph::closeness(int node_id) const {
     igraph_vs_t *vs_t = (igraph_vs_t *)malloc(sizeof(igraph_vs_t));
     igraph_vs_all(vs_t);
     igraph_closeness(graph_, closeness_.get()->vector(), *vs_t, IGRAPH_ALL,
-                     NULL, true /* normalize*/);
+                     NULL); //, true /* normalize*/);
     delete vs_t;
   }
   return (*closeness_.get())[node_id];
