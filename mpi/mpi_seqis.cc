@@ -1,4 +1,4 @@
-#include "seqis_paral.h"
+#include "mpi_seqis.h"
 
 #include "../common/bit_array.h"
 #include "../common/igraph.h"
@@ -47,13 +47,13 @@ MPI::Datatype datatypeOfMessage() {
 
 namespace cmplx {
 
-SeqISParal::SeqISParal() : MpiParal() {
+MPISeqIS::MPISeqIS() : MpiParal() {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 }
 
-void SeqISParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                     int benchmark_no, ModelType model_type) {
+void MPISeqIS::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                   int benchmark_no, ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
 
   if (rank_ == 0) {
@@ -82,7 +82,7 @@ void SeqISParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
   exit(0);
 }
 
-void SeqISParal::send_simul_end() {
+void MPISeqIS::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
@@ -91,7 +91,7 @@ void SeqISParal::send_simul_end() {
   }
 }
 
-vector<double> SeqISParal::convMaster(cmplx::SourceDetectionParams *params) {
+vector<double> MPISeqIS::convMaster(cmplx::SourceDetectionParams *params) {
   assert(rank_ == 0);
   std::vector<int> sims = {(int)1e4,      2 * (int)1e4,  4 * (int)1e4,
                            8 * (int)1e4,  10 * (int)1e4, 20 * (int)1e4,
@@ -156,8 +156,8 @@ vector<double> SeqISParal::convMaster(cmplx::SourceDetectionParams *params) {
   return res;
 }
 
-vector<double> SeqISParal::master(const SourceDetectionParams *params, bool end,
-                                  bool print) {
+vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
+                                bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
 
   assert(rank_ == 0);
@@ -224,8 +224,8 @@ vector<double> SeqISParal::master(const SourceDetectionParams *params, bool end,
   return events_resp;
 }
 
-void SeqISParal::worker(const SourceDetectionParams *params,
-                        ModelType model_type) {
+void MPISeqIS::worker(const SourceDetectionParams *params,
+                      ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
   assert(rank_ > 0);
 

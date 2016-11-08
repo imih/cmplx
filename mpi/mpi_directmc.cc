@@ -1,4 +1,4 @@
-#include "directmc_paral.h"
+#include "mpi_directmc.h"
 
 #include "../common/bit_array.h"
 #include "../common/igraph.h"
@@ -48,13 +48,9 @@ typedef long long ll;
 
 namespace cmplx {
 
-DirectMCParal::DirectMCParal() : MpiParal() {
-}
-
-void DirectMCParal::send_simul_end() {
+void MPIDirectMC::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  puts("Commit!");
   for (int v = 1; v < processes_; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
@@ -62,9 +58,8 @@ void DirectMCParal::send_simul_end() {
   }
 }
 
-void DirectMCParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                        int benchmark_no,
-                                        ModelType model_type) {
+void MPIDirectMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                      int benchmark_no, ModelType model_type) {
   if (rank_ == 0) {
     string filename = "DMCbench_SBS_" + std::to_string(benchmark_no) + ".info";
     FILE *f = fopen(filename.c_str(), "a+");
@@ -86,8 +81,8 @@ void DirectMCParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
   exit(0);
 }
 
-vector<double> DirectMCParal::master(const SourceDetectionParams *params,
-                                     bool end, bool print) {
+vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
+                                   bool end, bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
 message_type.Commit();
   assert(rank == 0);
@@ -166,7 +161,7 @@ message_type.Commit();
   return p;
 }
 
-vector<double> DirectMCParal::convMaster(SourceDetectionParams *params) {
+vector<double> MPIDirectMC::convMaster(SourceDetectionParams *params) {
   MPI::Datatype message_type = datatypeOfMessage();
 message_type.Commit();
 
@@ -222,8 +217,8 @@ message_type.Commit();
   return p0;
 }
 
-void DirectMCParal::worker(const SourceDetectionParams *params,
-                           ModelType model_type) {
+void MPIDirectMC::worker(const SourceDetectionParams *params,
+                         ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
 message_type.Commit();
 

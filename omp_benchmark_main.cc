@@ -1,10 +1,11 @@
 #include "source_detector/source_detection_params.h"
 #include "source_detector/source_detector.h"
-#include "mpi/mpi_source_detection.h"
+#include "openmp/omp_source_detection.h"
 
-#include <mpi.h>
 #include <ctime>
 #include <string>
+
+#include <omp.h>
 
 using cmplx::SourceDetectionParams;
 
@@ -14,7 +15,9 @@ using cmplx::SourceDetectionParams;
 // -s SoftMargin SIS
 int main(int argc, char** argv) {
   // Paralelized
-  MPI::Init(argc, argv);
+  //
+  //(void)omp_set_dynamic(1);
+
   bool seq = false;
   bool sm = false;
   int n = 0;
@@ -36,21 +39,19 @@ int main(int argc, char** argv) {
   }
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
-  cmplx::MpiParal* mpi_paral;
+  cmplx::OmpParal* omp_paral;
   std::string filename_prefix = "";
   if (!seq && !sm) {
-    mpi_paral = new cmplx::MPIDirectMC();
+    omp_paral = new cmplx::OMPDirectMCParal();
     filename_prefix += "DMC_";
   } else if (sm) {
-    mpi_paral = new cmplx::MPISoftMC();
+    omp_paral = new cmplx::OMPSoftMC();
     filename_prefix += "SM_";
   } else {
-    mpi_paral = new cmplx::MPISeqIS();
+    omp_paral = new cmplx::OMPSeqIS();
     filename_prefix += "Seq_";
   }
 
-  mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
-  MPI::Finalize();
-  delete mpi_paral;
+  omp_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
   return 0;
 }
