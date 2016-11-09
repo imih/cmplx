@@ -64,10 +64,10 @@ int DirectMonteCarloDetector::DMCSingleSourceSimulation(
   bool prunned = false;
   switch (model_type) {
     case ModelType::SIR:
-      prunned = simulator_.NaiveSIR(params0, true, realization.realization());
+      prunned = simulator_->NaiveSIR(params0, true, realization.realization());
       break;
     case ModelType::ISS:
-      prunned = simulator_.NaiveISS(params0, true, realization.realization());
+      prunned = simulator_->NaiveISS(params0, true, realization.realization());
       break;
   }
   if (prunned) return 0;
@@ -107,9 +107,9 @@ double SoftMarginDetector::SMSingleSourceSimulation(
   Realization params0 = paramsForSingleSource(source_id, realization);
   bool prunned = false;
   if (model_type == ModelType::SIR) {
-    prunned = simulator_.NaiveSIR(params0);
+    prunned = simulator_->NaiveSIR(params0);
   } else if (model_type == ModelType::ISS) {
-    prunned = simulator_.NaiveISS(params0);
+    prunned = simulator_->NaiveISS(params0);
   }
   BitArray observed = params0.infected() | params0.recovered();
   return JaccardSimilarity(realization.realization(), observed);
@@ -190,7 +190,7 @@ std::set<int> SequentialMCDetector::buildReachable(const BitArray& infected) {
   s.clear();
   std::vector<int> infected_positions = infected.positions();
   for (int pos : infected_positions) {
-    const IGraph* graph = simulator_.graph();
+    const IGraph* graph = simulator_->graph();
     const common::IVector<int>& adj_list = graph->adj_list(pos);
     for (int i = 0; i < (int)adj_list.size(); ++i) {
       s.insert(adj_list[i]);
@@ -207,12 +207,12 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
   std::set<int> reachable = buildReachable(prev_inf);
   BitArray next_inf = prev_inf;
   BitArray next_rec = prev_rec;
-  const common::IGraph* graph = simulator_.graph();
+  const common::IGraph* graph = simulator_->graph();
   double G = 1;
   for (int t : target_infected_idx) {
     if (prev_inf.bit(t)) {
       double q2 = q;
-      if (simulator_.eventDraw(q2)) {
+      if (simulator_->eventDraw(q2)) {
         G *= q2;
         // try I -> R
         next_rec.set(t, true);
@@ -229,7 +229,7 @@ SequentialMCDetector::NewSample SequentialMCDetector::drawSample(
 
       double p2 = 1 - pow((1 - p), D);
       if (maximize_hits && T == tMAX - 1) p2 = 1;
-      if (simulator_.eventDraw(p2)) {
+      if (simulator_->eventDraw(p2)) {
         // S -> I
         next_inf.set(t, true);
         G *= p2;
@@ -311,7 +311,7 @@ std::vector<SeqSample> SequentialMCDetector::resampling(
       }
 
       for (int i = 0; i < sample_size; ++i) {
-        double p = simulator_.P() * sum;
+        double p = simulator_->P() * sum;
         int lo = 0;
         int hi = sample_size - 1;
         while (lo < hi) {
@@ -349,7 +349,7 @@ std::vector<SeqSample> SequentialMCDetector::resampling(
       }
       double maxP = P.back();
       for (int i = 0; i < m_r; ++i) {
-        double p = simulator_.P() * maxP;
+        double p = simulator_->P() * maxP;
         int lo = 0;
         int hi = sample_size - 1;
         while (lo < hi) {

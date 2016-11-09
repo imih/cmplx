@@ -17,7 +17,10 @@ enum ModelType {
 
 class SourceDetector {
  public:
-  SourceDetector(const common::IGraph* g) : simulator_(g) {}
+  SourceDetector(const common::IGraph* g)
+      : simulator_(new simul::Simulator(g)) {}
+
+  ~SourceDetector() = default;
 
   /** Return starting parameters for the epidemic that starts with a single
    source defined by source_vertex and is capable of producing a snapshot
@@ -27,7 +30,7 @@ class SourceDetector {
       int source_vertex, const common::RealizationRead& realization);
 
  protected:
-  simul::Simulator simulator_;
+  std::unique_ptr<simul::Simulator> simulator_;
 };
 
 class DirectMonteCarloDetector : public SourceDetector {

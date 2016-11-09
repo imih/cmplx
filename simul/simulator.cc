@@ -38,7 +38,7 @@ bool Simulator::NaiveSIR(Realization &sir_params, bool prunning,
   BitArray R = sir_params.recovered();
 
   assert(I.bitCount() == 1);
-  assert(S.bitCount() == S.bits_num() - 1);
+  assert(S.bitCount() == S.bits_num());
   IDqueue q(I);
   assert(q.size() == 1);
 
