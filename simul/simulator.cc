@@ -4,6 +4,7 @@
 #include "../common/ivector.h"
 #include "../common/ivector.cc"
 
+#include <sys/syscall.h>
 #include <cmath>
 #include <fstream>
 #include <iostream>
@@ -26,8 +27,8 @@ Simulator::Simulator(const common::IGraph *graph)
     : graph_(graph), prob_distribution_(0, 1) {
   struct timeval tv;
   gettimeofday(&tv, 0);
-  srand(tv.tv_usec * getpid());
-  generator_.seed(tv.tv_usec * getpid());
+  srand(1LL * tv.tv_usec * syscall(SYS_gettid));
+  generator_.seed(tv.tv_usec * syscall(SYS_gettid));
 }
 
 bool Simulator::NaiveSIR(Realization &sir_params, bool prunning,
