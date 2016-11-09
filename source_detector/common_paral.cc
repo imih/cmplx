@@ -82,7 +82,7 @@ std::vector<double> CommonParal::convMaster(SourceDetectionParams *params,
     double pml1 = *std::max_element(p1.begin(), p1.end());
     bool converge = true;
     if (MAP0 != MAP1) converge = false;
-    if (isnan(pml1)) {
+    if (std::isnan(pml1)) {
       converge = false;
       printf("NAN! %d \n", s1);
     }

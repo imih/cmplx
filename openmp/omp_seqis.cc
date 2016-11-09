@@ -66,7 +66,7 @@ vector<double> OMPSeqIS::master(const SourceDetectionParams *params) {
         work(params, ModelType::SIR, node_id, SIMUL_PER_REQ);
   }
 
-  responseToProb(events_resp, vertices);
+  return responseToProb(events_resp, vertices);
 }
 
 // TODO make thread safe!
