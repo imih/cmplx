@@ -99,7 +99,6 @@ void MPISoftMC::send_simul_end() {
 
 vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
                                  bool print) {
-  assert(rank_ == 0);
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
@@ -182,7 +181,6 @@ void MPISoftMC::worker(const SourceDetectionParams *params,
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
   int rank = MPI::COMM_WORLD.Get_rank();
-  assert(rank > 0);
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();

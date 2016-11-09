@@ -18,11 +18,29 @@ class CommonMaster {
 
 class CommonTraits {
  public:
-  virtual const std::vector<int>& benchmarkStepByStepSims() = 0;
+  CommonTraits(std::vector<int> benchmarkStepByStepSims,
+               std::string benchmarkStepByStepPrefix,
+               std::vector<int> convMasterSims)
+      : benchmarkStepByStepSims_(benchmarkStepByStepSims),
+        benchmarkStepByStepPrefix_(benchmarkStepByStepPrefix),
+        convMasterSims_(convMasterSims) {}
 
-  virtual const std::string& benchmarkStepByStepPrefix() = 0;
+  const std::vector<int>& benchmarkStepByStepSims() {
+    return benchmarkStepByStepSims_;
+  }
 
-  virtual const std::vector<int>& convMasterSims() = 0;
+  const std::string& benchmarkStepByStepPrefix() {
+    return benchmarkStepByStepPrefix_;
+  }
+
+  const std::vector<int>& convMasterSims() { return convMasterSims_; }
+
+ protected:
+  const std::vector<int> benchmarkStepByStepSims_;
+
+  const std::string benchmarkStepByStepPrefix_;
+
+  const std::vector<int> convMasterSims_;
 };
 
 }  // namespace cmplx

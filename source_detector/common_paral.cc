@@ -60,6 +60,13 @@ void CommonParal::benchmarkStepByStep(std::string filename_prefix,
   fclose(f);
 }
 
+void CommonParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                      int benchmark_no, ModelType model_type) {
+  benchmarkStepByStep(common_traits_->benchmarkStepByStepPrefix(),
+                      common_traits_->benchmarkStepByStepSims(), params,
+                      benchmark_no);
+}
+
 std::vector<double> CommonParal::convMaster(SourceDetectionParams *params,
                                             const std::vector<int> &sims) {
   /***************  */

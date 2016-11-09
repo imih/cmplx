@@ -82,8 +82,6 @@ vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
-  assert(rank_ == 0);
-
   double p = params->realization().p();
   double q = params->realization().q();
   int vertices = params->graph()->vertices();
@@ -141,7 +139,6 @@ void MPISeqIS::worker(const SourceDetectionParams *params,
                       ModelType model_type) {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  assert(rank_ > 0);
 
   int vertices = params->graph()->vertices();
   const IGraph *graph = params->graph().get();

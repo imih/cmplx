@@ -65,7 +65,6 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
                                    bool end, bool print) {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  assert(rank == 0);
 
   const long long simulations = params->simulations();
   const common::RealizationRead &snapshot = params->realization();

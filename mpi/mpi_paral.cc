@@ -5,6 +5,8 @@
 
 #include "mpi_common.h"
 
+#include "../source_detector/common_paral.h"
+
 namespace cmplx {
 
 namespace {
@@ -40,7 +42,7 @@ MpiParal::MpiParal(std::unique_ptr<MpiMaster> mpi_master,
     : CommonParal(std::move(common_traits)),
       mpi_master_(std::move(mpi_master)) {
   rank_ = MPI::COMM_WORLD.Get_rank();
-  assert(rank_ > 0);
+  assert(rank_ >= 0);
   processes_ = MPI::COMM_WORLD.Get_size();
 }
 
@@ -53,7 +55,7 @@ void MpiParal::generateDistribution(SourceDetectionParams *params,
   // sleep(2);
 
   if (rank_ == 0) {
-    generateDistribution(params, model_type, filename_prefix);
+    CommonParal::generateDistribution(params, model_type, filename_prefix);
     mpi_master_->send_simul_end();
   } else {
     mpi_master_->worker(params, model_type);
@@ -64,7 +66,7 @@ void MpiParal::generateDistribution(SourceDetectionParams *params,
 void MpiParal::benchmark(SourceDetectionParams *params, int benchmark_no,
                          ModelType model_type, std::string filename_prefix) {
   if (rank_ == 0) {
-    benchmark(params, benchmark_no, model_type, filename_prefix);
+    CommonParal::benchmark(params, benchmark_no, model_type, filename_prefix);
     mpi_master_->send_simul_end();
   } else {
     mpi_master_->worker(params, model_type);
@@ -75,7 +77,7 @@ void MpiParal::benchmark(SourceDetectionParams *params, int benchmark_no,
 void MpiParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
                                    int benchmark_no, ModelType model_type) {
   if (rank_ == 0) {
-    benchmarkStepByStep(params, benchmark_no, model_type);
+    CommonParal::benchmarkStepByStep(params, benchmark_no, model_type);
     mpi_master_->send_simul_end();
   } else {
     mpi_master_->worker(params, model_type);

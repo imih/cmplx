@@ -42,7 +42,7 @@ class CommonParal {
     return x;
   }
 
-  std::vector<double> master(SourceDetectionParams* params) {
+  virtual std::vector<double> master(SourceDetectionParams* params) {
     return common_master_->master(params);
   }
   std::vector<double> convMaster(SourceDetectionParams* params) {
