@@ -1,6 +1,7 @@
 #include "source_detector/source_detection_params.h"
 #include "source_detector/source_detector.h"
 #include "mpi/mpi_source_detection.h"
+#include "mpi/mpi_paral.h"
 
 #include <mpi.h>
 #include <ctime>
@@ -37,12 +38,18 @@ int main(int argc, char** argv) {
 
   std::unique_ptr<SourceDetectionParams> params =
       SourceDetectionParams::ParamsFromGridISS(P / 10.0, Q / 10.0, n);
-  cmplx::MpiParal* mpi_paral = new cmplx::MPISeqIS();
+
   std::string filename_prefix = "GridISS_";
+  std::unique_ptr<cmplx::MpiMaster> mpi_master =
+      std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPISeqIS());
+  std::unique_ptr<cmplx::CommonTraits> common_traits =
+      std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSeqIS());
+
+  std::unique_ptr<cmplx::MpiParal> mpi_paral(
+      new cmplx::MpiParal(std::move(mpi_master), std::move(common_traits)));
   mpi_paral->generateDistribution(params.get(), cmplx::ModelType::ISS,
                                   filename_prefix);
 
   MPI::Finalize();
-  delete mpi_paral;
   return 0;
 }

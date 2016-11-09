@@ -1,6 +1,7 @@
 #include "source_detector/source_detection_params.h"
 #include "source_detector/source_detector.h"
 #include "mpi/mpi_source_detection.h"
+#include "mpi/mpi_paral.h"
 
 #include <mpi.h>
 #include <ctime>
@@ -36,21 +37,29 @@ int main(int argc, char** argv) {
   }
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
-  cmplx::MpiParal* mpi_paral;
   std::string filename_prefix = "";
+  std::unique_ptr<cmplx::MpiMaster> mpi_master;
+  std::unique_ptr<cmplx::CommonTraits> common_traits;
   if (!seq && !sm) {
-    mpi_paral = new cmplx::MPIDirectMC();
+    mpi_master = std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPIDirectMC());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalDirectMC());
     filename_prefix += "DMC_";
   } else if (sm) {
-    mpi_paral = new cmplx::MPISoftMC();
+    mpi_master = std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPISoftMC());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSoftMC());
     filename_prefix += "SM_";
   } else {
-    mpi_paral = new cmplx::MPISeqIS();
+    mpi_master = std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPISeqIS());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSeqIS());
     filename_prefix += "Seq_";
   }
 
+  std::unique_ptr<cmplx::MpiParal> mpi_paral(
+      new cmplx::MpiParal(std::move(mpi_master), std::move(common_traits)));
   mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
   MPI::Finalize();
-  delete mpi_paral;
   return 0;
 }

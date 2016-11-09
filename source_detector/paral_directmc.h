@@ -2,6 +2,7 @@
 #define PARAL_DIRECTMC_H
 
 #include "source_detection_params.h"
+#include "common_paral.h"
 
 #include <vector>
 #include <string>
@@ -9,20 +10,29 @@
 using std::vector;
 
 namespace cmplx {
-class ParalDirectMC {
+class ParalDirectMC : public CommonTraits {
  public:
-  void benchmarkStepByStep(cmplx::SourceDetectionParams* params,
-                           int benchmark_no);
+  ParalDirectMC() {}
+  ~ParalDirectMC() = default;
 
- protected:
-  std::vector<double> responseToProb(const std::vector<int>& events_resp,
-                                     int vertices);
+  const vector<int>& benchmarkStepByStepSims() {
+    return benchmarkStepByStepSims_;
+  }
 
-  std::vector<double> convMaster(SourceDetectionParams* params);
+  const std::string& benchmarkStepByStepPrefix() {
+    return benchmarkStepByStepPrefix_;
+  }
+
+  const vector<int>& convMasterSims() { return convMasterSims_; }
 
  private:
-  virtual std::vector<double> master(
-      const cmplx::SourceDetectionParams* params) = 0;
+  const vector<int> benchmarkStepByStepSims_ = {(int)1e4, (int)1e5, (int)1e6,
+                                                (int)1e7, (int)1e8, (int)1e9};
+  const std::string benchmarkStepByStepPrefix_ = "DMCbench_SBS_";
+
+  const vector<int> convMasterSims_ = {
+      (int)1e6,     2 * (int)1e6, 4 * (int)1e6, (int)1e7,     2 * (int)1e7,
+      4 * (int)1e7, (int)1e8,     2 * (int)1e8, 4 * (int)1e8, (int)1e9};
 };
 }
 

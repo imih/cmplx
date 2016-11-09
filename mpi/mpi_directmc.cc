@@ -4,6 +4,8 @@
 #include "../common/igraph.h"
 #include "../common/realization.h"
 
+#include "mpi_common.h"
+
 #include <mpi.h>
 #include <unistd.h>
 #include <algorithm>
@@ -48,21 +50,11 @@ typedef long long ll;
 
 namespace cmplx {
 
-void MPIDirectMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                      int benchmark_no, ModelType model_type) {
-  if (rank_ == 0) {
-    ParalDirectMC::benchmarkStepByStep(params, benchmark_no);
-    send_simul_end();
-  } else {
-    worker(params, model_type);
-  }
-  exit(0);
-}
-
 void MPIDirectMC::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  for (int v = 1; v < processes_; ++v) {
+  int processes = MpiMaster::processes();
+  for (int v = 1; v < processes; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
                           MessageType::SIMUL_END);
@@ -91,8 +83,9 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
   int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
   assert(simulations % (int)SIMUL_PER_REQ == 0);
 
+  int processes = MpiMaster::processes();
   while (jobs_remaining > 0) {
-    for (int i = 0; i < processes_ - 1; ++i) {
+    for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
         Message init_message;
         MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
@@ -120,7 +113,7 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
       }
     }
 
-    for (int i = 0; i < processes_ - 1; ++i) {
+    for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
         Message received;
         MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
@@ -137,7 +130,18 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
     }
   }
 
-  return responseToProb(events_resp, vertices);
+  double sum = 0;
+  for (int v = 0; v < vertices; ++v) {
+    sum += events_resp[v];
+  }
+
+  printf("\r\r\n");
+  vector<double> p;
+  p.clear();
+  for (int v = 0; v < vertices; ++v) {
+    p.push_back(events_resp[v] / sum);
+  }
+  return p;
 }
 
 void MPIDirectMC::worker(const SourceDetectionParams *params,

@@ -39,19 +39,31 @@ int main(int argc, char** argv) {
   }
 
   auto params = SourceDetectionParams::BenchmarkParams(n);
-  cmplx::OmpParal* omp_paral;
   std::string filename_prefix = "";
+
+  std::unique_ptr<cmplx::CommonMaster> common_master;
+  std::unique_ptr<cmplx::CommonTraits> common_traits;
   if (!seq && !sm) {
-    omp_paral = new cmplx::OMPDirectMCParal();
+    common_master =
+        std::unique_ptr<cmplx::CommonMaster>(new cmplx::OMPDirectMCParal());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalDirectMC());
     filename_prefix += "DMC_";
   } else if (sm) {
-    omp_paral = new cmplx::OMPSoftMC();
+    common_master =
+        std::unique_ptr<cmplx::CommonMaster>(new cmplx::OMPSoftMC());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSoftMC());
     filename_prefix += "SM_";
   } else {
-    omp_paral = new cmplx::OMPSeqIS();
+    common_master = std::unique_ptr<cmplx::CommonMaster>(new cmplx::OMPSeqIS());
+    common_traits =
+        std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSeqIS());
     filename_prefix += "Seq_";
   }
 
+  std::unique_ptr<cmplx::CommonParal> omp_paral(new cmplx::CommonParal(
+      std::move(common_master), std::move(common_traits)));
   omp_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
   return 0;
 }

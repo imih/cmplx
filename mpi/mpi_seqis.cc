@@ -4,6 +4,8 @@
 #include "../common/igraph.h"
 #include "../common/realization.h"
 
+#include "mpi_common.h"
+
 #include <mpi.h>
 #include <unistd.h>
 #include <algorithm>
@@ -43,116 +45,36 @@ MPI::Datatype datatypeOfMessage() {
   MPI::Datatype types[3] = {MPI::INT, MPI::DOUBLE, MPI::INT};
   return MPI::Datatype::Create_struct(3, blockLen, offsets, types);
 }
+
+std::vector<double> responseToProb(const std::vector<double> &events_resp,
+                                   int vertices) {
+  printf("\r\n");
+  /*****/
+  std::vector<double> P = events_resp;
+
+  double sum = 0;
+  for (int v = 0; v < vertices; ++v) {
+    sum += P[v];
+  }
+
+  for (int v = 0; v < vertices; ++v) {
+    if (sum > 0) P[v] /= sum;
+  }
+  return P;
+}
 }  // anonymous
 
 namespace cmplx {
 
-MPISeqIS::MPISeqIS() : MpiParal() {}
-
-void MPISeqIS::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                   int benchmark_no, ModelType model_type) {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-
-  if (rank_ == 0) {
-    std::string filename =
-        "SEQSoftbench_SBS_" + std::to_string(benchmark_no) + ".info";
-    FILE *f = fopen(filename.c_str(), "w+");
-    std::vector<int> sims = {(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6};
-    for (int sim : sims) {
-      fprintf(f, "s: %d\n", sim);
-      params->setSimulations(sim);
-      vector<double> p = master(params, false, false);
-      for (int i = 0; i < (int)p.size(); ++i)
-        fprintf(f, "%.10lf%c", p[i], i + 1 == (int)p.size() ? '\n' : ' ');
-      fflush(f);
-    }
-    fclose(f);
-
-    for (int v = 1; v < processes_; ++v) {
-      Message end_message;
-      MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
-                            MessageType::SIMUL_END);
-    }
-  } else {
-    worker(params, model_type);
-  }
-  exit(0);
-}
-
 void MPISeqIS::send_simul_end() {
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
-  for (int v = 1; v < processes_; ++v) {
+  int processes = MpiMaster::processes();
+  for (int v = 1; v < processes; ++v) {
     Message end_message;
     MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
                           MessageType::SIMUL_END);
   }
-}
-
-vector<double> MPISeqIS::convMaster(cmplx::SourceDetectionParams *params) {
-  assert(rank_ == 0);
-  std::vector<int> sims = {(int)1e4,      2 * (int)1e4,  4 * (int)1e4,
-                           8 * (int)1e4,  10 * (int)1e4, 20 * (int)1e4,
-                           40 * (int)1e4, 80 * (int)1e4, 100 * (int)1e4};
-  int s0 = sims[0];
-  printf("s0: %d\n", s0);
-
-  params->setSimulations(s0);
-  vector<double> p0 = master(params, false, true);
-  double pMAP0 = *std::max_element(p0.begin(), p0.end());
-  double c = 0.05;
-
-  vector<double> res;
-  res.clear();
-  int bits = params->realization().realization().bitCount();
-  int convergeG = 0;
-  int s_id = 1;
-  for (int s = 1; s < (int)sims.size(); ++s) {
-    int s1 = sims[s];
-    printf("s2: %d\n", s1);
-    params->setSimulations(s1);
-
-    bool converge = true;
-    vector<double> p1 = master(params, false, false);
-    double pMAP1 = *std::max_element(p1.begin(), p1.end());
-    double delta = dabs(pMAP1 - pMAP0) / pMAP1;
-    printf("\rc: %lf ", delta);
-    if (delta >= c) converge = false;
-    int pos = 0;
-    for (int j = 0; j < (int)p1.size(); ++j) {
-      if (p1[j] > 0 && (dabs(p1[j] - p0[j]) > c)) converge = false;
-      if (p1[j] > 0) {
-        pos++;
-      }
-    }
-    if (pos == 0) converge = false;
-    printf("\n");
-    if (converge)
-      convergeG++;
-    else
-      convergeG = 0;
-    if (convergeG > 0) {
-      printf("Converged for n=%d\n", s0);
-      res = p0;
-      /*
-      if (end) {
-        send_simul_end();
-      }
-      */
-      break;
-    } else {
-      printf("Not converged.\n");
-    }
-
-    s0 = s1;
-    p0.clear();
-    res = p1;
-    p0.assign(p1.begin(), p1.end());
-    pMAP0 = pMAP1;
-  }
-  params->setSimulations(s0);
-  return res;
 }
 
 vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
@@ -173,8 +95,9 @@ vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
 
   vector<double> events_resp(vertices, 0);
   long long jobs_remaining = 1LL * snapshot.realization().bitCount();
+  int processes = MpiMaster::processes();
   while (jobs_remaining > 0) {
-    for (int i = 0; i < processes_ - 1; ++i) {
+    for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
         Message init_message;
         MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
@@ -195,7 +118,7 @@ vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
       }
     }
 
-    for (int i = 0; i < processes_ - 1; ++i) {
+    for (int i = 0; i < processes - 1; ++i) {
       if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
         Message received;
         MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
@@ -211,17 +134,7 @@ vector<double> MPISeqIS::master(const SourceDetectionParams *params, bool end,
     }
   }
 
-  printf("\r\n");
-  /*****/
-  double sum = 0;
-  for (int v = 0; v < vertices; ++v) {
-    sum += events_resp[v];
-  }
-
-  for (int v = 0; v < vertices; ++v) {
-    if (sum > 0) events_resp[v] /= sum;
-  }
-  return events_resp;
+  return responseToProb(events_resp, vertices);
 }
 
 void MPISeqIS::worker(const SourceDetectionParams *params,

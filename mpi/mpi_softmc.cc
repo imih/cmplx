@@ -4,6 +4,8 @@
 #include "../common/igraph.h"
 #include "../common/realization.h"
 
+#include "mpi_common.h"
+
 #include <mpi.h>
 #include <unistd.h>
 #include <algorithm>
@@ -43,123 +45,10 @@ MPI::Datatype datatypeOfMessage() {
 }
 
 typedef long long ll;
-}  // anonymous
 
-namespace cmplx {
-
-void MPISoftMC::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                                    int benchmark_no, ModelType model_type) {
-
-  if (rank_ == 0) {
-    std::string filename =
-        "SMbench_SBS_" + std::to_string(benchmark_no) + ".info";
-    FILE *f = fopen(filename.c_str(), "a+");
-    std::vector<int> sims = {(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6};
-
-    double a = pow(2, -5);
-    params->setA(a);
-    for (int sim : sims) {
-      fprintf(f, "s: %d\n", sim);
-      params->setSimulations(sim);
-      vector<double> p = master(params, false, false);
-      for (int i = 0; i < (int)p.size(); ++i)
-        fprintf(f, "%.10lf%c", p[i], i + 1 == (int)p.size() ? '\n' : ' ');
-      fflush(f);
-    }
-    fclose(f);
-    send_simul_end();
-  } else {
-    worker(params, model_type);
-  }
-  exit(0);
-}
-
-void MPISoftMC::send_simul_end() {
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-  for (int v = 1; v < processes_; ++v) {
-    Message end_message;
-    MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
-                          MessageType::SIMUL_END);
-  }
-}
-
-vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
-                                 bool print) {
-  assert(rank_ == 0);
-  MPI::Datatype message_type = datatypeOfMessage();
-  message_type.Commit();
-
-  double p = params->realization().p();
-  double q = params->realization().q();
-  const int simulations = params->simulations();
-  int vertices = params->graph()->vertices();
-  const IGraph *graph = params->graph().get();
-  const common::RealizationRead &snapshot = params->realization();
-
-  // master process
-  int cur_simul_count = 0;
-  int cur_v = 0;
-  while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
-    cur_v++;
-  vector<double> events_resp_sum(vertices, 0);
-  vector<long long> events_resp_size(vertices, 0);
-  long long jobs_remaining =
-      1LL * simulations * snapshot.realization().bitCount();
-  assert(jobs_remaining % (int)SIMUL_PER_REQ == 0);
-
-  while (jobs_remaining > 0) {
-    for (int i = 0; i < processes_ - 1; ++i) {
-      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
-        Message init_message;
-        MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
-                             MessageType::SIMUL_PREREQUEST);
-        if (cur_simul_count < simulations) {
-          cur_simul_count += (int)SIMUL_PER_REQ;
-        } else {
-          cur_simul_count = (int)SIMUL_PER_REQ;
-          cur_v++;
-          while ((cur_v < vertices) &&
-                 (snapshot.realization().bit(cur_v) == false)) {
-            cur_v++;
-          }
-          if (cur_v >= vertices) {
-            cur_v = -1;
-          }
-        }
-        if (cur_v == -1) {
-          if (end) {
-            // There's no more jobs
-            Message message;
-            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
-                                  MessageType::SIMUL_END);
-          }
-        } else {
-          Message m = Message(cur_v, 0, params->a());
-          MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
-                                MessageType::SIMUL_REQUEST);
-        }
-      }
-    }
-
-    for (int i = 0; i < processes_ - 1; ++i) {
-      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
-        Message received;
-        MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
-                             MessageType::SIMUL_RESPONSE);
-        jobs_remaining -= (int)SIMUL_PER_REQ;
-        events_resp_sum[received.source_id] += received.event_outcome;
-        events_resp_size[received.source_id]++;
-        if (!i) {
-          printf("\r%.5f",
-                 jobs_remaining * 100 /
-                     ((double)simulations * snapshot.realization().bitCount()));
-          fflush(stdout);
-        }
-      }
-    }
-  }
-
+std::vector<double> responseToProb(
+    const std::vector<double> &events_resp_sum,
+    const std::vector<long long> &events_resp_size, int vertices) {
   printf("\r\n");
   /*****/
   std::vector<double> P;
@@ -193,147 +82,99 @@ vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
   }
   return P;
 }
+}  // anonymous
 
-std::vector<double> MPISoftMC::convMaster(SourceDetectionParams *params) {
-  std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
-                           10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
-                           100 * (int)1e4, 200 * (int)1e4, 400 * (int)1e4,
-                           1000 * (int)1e4};
+namespace cmplx {
 
-  int convergeG = 0;
-  double c = 0.05;
-  double a = pow(2, -5);
-  int s0 = sims[0];
-  printf("s0: %d\n", s0);
-  params->setSimulations(s0);
-  params->setA(a);
-  vector<double> p0 = master(params, false, false);
-  int MAP0 = std::max_element(p0.begin(), p0.end()) - p0.begin();
-  double pMAP0 = *std::max_element(p0.begin(), p0.end());
-  vector<double> P;
-  P.clear();
-  for (int s_id = 1; s_id < (int)sims.size(); ++s_id) {
-    int s1 = sims[s_id];
-    params->setSimulations(s1);
-    printf("\ns: %d\n", s1);
-    vector<double> p1 = master(params, false, false);
-    int MAP1 = std::max_element(p1.begin(), p1.end()) - p1.begin();
-    double pMAP1 = *std::max_element(p1.begin(), p1.end());
-    double delta = dabs(pMAP1 - pMAP0) / pMAP1;
-    printf("c: %lf\n", delta);
-    double converge = true;
-    if (MAP0 != MAP1) converge = false;
-    if (delta > c) converge = false;
-    int pos = 0;
-    for (int j = 0; j < (int)p1.size(); ++j) {
-      if (dabs(p1[j] - p0[j]) > c) converge = false;
-      if (p1[j] > 0) pos++;
-    }
-    if (pos == 0) converge = false;
-    if (converge) {
-      convergeG++;
-      printf("Converged for n=%d\n", s0);
-      P = p0;
-      params->setSimulations(s0);
-      if (convergeG > 0) break;
-    } else {
-      convergeG = 0;
-      printf("Not converged.\n");
-    }
-    s0 = s1;
-    p0.assign(p1.begin(), p1.end());
-    pMAP0 = pMAP1;
-    MAP0 = MAP1;
-    P = p1;
+void MPISoftMC::send_simul_end() {
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
+  int processes = MpiMaster::processes();
+  for (int v = 1; v < processes; ++v) {
+    Message end_message;
+    MPI::COMM_WORLD.Isend(&end_message, 1, message_type, v,
+                          MessageType::SIMUL_END);
   }
-  return P;
 }
 
-vector<double> MPISoftMC::softConvMaster(cmplx::SourceDetectionParams *params,
-                                         bool end) {
+vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
+                                 bool print) {
+  assert(rank_ == 0);
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
-  int convergeG = 0;
-  std::vector<int> sims = {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,
-                           10 * (int)1e4,  20 * (int)1e4,  40 * (int)1e4,
-                           100 * (int)1e4, 200 * (int)1e4, 400 * (int)1e4,
-                           800 * (int)1e4};
+  double p = params->realization().p();
+  double q = params->realization().q();
+  const int simulations = params->simulations();
+  int vertices = params->graph()->vertices();
+  const IGraph *graph = params->graph().get();
+  const common::RealizationRead &snapshot = params->realization();
 
-  double c = 0.05;
-  const int MAXA = 9;
-  int s0 = sims[0];
-  printf("s0: %d\n", s0);
-  vector<double> a(MAXA + 1, 0);
-  for (int i = 3; i <= MAXA; ++i) {
-    a[i] = 1.0 / (double)(1 << i);
-  }
-  vector<double> p0[MAXA + 1];
-  vector<double> pMAP0(MAXA + 1, 0);
-  for (int i = 3; i <= MAXA; ++i) {
-    params->setSimulations(s0);
-    params->setA(a[i]);
-    printf("a[i]: %lf\n", a[i]);
-    p0[i] = master(params, false, false);
-    pMAP0[i] = *std::max_element(p0[i].begin(), p0[i].end());
-  }
+  // master process
+  int cur_simul_count = 0;
+  int cur_v = 0;
+  while ((cur_v < vertices) && (snapshot.realization().bit(cur_v) == false))
+    cur_v++;
+  vector<double> events_resp_sum(vertices, 0);
+  vector<long long> events_resp_size(vertices, 0);
+  long long jobs_remaining =
+      1LL * simulations * snapshot.realization().bitCount();
+  assert(jobs_remaining % (int)SIMUL_PER_REQ == 0);
 
-  vector<int> convergeGlobal(MAXA + 1, 0);
-  vector<double> P;
-  int bits = params->realization().realization().bitCount();
-  for (int s = 1; s < (int)sims.size(); ++s) {
-    int s1 = sims[s];
-    printf("\ns: %d\n", s1);
-    params->setSimulations(s1);
-    vector<double> p1[MAXA + 1];
-    vector<double> pMAP1(MAXA + 1, 0);
-
-    for (int i = MAXA; i >= 3; --i) {
-      printf("\ns: %d a: %.10lf\n", s1, a[i]);
-      params->setA(a[i]);
-      double converge = true;
-      p1[i] = master(params, false, false);
-      pMAP1[i] = *std::max_element(p1[i].begin(), p1[i].end());
-      double delta = dabs(pMAP1[i] - pMAP0[i]) / pMAP1[i];
-      printf("c: %lf\n", delta);
-      if (delta > c) converge = false;
-      int pos = 0;
-      for (int j = 0; j < (int)p1[i].size(); ++j) {
-        if (dabs(p1[i][j] - p0[i][j]) > c) converge = false;
-        if (p1[i][j] > 0) pos++;
-      }
-      if (pos == 0) converge = false;
-      if (converge) {
-        convergeGlobal[i]++;
-        printf("Converged for n=%d a=%lf\n", s0, a[i]);
-        if (convergeGlobal[i] > 0) break;
-      } else {
-        convergeGlobal[i] = 0;
-        printf("Not converged.\n");
-      }
-    }
-
-    bool done = false;
-    for (int i = MAXA; i >= 3; --i) {
-      if (convergeGlobal[i] > 0) {
-        P = p0[i];
-        params->setSimulations(s0);
-        params->setA(a[i]);
-        if (end) {
-          send_simul_end();
+  int processes = MpiMaster::processes();
+  while (jobs_remaining > 0) {
+    for (int i = 0; i < processes - 1; ++i) {
+      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
+        Message init_message;
+        MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
+                             MessageType::SIMUL_PREREQUEST);
+        if (cur_simul_count < simulations) {
+          cur_simul_count += (int)SIMUL_PER_REQ;
+        } else {
+          cur_simul_count = (int)SIMUL_PER_REQ;
+          cur_v++;
+          while ((cur_v < vertices) &&
+                 (snapshot.realization().bit(cur_v) == false)) {
+            cur_v++;
+          }
+          if (cur_v >= vertices) {
+            cur_v = -1;
+          }
         }
-        done = true;
-        break;
+        if (cur_v == -1) {
+          if (end) {
+            // There's no more jobs
+            Message message;
+            MPI::COMM_WORLD.Isend(&message, 1, message_type, i + 1,
+                                  MessageType::SIMUL_END);
+          }
+        } else {
+          Message m = Message(cur_v, 0, params->a());
+          MPI::COMM_WORLD.Isend(&m, 1, message_type, i + 1,
+                                MessageType::SIMUL_REQUEST);
+        }
       }
     }
 
-    s0 = s1;
-    for (int i = 3; i <= MAXA; ++i) p0[i] = p1[i];
-    pMAP0 = pMAP1;
-    if (done) break;
-    P = p1[MAXA];
+    for (int i = 0; i < processes - 1; ++i) {
+      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
+        Message received;
+        MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
+                             MessageType::SIMUL_RESPONSE);
+        jobs_remaining -= (int)SIMUL_PER_REQ;
+        events_resp_sum[received.source_id] += received.event_outcome;
+        events_resp_size[received.source_id]++;
+        if (!i) {
+          printf("\r%.5f",
+                 jobs_remaining * 100 /
+                     ((double)simulations * snapshot.realization().bitCount()));
+          fflush(stdout);
+        }
+      }
+    }
   }
-  return P;
+
+  return responseToProb(events_resp_sum, events_resp_size, vertices);
 }
 
 void MPISoftMC::worker(const SourceDetectionParams *params,

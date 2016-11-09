@@ -10,7 +10,7 @@ if(OPENMP_FOUND)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g ${OpenMP_CXX_FLAGS}")
 endif()
 
-add_library(openmp_detection omp_paral.cc omp_directmc.cc omp_softmc.cc omp_seqis.cc)
+add_library(openmp_detection omp_directmc.cc omp_softmc.cc omp_seqis.cc)
 target_include_directories(openmp_detection PUBLIC)
 
 link_directories(source_detector/)

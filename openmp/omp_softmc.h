@@ -1,28 +1,26 @@
-#ifndef SOFTMC_PARAL_H
-#define SOFTMC_PARAL_H
+#ifndef OMP_SOFTMC_PARAL_H
+#define OMP_SOFTMC_PARAL_H
 
-#include "omp_paral.h"
 #include "../source_detector/source_detection_params.h"
 #include "../source_detector/source_detector.h"
+#include "../source_detector/paral_softmc.h"
+#include "../source_detector/common_master.h"
 
 #include <vector>
 
 namespace cmplx {
 
-class OMPSoftMC : public OmpParal {
+class OMPSoftMC : public CommonMaster {
  public:
   OMPSoftMC() {}
+  ~OMPSoftMC() = default;
 
-  void benchmarkStepByStep(SourceDetectionParams* params, int benchmark_no);
+  std::vector<double> master(const SourceDetectionParams* params);
 
  private:
-  std::vector<double> master(const SourceDetectionParams* params);
-  std::vector<double> softConvMaster(SourceDetectionParams* params);
-
-  std::vector<double> convMaster(SourceDetectionParams* params);
   double work(const SourceDetectionParams* params, ModelType model_type,
               int node_id);
 };
 
 }  // namespace cmplx
-#endif  // SOFTMC_PARAL_H
+#endif  // OMP_SOFTMC_PARAL_H

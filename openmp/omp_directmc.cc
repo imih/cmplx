@@ -57,9 +57,21 @@ vector<double> OMPDirectMCParal::master(const SourceDetectionParams *params) {
     events_resp[node_id] += event_outcome;
   }
 
-  return responseToProb(events_resp, vertices);
+  double sum = 0;
+  for (int v = 0; v < vertices; ++v) {
+    sum += events_resp[v];
+  }
+
+  printf("\r\r\n");
+  vector<double> p;
+  p.clear();
+  for (int v = 0; v < vertices; ++v) {
+    p.push_back(events_resp[v] / sum);
+  }
+  return p;
 }
 
+// TODO make thread safe!
 double OMPDirectMCParal::work(const SourceDetectionParams *params,
                               ModelType model_type, int source_id,
                               int batch_size) {

@@ -3,6 +3,8 @@
 #include <mpi.h>
 #include <cassert>
 
+#include "mpi_common.h"
+
 namespace cmplx {
 
 namespace {
@@ -31,19 +33,12 @@ void share_params(SourceDetectionParams *params) {
   }
 }
 
-void print_to_file(std::string filename, std::vector<double> P,
-                   SourceDetectionParams *params) {
-  FILE *f = fopen(filename.c_str(), "w+");
-  fprintf(f, "%s\n", params->summary().c_str());
-  fprintf(f, "s: %lld\n", params->simulations());
-  for (int i = 0; i < (int)P.size(); ++i)
-    fprintf(f, "%.10lf%c", P[i], i + 1 == (int)P.size() ? '\n' : ' ');
-  fclose(f);
-}
-
 }  // namespace
 
-MpiParal::MpiParal() {
+MpiParal::MpiParal(std::unique_ptr<MpiMaster> mpi_master,
+                   std::unique_ptr<CommonTraits> common_traits)
+    : CommonParal(std::move(common_traits)),
+      mpi_master_(std::move(mpi_master)) {
   rank_ = MPI::COMM_WORLD.Get_rank();
   assert(rank_ > 0);
   processes_ = MPI::COMM_WORLD.Get_size();
@@ -58,17 +53,10 @@ void MpiParal::generateDistribution(SourceDetectionParams *params,
   // sleep(2);
 
   if (rank_ == 0) {
-    std::vector<double> P = convMaster(params);
-    std::string filename = filename_prefix + params->summary();
-    FILE *f = fopen(filename.c_str(), "a");
-    fprintf(f, "s:%lld -%d ", params->simulations(), params->sourceID());
-    for (int j = 0; j < (int)P.size(); ++j) {
-      fprintf(f, "%.10lf%c", P[j], j == ((int)P.size() - 1) ? '\n' : ' ');
-    }
-    fclose(f);
-    send_simul_end();
+    generateDistribution(params, model_type, filename_prefix);
+    mpi_master_->send_simul_end();
   } else {
-    worker(params, model_type);
+    mpi_master_->worker(params, model_type);
   }
   exit(0);
 }
@@ -76,22 +64,23 @@ void MpiParal::generateDistribution(SourceDetectionParams *params,
 void MpiParal::benchmark(SourceDetectionParams *params, int benchmark_no,
                          ModelType model_type, std::string filename_prefix) {
   if (rank_ == 0) {
-    std::vector<double> P = convMaster(params);
-    std::string filename =
-        filename_prefix + std::to_string(benchmark_no) + ".info";
-    print_to_file(filename, P, params);
-    send_simul_end();
+    benchmark(params, benchmark_no, model_type, filename_prefix);
+    mpi_master_->send_simul_end();
   } else {
-    worker(params, model_type);
+    mpi_master_->worker(params, model_type);
   }
   exit(0);
 }
 
-int MpiParal::nextV(int cur_v, const common::BitArray &realization) {
-  int vertices = realization.bits_num();
-  while ((cur_v < vertices) && (realization.bit(cur_v) == false)) cur_v++;
-  if (cur_v >= vertices) cur_v = -1;
-  return cur_v;
+void MpiParal::benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                                   int benchmark_no, ModelType model_type) {
+  if (rank_ == 0) {
+    benchmarkStepByStep(params, benchmark_no, model_type);
+    mpi_master_->send_simul_end();
+  } else {
+    mpi_master_->worker(params, model_type);
+  }
+  exit(0);
 }
 
 }  // namespace cmplx
