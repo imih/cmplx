@@ -24,6 +24,7 @@ class IGraph {
   static IGraph* BarabasiAlbert(int nodes);
   static IGraph* ErdosRenyi(int nodes, double p);
 
+  IGraph(const IGraph& i_graph);
   ~IGraph();
 
   const igraph_t& graph() const { return *graph_; }
@@ -45,7 +46,6 @@ class IGraph {
 
  private:
   IGraph(igraph_t* graph_, bool fill_attributes = false);
-  IGraph(const IGraph& i_graph);
 
   igraph_t* graph_;
   mutable std::unordered_map<int, IVector<int> >* adj_list_cache_;

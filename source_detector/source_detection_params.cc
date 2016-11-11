@@ -33,7 +33,7 @@ const int Q_LINE = 2;
 const int T_LINE = 3;
 const int NODES_LINE = 5;
 const int SIMUL_LINE = 0;
-std::string BENCHMARK_PATH = "/home/imiholic";
+std::string BENCHMARK_PATH = "/home/iva/dipl";
 }
 
 namespace cmplx {

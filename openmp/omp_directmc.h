@@ -18,7 +18,8 @@ class OMPDirectMCParal : public CommonMaster {
   std::vector<double> master(const SourceDetectionParams* params);
 
  private:
-  double work(const SourceDetectionParams* params, ModelType model_type,
+  double work(const common::IGraph& graph,
+              const common::RealizationRead& snapshot, ModelType model_type,
               int source_id, int batch_size);
 };
 

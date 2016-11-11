@@ -31,12 +31,12 @@ typedef long long ll;
 
 namespace cmplx {
 
-vector<double> OMPDirectMCParal::master(const SourceDetectionParams *params) {
+vector<double> OMPDirectMCParal::master(const SourceDetectionParams* params) {
   int vertices = params->graph()->vertices();
   vector<int> events_resp(vertices, 0);
 
   const long long simulations = params->simulations();
-  const common::RealizationRead &snapshot = params->realization();
+  const common::RealizationRead snapshot = params->realization();
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
 
@@ -48,12 +48,15 @@ vector<double> OMPDirectMCParal::master(const SourceDetectionParams *params) {
   int j = 0;
   int node_id = 0;
   double event_outcome = 0;
+  const IGraph graph = *params->graph().get();
+
 #pragma omp parallel for default(none)                              \
     shared(events_resp, jobs_remaining, SIMUL_PER_REQ, activeNodes, \
-           params) private(j, node_id, event_outcome)
+           graph) private(j, node_id, event_outcome)
   for (j = 0; j < jobs_remaining; j += SIMUL_PER_REQ) {
     node_id = activeNodes[jobs_remaining % simulations];
-    event_outcome = work(params, ModelType::SIR, node_id, SIMUL_PER_REQ);
+    event_outcome =
+        work(graph, snapshot, ModelType::SIR, node_id, SIMUL_PER_REQ);
     events_resp[node_id] += event_outcome;
   }
 
@@ -72,19 +75,19 @@ vector<double> OMPDirectMCParal::master(const SourceDetectionParams *params) {
 }
 
 // TODO make thread safe!
-double OMPDirectMCParal::work(const SourceDetectionParams *params,
+double OMPDirectMCParal::work(const IGraph& graph,
+                              const RealizationRead& snapshot,
                               ModelType model_type, int source_id,
                               int batch_size) {
-  const IGraph *graph = params->graph().get();
-  const common::RealizationRead &snapshot = params->realization();
 
   // workers
   // Performs simulation on request.
-  DirectMonteCarloDetector sd(graph);
+  auto sd = std::unique_ptr<DirectMonteCarloDetector>(
+      new DirectMonteCarloDetector(&graph));
   int outcomes = 0;
   for (int t = 0; t < batch_size; ++t) {
     common::RealizationRead sp0 = snapshot;
-    outcomes += sd.DMCSingleSourceSimulation(source_id, sp0, model_type);
+    outcomes += sd->DMCSingleSourceSimulation(source_id, sp0, model_type);
   }
   return outcomes;
 }

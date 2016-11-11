@@ -94,7 +94,7 @@ std::vector<double> CommonParal::convMaster(SourceDetectionParams *params,
       printf("NAN! %d \n", s1);
     }
     double delta = dabs(pml1 - pml0) / pml1;
-    printf("c: %lf\n", delta);
+    printf("0: %lf 1:%lf c: %lf\n", pml0, pml1, delta);
     if (delta > c) converge = false;
     int pos = 0;
     for (int i = 0; i < (int)p1.size(); ++i) {

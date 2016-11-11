@@ -145,7 +145,8 @@ void MPISeqIS::worker(const SourceDetectionParams *params,
   RealizationRead snapshot = params->realization();
 
   // Performs simulation on request.
-  SequentialMCDetector sd(graph);
+  auto sd =
+      std::unique_ptr<SequentialMCDetector>(new SequentialMCDetector(graph));
   // SequentialSoftMCDetector sd(graph);
 
   while (true) {
@@ -159,10 +160,9 @@ void MPISeqIS::worker(const SourceDetectionParams *params,
 
       /***/
       int sample_size = message_recv.sample_size;
-      double Pos =
-          sd.seqPosterior(message_recv.source_id, sample_size, snapshot,
-                          cmplx::ResamplingType::SIMPLE_RANDOM_SAMPLING,
-                          true /* p = 1 @ T = 5*/);
+      double Pos = sd->seqPosterior(message_recv.source_id, sample_size,
+                                    snapshot, cmplx::ResamplingType::NONE,
+                                    true /* p = 1 @ T = 5*/);
       message_recv.event_outcome = Pos;
       /****/
 

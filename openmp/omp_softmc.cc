@@ -70,7 +70,7 @@ namespace cmplx {
 vector<double> OMPSoftMC::master(const SourceDetectionParams *params) {
   const int simulations = params->simulations();
   int vertices = params->graph()->vertices();
-  const common::RealizationRead &snapshot = params->realization();
+  const common::RealizationRead snapshot = params->realization();
 
   // master process
   vector<double> events_resp_sum(vertices, 0);
@@ -80,15 +80,18 @@ vector<double> OMPSoftMC::master(const SourceDetectionParams *params) {
   assert(jobs_remaining % (int)SIMUL_PER_REQ == 0);
   vector<int> activeNodes = snapshot.realization().positions();
 
+  const IGraph graph = *params->graph().get();
+
   int j = 0;
   int node_id = 0;
   double event_outcome = 0;
+  double a = params->a();
 #pragma omp parallel for default(none)                                     \
     shared(events_resp_sum, events_resp_size, jobs_remaining, activeNodes, \
-           params) private(j, node_id, event_outcome)
+           graph, a) private(j, node_id, event_outcome)
   for (j = 0; j < jobs_remaining; j += SIMUL_PER_REQ) {
     node_id = activeNodes[jobs_remaining % simulations];
-    event_outcome = work(params, ModelType::SIR, node_id);
+    event_outcome = work(graph, snapshot, a, ModelType::SIR, node_id);
     events_resp_sum[node_id] += event_outcome;
     events_resp_size[node_id]++;
   }
@@ -96,24 +99,21 @@ vector<double> OMPSoftMC::master(const SourceDetectionParams *params) {
   return responseToProb(events_resp_sum, events_resp_size, vertices);
 }
 
-// TODO make thread safe!
-double OMPSoftMC::work(const SourceDetectionParams *params,
-                       ModelType model_type, int node_id) {
-  const IGraph *graph = params->graph().get();
-  common::RealizationRead snapshot = params->realization();
+double OMPSoftMC::work(const IGraph &graph, const RealizationRead &snapshot,
+                       double a, ModelType model_type, int node_id) {
 
   // workers
   // Performs simulation on request.
-  SoftMarginDetector sd(graph);
+  auto sd = std::unique_ptr<SoftMarginDetector>(new SoftMarginDetector(&graph));
 
   /***/
   vector<double> fi;
   fi.clear();
   for (int t = 0; t < (int)SIMUL_PER_REQ; ++t) {
     RealizationRead sp0 = snapshot;
-    fi.push_back(sd.SMSingleSourceSimulation(node_id, sp0, model_type));
+    fi.push_back(sd->SMSingleSourceSimulation(node_id, sp0, model_type));
   }
-  return sd.likelihood(fi, params->a());
+  return sd->likelihood(fi, a);
 }
 
 }  // namespace cmplx

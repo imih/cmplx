@@ -15,10 +15,11 @@ class OMPSeqIS : public CommonMaster {
   OMPSeqIS() {}
   ~OMPSeqIS() = default;
 
-  std::vector<double> master(const SourceDetectionParams* params);
+  std::vector<double> master(const SourceDetectionParams *params);
 
  private:
-  double work(const SourceDetectionParams* params, ModelType model_type,
+  double work(const common::IGraph &graph,
+              const common::RealizationRead &snapshot, ModelType model_type,
               int source_id, int sample_size);
 };
 

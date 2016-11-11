@@ -153,7 +153,8 @@ void MPIDirectMC::worker(const SourceDetectionParams *params,
 
   // workers
   // Performs simulation on request.
-  DirectMonteCarloDetector sd(graph);
+  auto sd = std::unique_ptr<DirectMonteCarloDetector>(
+      new DirectMonteCarloDetector(graph));
   while (true) {
     Message message = {-1, 0, 0};
     MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
@@ -165,8 +166,8 @@ void MPIDirectMC::worker(const SourceDetectionParams *params,
       int outcomes = 0;
       for (int t = 0; t < message_recv.batch_size; ++t) {
         common::RealizationRead sp0 = snapshot;
-        outcomes += sd.DMCSingleSourceSimulation(message_recv.source_id, sp0,
-                                                 model_type);
+        outcomes += sd->DMCSingleSourceSimulation(message_recv.source_id, sp0,
+                                                  model_type);
       }
 
       message_recv.event_outcome = outcomes;

@@ -188,7 +188,7 @@ void MPISoftMC::worker(const SourceDetectionParams *params,
 
   // workers
   // Performs simulation on request.
-  SoftMarginDetector sd(graph);
+  auto sd = std::unique_ptr<SoftMarginDetector>(new SoftMarginDetector(graph));
 
   while (true) {
     Message message;
@@ -204,10 +204,10 @@ void MPISoftMC::worker(const SourceDetectionParams *params,
       fi.clear();
       for (int t = 0; t < (int)SIMUL_PER_REQ; ++t) {
         RealizationRead sp0 = snapshot;
-        fi.push_back(sd.SMSingleSourceSimulation(message_recv.source_id, sp0,
-                                                 model_type));
+        fi.push_back(sd->SMSingleSourceSimulation(message_recv.source_id, sp0,
+                                                  model_type));
       }
-      message_recv.event_outcome = sd.likelihood(fi, message_recv.a);
+      message_recv.event_outcome = sd->likelihood(fi, message_recv.a);
       /****/
 
       Message toSend = message_recv;

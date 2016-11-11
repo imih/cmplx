@@ -15,11 +15,12 @@ class OMPSoftMC : public CommonMaster {
   OMPSoftMC() {}
   ~OMPSoftMC() = default;
 
-  std::vector<double> master(const SourceDetectionParams* params);
+  std::vector<double> master(const SourceDetectionParams *params);
 
  private:
-  double work(const SourceDetectionParams* params, ModelType model_type,
-              int node_id);
+  double work(const common::IGraph &graph,
+              const common::RealizationRead &snapshot, double a,
+              ModelType model_type, int node_id);
 };
 
 }  // namespace cmplx
