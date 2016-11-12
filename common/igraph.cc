@@ -33,6 +33,13 @@ IGraph *IGraph::ErdosRenyi(int nodes, double p) {
   return new IGraph(graph);
 }
 
+IGraph *IGraph::WattsAndStrogatz(int dimensions, double p) {
+  igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
+  igraph_watts_strogatz_game(graph, 2 /* dim*/, dimensions, 1, p,
+                             0 /* loop edges*/, 0 /*multiple */);
+  return new IGraph(graph, true);
+}
+
 IGraph::IGraph(igraph_t *graph_, bool fill_attributes) : graph_(graph_) {
   adj_list_cache_ = new std::unordered_map<int, IVector<int> >();
   adj_list_cache_->clear();
@@ -77,7 +84,7 @@ double IGraph::closeness(int node_id) const {
     igraph_vs_t *vs_t = (igraph_vs_t *)malloc(sizeof(igraph_vs_t));
     igraph_vs_all(vs_t);
     igraph_closeness(graph_, closeness_.get()->vector(), *vs_t, IGRAPH_ALL,
-                     NULL); //, true /* normalize*/);
+                     NULL, true /* normalize*/);
     delete vs_t;
   }
   return (*closeness_.get())[node_id];

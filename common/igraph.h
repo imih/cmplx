@@ -23,6 +23,7 @@ class IGraph {
   static IGraph* GraphFromGDF(const std::string& file_name);
   static IGraph* BarabasiAlbert(int nodes);
   static IGraph* ErdosRenyi(int nodes, double p);
+  static IGraph* WattsAndStrogatz(int dimensions, double p);
 
   IGraph(const IGraph& i_graph);
   ~IGraph();
