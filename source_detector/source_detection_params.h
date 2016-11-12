@@ -24,6 +24,9 @@ class SourceDetectionParams {
   static std::unique_ptr<SourceDetectionParams> ParamsFromGML(
       const std::string &file_name, int source_node, double p, double q);
 
+  static std::unique_ptr<SourceDetectionParams> ParamsFromGraphRealization(
+      const std::string &file_name, int realization_id);
+
   ~SourceDetectionParams() = default;
 
   const std::unique_ptr<common::IGraph> &graph() const { return graph_; }

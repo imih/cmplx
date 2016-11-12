@@ -194,6 +194,53 @@ std::unique_ptr<SourceDetectionParams> SourceDetectionParams::BenchmarkParams(
       new SourceDetectionParams(graph, read, 100000));
 }
 
+std::unique_ptr<SourceDetectionParams>
+SourceDetectionParams::ParamsFromGraphRealization(const std::string& graph_path,
+                                                  int realization_id) {
+
+  IGraph* graph = IGraph::GraphFromGML(graph_path);
+  double p = 0, q = 0;
+  int T = 0;
+  BitArray r = BitArray::zeros(graph->vertices());
+
+  std::ifstream f_real;
+  std::string filename =
+      "realizations/realization_" + std::to_string(realization_id) + ".txt";
+  f_real.open(filename);
+  if (!f_real.is_open()) {
+    std::cout << std::strerror(errno) << std::endl;
+    exit(1);
+  }
+  std::string line;
+  int line_no = 0;
+  while (getline(f_real, line)) {
+    auto items = split(line);
+    switch (line_no) {
+      case P_LINE:
+        p = stod(items[1]);
+        break;
+      case Q_LINE:
+        q = stod(items[1]);
+        break;
+      case T_LINE:
+        T = stoi(items[1]);
+        break;
+    }
+
+    if (line_no >= NODES_LINE) {
+      if (stoi(line)) {
+        r.set(line_no - NODES_LINE, true);
+      }
+    }
+    line_no++;
+  }
+
+  f_real.close();
+  common::RealizationRead read(r, p, q, T);
+  return std::unique_ptr<SourceDetectionParams>(
+      new SourceDetectionParams(graph, read, 100000));
+}
+
 std::string SourceDetectionParams::summary() const {
   std::string s = std::to_string(realization_.p()) + "_" +
                   std::to_string(realization_.q()) + "_" +

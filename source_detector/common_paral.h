@@ -31,6 +31,10 @@ class CommonParal {
   std::vector<double> convMaster(SourceDetectionParams* params,
                                  const std::vector<int>& sims);
 
+  std::vector<double> convMaster(SourceDetectionParams* params) {
+    return convMaster(params, common_traits_->convMasterSims());
+  }
+
  protected:
   void benchmarkStepByStep(std::string filename_prefix,
                            const std::vector<int>& sims,
@@ -44,9 +48,6 @@ class CommonParal {
 
   virtual std::vector<double> master(SourceDetectionParams* params) {
     return common_master_->master(params);
-  }
-  std::vector<double> convMaster(SourceDetectionParams* params) {
-    return convMaster(params, common_traits_->convMasterSims());
   }
 
  private:
