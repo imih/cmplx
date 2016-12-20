@@ -45,7 +45,7 @@ void CommonParal::benchmarkStepByStep(std::string filename_prefix,
                                       cmplx::SourceDetectionParams *params,
                                       int benchmark_no) {
   std::string filename =
-      filename_prefix + std::to_string(benchmark_no) + ".info";
+      filename_prefix + "StepByStep_" + std::to_string(benchmark_no) + ".info";
   FILE *f = fopen(filename.c_str(), "a+");
 
   params->setA(pow(2, -5));

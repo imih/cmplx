@@ -13,13 +13,31 @@ namespace cmplx {
 class ParalSeqIS : public CommonTraits {
  public:
   ParalSeqIS()
-      : CommonTraits({(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6},
-                     "SEQSoftbench_SBS_",
-                     {(int)1e4,      2 * (int)1e4,  4 * (int)1e4,
-                      8 * (int)1e4,  10 * (int)1e4, 20 * (int)1e4,
-                      40 * (int)1e4, 80 * (int)1e4, 100 * (int)1e4}) {}
+      : CommonTraits({100, 200, 1000, 2000, 
+                     (int)1e4, 2 * (int)1e4,  
+                      (int)1e5, 2 * (int)1e5,
+                      (int)1e6, 2 * (int) 1e6},
+                     "SEQbench_",
+                     {(int)1e4, 2 * (int)1e4,  4 * (int)1e4,
+                      (int)1e5, 2 * (int)1e5,
+                      4 * (int)1e5 , (int)1e6, 2 * (int) 1e6, 4 * (int) 1e6}) {}
 
   ~ParalSeqIS() = default;
+};
+
+class ParalSoftSeqIS : public CommonTraits {
+ public:
+  ParalSoftSeqIS()
+      : CommonTraits({100, 200, 1000, 2000, 
+                     (int)1e4, 2 * (int)1e4,  
+                      (int)1e5, 2 * (int)1e5,
+                      (int)1e6, 2 * (int) 1e6},
+                     "SEQSoftbench_",
+                     {(int)1e4, 2 * (int)1e4,  4 * (int)1e4,
+                      (int)1e5, 2 * (int)1e5,
+                      4 * (int)1e5 , (int)1e6, 2 * (int) 1e6, 4 * (int) 1e6}) {}
+
+  ~ParalSoftSeqIS() = default;
 };
 }
 
