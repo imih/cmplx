@@ -4,5 +4,6 @@
 #include "mpi_directmc.h"
 #include "mpi_softmc.h"
 #include "mpi_seqis.h"
+#include "mpi_softseqis.h"
 
 #endif  // MPI_SOURCE_DETECTION_PARAL_H

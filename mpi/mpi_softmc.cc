@@ -24,8 +24,7 @@ using cmplx::SourceDetectionParams;
 using std::vector;
 
 namespace {
-const int SIMUL_PER_REQ = 10000;
-
+const int SIMUL_PER_REQ = 100;
 struct Message {
   int source_id;
   double event_outcome;
@@ -45,43 +44,6 @@ MPI::Datatype datatypeOfMessage() {
 }
 
 typedef long long ll;
-
-std::vector<double> responseToProb(
-    const std::vector<double> &events_resp_sum,
-    const std::vector<long long> &events_resp_size, int vertices) {
-  printf("\r\n");
-  /*****/
-  std::vector<double> P;
-  P.clear();
-  double sum = 0;
-
-  int first_size = 0;
-  bool normalize = false;
-  for (int v = 0; v < vertices; ++v) {
-    if (!first_size) first_size = events_resp_size[0];
-    if (first_size && events_resp_size[v] &&
-        events_resp_size[v] != first_size) {
-      std::cout << std::endl << events_resp_size[v] << " " << first_size
-                << std::endl;
-      puts("PROBLEM!");
-      normalize = true;
-      break;
-    }
-  }
-
-  for (int v = 0; v < vertices; ++v) {
-    P.push_back((normalize && events_resp_size[v])
-                    ? (events_resp_sum[v] / events_resp_size[v])
-                    : events_resp_sum[v]);
-    sum += P.back();
-    if (P.back() > 0.01) printf("%.2lf ", P.back());
-  }
-  printf("\n");
-  for (int v = 0; v < vertices; ++v) {
-    if (sum > 0) P[v] /= sum;
-  }
-  return P;
-}
 }  // anonymous
 
 namespace cmplx {
@@ -173,7 +135,42 @@ vector<double> MPISoftMC::master(const SourceDetectionParams *params, bool end,
     }
   }
 
-  return responseToProb(events_resp_sum, events_resp_size, vertices);
+  printf("\r\n");
+  /*****/
+  std::vector<double> P;
+  P.clear();
+  double sum = 0;
+
+  int first_size = 0;
+  bool normalize = false;
+  for (int v = 0; v < vertices; ++v) {
+    if (!first_size) first_size = events_resp_size[0];
+    if (first_size && events_resp_size[v] &&
+        events_resp_size[v] != first_size) {
+      std::cout << std::endl << events_resp_size[v] << " " << first_size
+                << std::endl;
+      puts("PROBLEM!");
+      normalize = true;
+      break;
+    }
+  }
+  if(normalize) {
+send_simul_end();
+exit(1);
+}
+
+  for (int v = 0; v < vertices; ++v) {
+    P.push_back((normalize && events_resp_size[v])
+                    ? (events_resp_sum[v] / events_resp_size[v])
+                    : events_resp_sum[v]);
+    sum += P.back();
+    if (P.back() > 0.01) printf("%.2lf ", P.back());
+  }
+  printf("\n");
+  for (int v = 0; v < vertices; ++v) {
+    if (sum > 0) P[v] /= sum;
+  }
+  return P;
 }
 
 void MPISoftMC::worker(const SourceDetectionParams *params,

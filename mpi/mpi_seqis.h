@@ -22,7 +22,7 @@ class MPISeqIS : public MpiMaster {
     return master(params, false, false);
   }
 
-  void worker(const SourceDetectionParams* params, ModelType model_type);
+  virtual void worker(const SourceDetectionParams* params, ModelType model_type);
   void send_simul_end();
 };
 

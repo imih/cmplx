@@ -24,8 +24,6 @@ using cmplx::SourceDetectionParams;
 using std::vector;
 
 namespace {
-const int SIMUL_PER_REQ = 10000;
-
 struct Message {
   int source_id;
   double event_outcome;
@@ -145,9 +143,7 @@ void MPISeqIS::worker(const SourceDetectionParams *params,
   RealizationRead snapshot = params->realization();
 
   // Performs simulation on request.
-  auto sd =
-      std::unique_ptr<SequentialMCDetector>(new SequentialMCDetector(graph));
-  // SequentialSoftMCDetector sd(graph);
+  auto sd = std::unique_ptr<SequentialMCDetector>(new SequentialMCDetector(graph));
 
   while (true) {
     Message message;

@@ -13,11 +13,14 @@ namespace cmplx {
 class ParalSoftMC : public CommonTraits {
  public:
   ParalSoftMC()
-      : CommonTraits(
-            {(int)1e2, (int)1e3, (int)1e4, (int)1e5, (int)1e6}, "SMbench_SBS_",
-            {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,   10 * (int)1e4,
-             20 * (int)1e4,  40 * (int)1e4,  100 * (int)1e4, 200 * (int)1e4,
-             400 * (int)1e4, 1000 * (int)1e4}) {}
+      : CommonTraits({100, 200, 1000, 2000, 
+                     (int)1e4, 2 * (int)1e4,  
+                      (int)1e5, 2 * (int)1e5,
+                      (int)1e6, 2 * (int) 1e6},
+            "SMbench_",
+            {(int)1e4,       2 * (int)1e4,   4 * (int)1e4,   (int)1e5,
+             2 * (int)1e5,  4 * (int)1e5,  (int)1e6, 2 * (int)1e6,
+             4 * (int)1e6, (int)1e7}) {}
 
   ~ParalSoftMC() = default;
 };

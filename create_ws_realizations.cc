@@ -35,8 +35,9 @@ void build_realizations() {
 // -m - SoftMargin
 // -s SoftMargin SIS
 int main(int argc, char** argv) {
+  MPI::Init(argc, argv);
   // Paralelized
-  std::string graph_path = "WattsStrogatz30_0.5.gml";
+  std::string graph_path = "/home/imiholic/ws_benchmark/WattsStrogatz30_0.5.gml";
   // build_realizations();
 
   int id = 0;
@@ -48,9 +49,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  MPI::Init(argc, argv);
   std::unique_ptr<cmplx::MpiMaster> mpi_master =
       std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPIDirectMC());
+
   std::unique_ptr<cmplx::CommonTraits> common_traits =
       std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalDirectMC());
   std::unique_ptr<cmplx::MpiParal> mpi_paral(
@@ -62,7 +63,7 @@ int main(int argc, char** argv) {
   if (rank == 0) {
     std::vector<double> P = mpi_paral->convMaster(params.get());
     std::string file_name =
-        "solutions/inverse_solution_" + std::to_string(id) + ".txt";
+        "/home/imiholic/ws_benchmark/solutions/inverse_solution_" + std::to_string(id) + ".txt";
     FILE* f = fopen(file_name.c_str(), "w");
     fprintf(f, "#Number of simulations: %lld\n", params->simulations());
     fprintf(f, "#Node source probabilities:\n");
@@ -71,7 +72,9 @@ int main(int argc, char** argv) {
     }
     fclose(f);
   } else {
-    mpi_master->worker(params.get(), cmplx::ModelType::SIR);
+  std::unique_ptr<cmplx::MpiMaster> mpi_masterW =
+      std::unique_ptr<cmplx::MpiMaster>(new cmplx::MPIDirectMC());
+    mpi_masterW->worker(params.get(), cmplx::ModelType::SIR);
   }
 
   MPI::Finalize();
