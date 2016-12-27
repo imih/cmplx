@@ -12,7 +12,10 @@ namespace cmplx {
 
 class MpiMaster : public CommonMaster {
  public:
-  MpiMaster() { processes_ = MPI::COMM_WORLD.Get_size(); }
+  MpiMaster() {
+    processes_ = MPI::COMM_WORLD.Get_size();
+    rank_ = MPI::COMM_WORLD.Get_rank();
+  }
   ~MpiMaster() = default;
 
   virtual std::vector<double> master(const SourceDetectionParams* params) = 0;
@@ -22,6 +25,7 @@ class MpiMaster : public CommonMaster {
 
  protected:
   int processes() { return processes_; }
+  int rank();
 
   int nextV(int cur_v, const common::BitArray& realization) {
     int vertices = realization.bits_num();
@@ -32,6 +36,7 @@ class MpiMaster : public CommonMaster {
 
  private:
   int processes_;
+  int rank_;
 };
 
 }  // namespace cmplx

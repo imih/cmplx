@@ -1,10 +1,3 @@
-Entropy <- function(L, bitCnt) {
-  if(sum(L) == 0) { return(0) }
-  H = -Reduce("+", ifelse(L > 0, L * log(L), 0))
-  H = H / log(bitCnt)
-  return(H)
-}
-
 PrepareEntropy <- function(data) {
   entropies = vector(length = nrow(data))
   #if(ncol(data) == 9) {

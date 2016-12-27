@@ -396,7 +396,7 @@ echo "Installing igraph into: ${PREFIX}"
 echo ""
 
 install_dependencies
-check_dependencies
+#check_dependencies
 
 checkout_source
 compile_core

@@ -19,17 +19,17 @@ int main(int argc, char** argv) {
   bool seq = false;
   bool sm = false;
   bool direct = false;
-bool softseq = false;
-bool sbs = false;
+  bool softseq = false;
+  bool sbs = false;
   int n = 0;
   {
     int c;
-    while ((c = getopt(argc, argv, "n:sm")) != EOF) {
+    while ((c = getopt(argc, argv, "n:smdbf")) != EOF) {
       switch (c) {
         case 'n':
           n = atoi(optarg);
           break;
-          case 'd':
+        case 'd':
           direct = true;
           break;
         case 's':
@@ -38,12 +38,12 @@ bool sbs = false;
         case 'm':
           sm = true;
           break;
-	case 'f':
- 	 softseq = true;
-	 break;
+        case 'f':
+          softseq = true;
+          break;
         case 'b':
-         sbs = true;
-         break;
+          sbs = true;
+          break;
       }
     }
   }
@@ -72,14 +72,15 @@ bool sbs = false;
     common_traits =
         std::unique_ptr<cmplx::CommonTraits>(new cmplx::ParalSoftSeqIS());
     filename_prefix += "SoftSeq_";
- }
+  }
 
   std::unique_ptr<cmplx::MpiParal> mpi_paral(
       new cmplx::MpiParal(std::move(mpi_master), std::move(common_traits)));
-if(sbs and !direct)
-  mpi_paral->benchmarkStepByStep(params.get(), n, cmplx::ModelType::SIR);
-else
-  mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR, filename_prefix);
+  if (sbs and !direct)
+    mpi_paral->benchmarkStepByStep(params.get(), n, cmplx::ModelType::SIR);
+  else
+    mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR,
+                         filename_prefix);
 
   MPI::Finalize();
   return 0;
