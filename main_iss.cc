@@ -12,7 +12,9 @@ using cmplx::SourceDetectionParams;
 int main(int argc, char** argv) {
 
   // Paralelized
-  MPI::Init(argc, argv);
+  int provided_level = MPI::Init_thread(argc, argv, MPI_THREAD_MULTIPLE);
+  printf("Provided level of thread support: %d", provided_level);
+
   bool seq = false;
   int P = 5, Q = 5;
   int n = 30;

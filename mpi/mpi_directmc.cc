@@ -6,15 +6,17 @@
 
 #include "mpi_common.h"
 
-#include <mpi.h>
-#include <unistd.h>
 #include <algorithm>
 #include <cmath>
+#include <mpi.h>
+#include <unistd.h>
 
 #include <cstdio>
 #include <cstdlib>
 
 #include <cassert>
+
+#include <thread>
 
 using cmplx::SourceDetector;
 using cmplx::common::IGraph;
@@ -61,16 +63,54 @@ void MPIDirectMC::send_simul_end() {
   }
 }
 
-vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
-                                   bool end, bool print) {
+static void master_steve_wrapper(MPIDirectMC *direct_mc,
+                                 const common::BitArray &realization,
+                                 int simulation, int simul_per_req) {
+  direct_mc->master_steve(realization, simulation, simul_per_req);
+}
+
+void MPIDirectMC::master_steve(const common::BitArray &realization,
+                               int simulations, int simul_per_req) {
+  long long cur_simul_count = 0;
+
   MPI::Datatype message_type = datatypeOfMessage();
   message_type.Commit();
 
+  int cur_v = nextV(0, realization);
+
+  while (true) {
+    Message init_message;
+    MPI::COMM_WORLD.Recv(&init_message, 1, message_type, MPI_ANY_SOURCE,
+                         MessageType::SIMUL_PREREQUEST);
+    int worker_id = init_message.source_id;
+
+    if (cur_simul_count < simulations) {
+      cur_simul_count += simul_per_req;
+    } else {
+      cur_simul_count = simul_per_req;
+      cur_v = nextV(cur_v + 1, realization);
+    }
+    if (cur_v == -1) {
+      return;
+    } else {
+      Message m = {cur_v, 0, simul_per_req};
+      MPI::COMM_WORLD.Send(&m, 1, message_type, worker_id,
+                           MessageType::SIMUL_REQUEST);
+    }
+  }
+}
+
+vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
+                                   bool end, bool print) {
+
   const long long simulations = params->simulations();
   const common::RealizationRead &snapshot = params->realization();
+  int simul_per_req = std::max(10000LL, simulations / 10000);
+  assert(simulations % (int)simul_per_req == 0);
 
-  long long cur_simul_count = 0;
-  int cur_v = nextV(0, snapshot.realization());
+  MPIDirectMC *ja = this;
+  std::thread steve(&master_steve_wrapper, ja, snapshot.realization(),
+                    simulations, simul_per_req);
 
   const IGraph *graph = params->graph().get();
   int vertices = params->graph()->vertices();
@@ -79,53 +119,20 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
   long long jobs_remaining =
       1LL * simulations * snapshot.realization().bitCount();
 
-  int SIMUL_PER_REQ = std::max(10000LL, simulations / 10000);
-  assert(simulations % (int)SIMUL_PER_REQ == 0);
+  MPI::Datatype message_type = datatypeOfMessage();
+  message_type.Commit();
 
-  int processes = MpiMaster::processes();
   while (jobs_remaining > 0) {
-    for (int i = 0; i < processes - 1; ++i) {
-      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_PREREQUEST)) {
-        Message init_message;
-        MPI::COMM_WORLD.Recv(&init_message, 1, message_type, i + 1,
-                             MessageType::SIMUL_PREREQUEST);
-        if (cur_simul_count < simulations) {
-          cur_simul_count += (int)SIMUL_PER_REQ;
-        } else {
-          cur_simul_count = (int)SIMUL_PER_REQ;
-          cur_v = nextV(cur_v + 1, snapshot.realization());
-        }
-        if (cur_v == -1) {
-          // There's no more jobs
-          if (end == true) {
-            Message message = {-1, -1};
-            MPI::COMM_WORLD.Send(&message, 1, message_type, i + 1,
-                                 MessageType::SIMUL_END);
-          } else {
-            // do nothing
-          }
-        } else {
-          Message m = {cur_v, 0, SIMUL_PER_REQ};
-          MPI::COMM_WORLD.Send(&m, 1, message_type, i + 1,
-                               MessageType::SIMUL_REQUEST);
-        }
-      }
-    }
-
-    for (int i = 0; i < processes - 1; ++i) {
-      if (MPI::COMM_WORLD.Iprobe(i + 1, MessageType::SIMUL_RESPONSE)) {
-        Message received;
-        MPI::COMM_WORLD.Recv(&received, 1, message_type, i + 1,
-                             MessageType::SIMUL_RESPONSE);
-        jobs_remaining -= (int)SIMUL_PER_REQ;
-        events_resp[received.source_id] += received.event_outcome;
-        if (!i) {
-          printf("\r%.5f",
-                 jobs_remaining * 100 /
-                     ((double)simulations * snapshot.realization().bitCount()));
-          fflush(stdout);
-        }
-      }
+    Message received;
+    MPI::COMM_WORLD.Recv(&received, 1, message_type, MPI_ANY_SOURCE,
+                         MessageType::SIMUL_RESPONSE);
+    jobs_remaining -= (int)SIMUL_PER_REQ;
+    events_resp[received.source_id] += received.event_outcome;
+    if (rand() % 100 == 0) {
+      printf("\r%.5f",
+             jobs_remaining * 100 /
+                 ((double)simulations * snapshot.realization().bitCount()));
+      fflush(stdout);
     }
   }
 
@@ -140,6 +147,7 @@ vector<double> MPIDirectMC::master(const SourceDetectionParams *params,
   for (int v = 0; v < vertices; ++v) {
     p.push_back(events_resp[v] / sum);
   }
+  steve.join();
   return p;
 }
 
@@ -156,7 +164,7 @@ void MPIDirectMC::worker(const SourceDetectionParams *params,
   auto sd = std::unique_ptr<DirectMonteCarloDetector>(
       new DirectMonteCarloDetector(graph));
   while (true) {
-    Message message = {-1, 0, 0};
+    Message message = {rank(), 0, 0};
     MPI::COMM_WORLD.Send(&message, 1, message_type, 0 /* dest */,
                          MessageType::SIMUL_PREREQUEST);
     if (MPI::COMM_WORLD.Iprobe(0, MessageType::SIMUL_REQUEST)) {

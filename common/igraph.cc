@@ -122,6 +122,10 @@ double IGraph::eigenvector_centrality(int node_id) const {
 
 IGraph *IGraph::GraphFromGML(const std::string &file_name) {
   igraph_t *graph = (igraph_t *)malloc(sizeof(igraph_t));
+  if(graph == NULL) {
+      std::cout << "Unable to create igraph_t with malloc" << std::endl;
+      exit(1);
+  }
   FILE *f = fopen(file_name.c_str(), "r");
   std::cout << file_name << std::endl;
   if (f == NULL) {

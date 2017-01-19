@@ -35,7 +35,8 @@ void build_realizations() {
 // -m - SoftMargin
 // -s SoftMargin SIS
 int main(int argc, char** argv) {
-  MPI::Init(argc, argv);
+  int provided_level = MPI::Init_thread(argc, argv, MPI_THREAD_MULTIPLE);
+
   // Paralelized
   std::string graph_path = "/home/imiholic/ws_benchmark/WattsStrogatz30_0.5.gml";
   // build_realizations();

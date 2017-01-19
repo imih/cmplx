@@ -6,16 +6,21 @@
 #include <mpi.h>
 #include <ctime>
 #include <string>
+#include <cassert>
 
 using cmplx::SourceDetectionParams;
 
 // -n bench_no
-// [no flag] - DirectMC
-// -m - SoftMargin
-// -s SoftMargin SIS
+// -d -> DirectMC
+// -s -> SequentialMC
+// -m -> SoftMargin
+// -f -> SoftSeqMC
+// -b -> step_by_step mode
 int main(int argc, char** argv) {
   // Paralelized
-  MPI::Init(argc, argv);
+  int provided_level = MPI::Init_thread(argc, argv, MPI_THREAD_MULTIPLE);
+  printf("Provided level of thread support: %d", provided_level);
+
   bool seq = false;
   bool sm = false;
   bool direct = false;
@@ -24,7 +29,7 @@ int main(int argc, char** argv) {
   int n = 0;
   {
     int c;
-    while ((c = getopt(argc, argv, "n:smdbf")) != EOF) {
+    while ((c = getopt(argc, argv, "n:dsmfb")) != EOF) {
       switch (c) {
         case 'n':
           n = atoi(optarg);
@@ -76,12 +81,13 @@ int main(int argc, char** argv) {
 
   std::unique_ptr<cmplx::MpiParal> mpi_paral(
       new cmplx::MpiParal(std::move(mpi_master), std::move(common_traits)));
-  if (sbs and !direct)
+  assert(!(sbs && direct));
+  if (sbs) {
     mpi_paral->benchmarkStepByStep(params.get(), n, cmplx::ModelType::SIR);
-  else
+  } else {
     mpi_paral->benchmark(params.get(), n, cmplx::ModelType::SIR,
                          filename_prefix);
-
+  }
   MPI::Finalize();
   return 0;
 }

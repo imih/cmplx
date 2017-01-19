@@ -25,7 +25,7 @@ class MpiMaster : public CommonMaster {
 
  protected:
   int processes() { return processes_; }
-  int rank();
+  int rank() { return rank_; }
 
   int nextV(int cur_v, const common::BitArray& realization) {
     int vertices = realization.bits_num();

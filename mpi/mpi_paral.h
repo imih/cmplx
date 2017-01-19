@@ -15,14 +15,14 @@ class MpiParal : public CommonParal {
            std::unique_ptr<CommonTraits> common_traits);
   ~MpiParal() = default;
 
-  void benchmarkStepByStep(cmplx::SourceDetectionParams *params,
-                           int benchmark_no, ModelType model_type);
-
   void generateDistribution(SourceDetectionParams *params, ModelType model_type,
                             std::string &filename_prefix);
 
   void benchmark(SourceDetectionParams *params, int benchmark_no,
                  ModelType model_type, std::string filename_prefix);
+
+  void benchmarkStepByStep(cmplx::SourceDetectionParams *params,
+                           int benchmark_no, ModelType model_type);
 
  protected:
   int rank_;
