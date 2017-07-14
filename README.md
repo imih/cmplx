@@ -25,12 +25,12 @@ cmake cmplx
 make
 ```
 
-###Compiling the tests
+### Compiling the tests
 Tests are configured with ```cmake cmplx -Dtest=ON```.
 Run them all with ```make test```.
 Tests require [GTest](https://github.com/google/googletest) library. 
 
-###Running
+### Running
 Run executables with ```mpiexec -n [#processes] executable [local flags]```.
 
 
